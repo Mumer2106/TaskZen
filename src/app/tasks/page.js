@@ -239,30 +239,34 @@ export default function Home() {
 
       {/* Top Floating Buttons */}
       <div className="fixed top-6 left-6 z-[100] pointer-events-auto">
-        <Link href="/" className="group flex items-center gap-2 text-slate-400 hover:text-white transition-all duration-300 bg-[#02000d]/80 backdrop-blur-2xl px-4 py-2 sm:px-5 sm:py-3 rounded-2xl border border-white/10 shadow-2xl hover:border-white/20">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6" /></svg>
-          <span className="font-black tracking-tight text-xs sm:text-sm hidden xs:inline uppercase">Home</span>
+        <Link href="/" className="group flex items-center gap-3 text-slate-500 hover:text-white transition-all duration-500 bg-[#02000d]/60 backdrop-blur-3xl p-3 sm:p-4 rounded-2xl border border-white/5 shadow-2xl hover:border-indigo-500/30 hover:scale-110 active:scale-95">
+          <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse-subtle"></div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100 transition-all"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
         </Link>
       </div>
 
       <div className="fixed top-6 right-6 z-[100] pointer-events-auto">
         <button
           onClick={handleLogout}
-          className="group flex items-center gap-2 text-rose-500/80 hover:text-rose-500 transition-all duration-300 bg-[#02000d]/80 backdrop-blur-2xl px-4 py-2 sm:px-5 sm:py-3 rounded-2xl border border-white/10 shadow-2xl hover:border-rose-500/30"
+          className="group flex items-center gap-3 text-rose-500/60 hover:text-rose-500 transition-all duration-500 bg-[#02000d]/60 backdrop-blur-3xl p-3 sm:p-4 rounded-2xl border border-white/5 shadow-2xl hover:border-rose-500/30 hover:scale-110 active:scale-95"
         >
-          <span className="font-black tracking-tight text-xs sm:text-sm hidden xs:inline uppercase">Exit</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-x-1 transition-transform"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100 transition-all"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+          <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></div>
         </button>
       </div>
 
       {/* Header */}
-      <div className="w-full max-w-7xl pt-16 sm:pt-20 mb-8 sm:mb-12 relative z-10 px-4 sm:px-8 text-center flex flex-col justify-center items-center mx-auto">
+      <div className="w-full max-w-7xl pt-16 sm:pt-24 mb-10 sm:mb-16 relative z-10 px-4 sm:px-8 text-center flex flex-col justify-center items-center mx-auto animate-in fade-in slide-in-from-top-10 duration-1000">
         <div className="flex flex-col items-center text-center">
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tighter mb-2 sm:mb-4 text-gradient leading-[0.9] sm:leading-none">
+          <div className="flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/5 animate-pulse-subtle">
+            <span className="h-1.5 w-1.5 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(255,45,149,0.8)]"></span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Node_Feed v4.0.2 // Stable</span>
+          </div>
+          <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black tracking-tighter mb-4 text-gradient leading-[0.9] sm:leading-none italic uppercase">
             TaskZen
           </h1>
-          <p className="text-base sm:text-lg text-slate-400 font-light max-w-xl leading-relaxed">
-            Stay organized and productive. A <span className="text-white">simple yet powerful</span> way to track your daily goals and projects.
+          <p className="text-base sm:text-xl text-slate-500 font-light max-w-2xl leading-relaxed italic pr-2">
+            Interface with your objectives. A <span className="text-white font-bold">high-bandwidth system</span> for managing node life-cycles and neural-protocol execution with absolute precision.
           </p>
         </div>
       </div>
@@ -291,38 +295,38 @@ export default function Home() {
         <div className={`lg:col-span-5 w-full flex justify-center lg:sticky lg:top-24 ${activeTab !== 'form' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
           <div className="w-full bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col justify-center text-center hover:bg-white/[0.04] hover:border-white/20 transition-all duration-500 lg:h-[620px] animate-glow">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex justify-center items-center gap-4">
-                <div className="h-8 sm:h-10 w-1.5 rounded-full bg-gradient-to-b from-pink-500 to-indigo-600 shadow-[0_0_15px_rgba(255,45,149,0.5)]"></div>
-                {editId ? "Edit Task" : "Add Task"}
+              <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex justify-center items-center gap-4 italic uppercase tracking-tighter">
+                <span className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
+                {editId ? "Update Protocol" : "New Node"}
                 {actionLoading && <Loader />}
               </h2>
               <form onSubmit={handleAddOrUpdate} className="space-y-6 sm:space-y-8">
-                <div className="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-full">Task Name</label>
+                <div className="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full group">
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full group-focus-within:text-pink-500 transition-colors">Node_Title</label>
                   <input
                     type="text"
-                    placeholder="What needs to be done?"
+                    placeholder="Enter objective..."
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl px-5 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all text-lg font-bold"
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all text-lg font-bold shadow-inner"
                     required
                     disabled={actionLoading}
                   />
                 </div>
-                <div className="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-full">Task Details</label>
+                <div className="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full group">
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full group-focus-within:text-indigo-400 transition-colors">Metadata_Stream</label>
                   <textarea
-                    placeholder="Add more information here..."
+                    placeholder="Record additional information..."
                     value={newTaskDesc}
                     onChange={(e) => setNewTaskDesc(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl px-5 py-4 text-white placeholder-slate-700/80 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all min-h-[120px] resize-none pb-4 text-base leading-relaxed"
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all min-h-[120px] resize-none pb-4 text-base italic leading-relaxed shadow-inner"
                     disabled={actionLoading}
                   />
                 </div>
                 <div className="group space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full relative">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-full flex items-center gap-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full flex items-center justify-center sm:justify-start gap-2 group-focus-within:text-pink-500 transition-colors uppercase">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
-                    Target Date
+                    Temporal_Target
                   </label>
                   <div className="relative w-full">
                     <input
@@ -424,55 +428,78 @@ export default function Home() {
                                 new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                           </span>
                         </div>
-                        <div className="divide-y divide-white/[0.05] flex flex-col gap-3">
+                        <div className="flex flex-col gap-4">
                           {dateTasks.map((task, i) => (
                             <div
                               key={task.id}
-                              className={`group relative flex flex-col sm:flex-row items-center justify-between gap-4 py-4 sm:py-5 transition-all duration-700 hover:bg-white/[0.04] px-4 sm:px-6 rounded-2xl border border-transparent hover:border-white/5 w-full ${selectedTasks.includes(task.id) ? 'bg-white/[0.04] border-white/10' : ''}`}
+                              className={`group relative bg-white/[0.02] border border-white/5 p-6 rounded-[2.5rem] overflow-hidden hover:bg-white/[0.04] transition-all duration-700 hover:scale-[1.02] hover:border-white/10 shadow-2xl ${selectedTasks.includes(task.id) ? 'bg-pink-500/5 border-pink-500/20 shadow-[0_0_40px_rgba(255,45,149,0.1)]' : ''}`}
                             >
-                              <div className="flex items-center gap-4 flex-shrink-0 w-full sm:w-auto justify-center sm:justify-start">
-                                <div className="relative h-6 w-6 flex-shrink-0">
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedTasks.includes(task.id)}
-                                    onChange={() => toggleSelection(task.id)}
-                                    className="peer h-6 w-6 rounded-md sm:rounded-lg border-2 border-white/10 bg-black/40 text-pink-500 focus:ring-0 cursor-pointer appearance-none transition-all checked:bg-pink-600 checked:border-pink-600"
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white opacity-0 peer-checked:opacity-100 transition-opacity">
-                                    <CheckIcon />
-                                  </div>
-                                </div>
-
-                                <button
-                                  onClick={() => toggleStatus(task.id)}
-                                  className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all duration-700 ${task.status === "Completed"
-                                    ? "bg-pink-600 border-pink-600 text-white shadow-[0_0_15px_rgba(255,45,149,0.5)]"
-                                    : "bg-transparent border-slate-700 text-transparent hover:border-pink-500/50 hover:text-pink-500/30"
-                                    }`}
-                                >
-                                  <span className="scale-[0.85]"><CheckIcon /></span>
-                                </button>
+                              {/* Holographic Scanline */}
+                              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+                                <div className="absolute inset-x-0 h-full w-full bg-gradient-to-b from-transparent via-white/[0.03] to-transparent animate-scanline"></div>
                               </div>
 
-                              <div className="flex flex-col flex-1 min-w-0 justify-center items-center text-center px-4">
-                                <div className={`text-lg sm:text-xl font-black transition-all duration-700 break-words tracking-tight mb-0.5 ${task.status === "Completed" ? "text-slate-700 line-through italic" : "text-white"}`}>
+                              <div className="flex items-start justify-between gap-4 mb-6 relative z-10">
+                                <div className="flex items-center gap-4">
+                                  {/* Selection Checkbox */}
+                                  <div className="relative h-6 w-6 flex-shrink-0">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedTasks.includes(task.id)}
+                                      onChange={() => toggleSelection(task.id)}
+                                      className="peer h-6 w-6 rounded-xl border-2 border-white/10 bg-black/40 text-pink-500 focus:ring-0 cursor-pointer appearance-none transition-all checked:bg-pink-600 checked:border-pink-600"
+                                    />
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                                      <CheckIcon />
+                                    </div>
+                                  </div>
+
+                                  {/* Status Node */}
+                                  <button
+                                    onClick={() => toggleStatus(task.id)}
+                                    className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border transition-all duration-500 flex items-center gap-2 ${task.status === "Completed"
+                                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
+                                      : "bg-pink-500/10 text-pink-500 border-pink-500/20 shadow-[0_0_20px_rgba(255,45,149,0.1)]"
+                                      }`}
+                                  >
+                                    <span className={`h-1.5 w-1.5 rounded-full animate-pulse-subtle ${task.status === "Completed" ? "bg-emerald-400" : "bg-pink-500"}`}></span>
+                                    {task.status}
+                                  </button>
+                                </div>
+
+                                <div className="text-[11px] font-mono text-slate-700 tracking-widest uppercase opacity-50">
+                                  NODE_{task.id.slice(-4)}
+                                </div>
+                              </div>
+
+                              <div className="flex flex-col mb-8 relative z-10">
+                                <div className={`text-2xl font-black transition-all duration-700 break-words tracking-tighter mb-2 leading-[0.9] uppercase italic ${task.status === "Completed" ? "text-slate-600 line-through" : "text-white"}`}>
                                   {task.title}
                                 </div>
-                                <div className={`text-xs transition-all duration-700 break-words font-light leading-snug w-full max-w-sm ${task.status === "Completed" ? "text-slate-800" : "text-slate-500"}`}>
-                                  {task.description || "No description provided."}
+                                <div className={`text-sm transition-all duration-700 break-words font-light leading-relaxed italic line-clamp-2 pr-4 ${task.status === "Completed" ? "text-slate-800" : "text-slate-400"}`}>
+                                  {task.description || "System: Default protocol active. No additional metadata recorded."}
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-center gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 w-full sm:w-auto border-t border-white/5 sm:border-t-0 flex-shrink-0 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
-                                <button onClick={() => setViewTask(task)} title="View Info" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-white border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
-                                  <span className="scale-[0.85]"><EyeIcon /></span>
-                                </button>
-                                <button onClick={() => startEdit(task)} title="Edit Task" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-amber-500 border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
-                                  <span className="scale-[0.85]"><EditIcon /></span>
-                                </button>
-                                <button onClick={() => deleteTask(task.id)} title="Delete Task" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-rose-500 border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
-                                  <span className="scale-[0.85]"><TrashIcon /></span>
-                                </button>
+                              <div className="flex items-center justify-between pt-6 border-t border-white/[0.03] bg-transparent relative z-10">
+                                <div className="flex items-center gap-3">
+                                  <div className="flex -space-x-1">
+                                    <div className="w-2 h-2 rounded-full bg-pink-500/40"></div>
+                                    <div className="w-2 h-2 rounded-full bg-indigo-500/40"></div>
+                                  </div>
+                                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-[0.3em]">P_v2</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <button onClick={() => setViewTask(task)} title="View Info" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-white border border-white/5 hover:scale-110 active:scale-95">
+                                    <span className="scale-[0.85] block relative"><EyeIcon /></span>
+                                  </button>
+                                  <button onClick={() => startEdit(task)} title="Edit Task" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-indigo-400 border border-white/5 hover:scale-110 active:scale-95">
+                                    <span className="scale-[0.85] block relative"><EditIcon /></span>
+                                  </button>
+                                  <button onClick={() => deleteTask(task.id)} title="Delete Task" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-rose-500 border border-white/5 hover:scale-110 active:scale-95">
+                                    <span className="scale-[0.85] block relative"><TrashIcon /></span>
+                                  </button>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -484,7 +511,7 @@ export default function Home() {
             )}
           </div>
         </div>
-      </div >
+      </div>
 
       {/* View Modal */}
       {
@@ -492,38 +519,55 @@ export default function Home() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 backdrop-blur-3xl">
             <div className="absolute inset-0 bg-black/60" onClick={() => setViewTask(null)}></div>
             <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[5rem] p-8 sm:p-16 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-[0_100px_200px_rgba(0,0,0,1)] relative z-10 animate-in zoom-in-95 duration-700 custom-scrollbar">
-              <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+              <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none text-center"></div>
 
-              <button onClick={() => setViewTask(null)} className="absolute top-6 right-6 sm:top-12 sm:right-12 p-3 sm:p-5 text-slate-600 hover:text-white bg-white/5 rounded-full hover:rotate-90 hover:scale-110 transition-all duration-500 shadow-2xl">
+              {/* Scanline Overlay */}
+              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-30">
+                <div className="absolute inset-x-0 h-full w-full bg-gradient-to-b from-transparent via-white/[0.02] to-transparent animate-scanline"></div>
+              </div>
+
+              <button onClick={() => setViewTask(null)} className="absolute top-6 right-6 sm:top-12 sm:right-12 p-3 sm:p-5 text-slate-600 hover:text-white bg-white/5 rounded-full hover:rotate-90 hover:scale-110 transition-all duration-500 shadow-2xl z-20">
                 <XIcon />
               </button>
-              <div className="mb-8 ">
-                <span className={`inline-block px-4 sm:px-8 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] rounded-full mb-6 border ${viewTask.status === "Completed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-pink-500/10 text-pink-400 border-pink-500/20"}`}>
-                  {viewTask.status}
-                </span>
-                <h3 className="text-4xl sm:text-7xl lg:text-8xl font-black text-white mb-4 tracking-tighter leading-tight sm:leading-none italic uppercase break-words">{viewTask.title}</h3>
-                <p className="text-slate-600 font-bold uppercase text-[9px] sm:text-xs px-2">
-                  Target Date: <span className="text-pink-500">{viewTask.taskdate || viewTask.taskDate || "Not set"}</span>
-                </p>
-                <p className="text-slate-700 font-bold uppercase text-[8px] sm:text-[10px] px-2 mt-1">Created on {viewTask.createdAt}</p>
+
+              <div className="mb-10 relative z-10 text-center">
+                <div className="flex flex-col items-center gap-4 mb-6">
+                  <span className={`px-5 py-2 text-[9px] font-black uppercase tracking-[0.4em] rounded-full border ${viewTask.status === "Completed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-pink-500/10 text-pink-400 border-pink-500/20"}`}>
+                    NODE_STATUS: {viewTask.status}
+                  </span>
+                  <div className="text-[10px] font-mono text-slate-700 tracking-[0.5em] uppercase">SYSTEM_IDENTIFIER: {viewTask.id}</div>
+                </div>
+
+                <h3 className="text-4xl sm:text-7xl lg:text-8xl font-black text-white mb-6 tracking-tighter leading-tight sm:leading-none italic uppercase break-words px-2">{viewTask.title}</h3>
+
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 text-slate-500 font-bold uppercase text-[9px] sm:text-xs">
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white/[0.02] rounded-xl border border-white/5">
+                    TEMPORAL_TARGET: <span className="text-pink-500 tracking-widest">{viewTask.taskdate || viewTask.taskDate || "UNDEFINED"}</span>
+                  </div>
+                  <div className="flex items-center gap-2 px-4 py-2 bg-white/[0.02] rounded-xl border border-white/5">
+                    LEDGER_ENTRY: <span className="text-slate-400">{viewTask.createdAt}</span>
+                  </div>
+                </div>
               </div>
-              <div className="bg-white/[0.02] rounded-2xl sm:rounded-[3.5rem] p-6 sm:p-12 border border-white/5 mb-8 min-h-[140px] shadow-inner">
-                <p className="text-slate-300 text-lg sm:text-3xl leading-snug font-light italic">
-                  {viewTask.description || "No detailed information for this task."}
+
+              <div className="bg-white/[0.02] rounded-2xl sm:rounded-[3.5rem] p-8 sm:p-14 border border-white/5 mb-10 min-h-[160px] shadow-inner relative z-10">
+                <div className="absolute top-6 left-10 text-[8px] font-black text-slate-800 uppercase tracking-[0.5em]">METADATA_STREAM</div>
+                <p className="text-slate-300 text-xl sm:text-3xl leading-relaxed font-light italic text-center sm:text-left">
+                  {viewTask.description || "System: Default protocol active. No additional metadata recorded for this node."}
                 </p>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 relative z-10">
                 <button
                   onClick={() => { startEdit(viewTask); setViewTask(null); }}
-                  className="btn-premium-pink py-5 sm:py-8 rounded-xl sm:rounded-[2rem] text-lg"
+                  className="btn-premium-pink py-5 sm:py-8 rounded-xl sm:rounded-[2.5rem] text-lg uppercase italic tracking-[0.1em]"
                 >
-                  EDIT TASK
+                  MODIFY PROTOCOL
                 </button>
                 <button
                   onClick={() => setViewTask(null)}
-                  className="btn-premium-glass py-5 sm:py-8 rounded-xl sm:rounded-[2rem] text-lg"
+                  className="btn-premium-glass py-5 sm:py-8 rounded-xl sm:rounded-[2.5rem] text-lg uppercase italic tracking-[0.1em]"
                 >
-                  CLOSE
+                  DEACTIVATE VIEW
                 </button>
               </div>
             </div>
@@ -536,17 +580,20 @@ export default function Home() {
         isDeleteModalOpen && (
           <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
             <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsDeleteModalOpen(false)}></div>
-            <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[4rem] p-8 sm:p-16 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 text-center">
-              <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[3.5rem] bg-rose-500/10 flex items-center justify-center mx-auto mb-6 border border-rose-500/20 text-rose-500">
+            <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[5rem] p-8 sm:p-16 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 text-center overflow-hidden">
+              {/* Pulse Effect */}
+              <div className="absolute inset-0 bg-rose-500/5 animate-pulse pointer-events-none"></div>
+
+              <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-[2.5rem] bg-rose-500/10 flex items-center justify-center mx-auto mb-8 border border-rose-500/20 text-rose-500 relative z-10 shadow-[0_0_50px_rgba(244,63,94,0.2)]">
                 <TrashIcon />
               </div>
-              <h3 className="text-3xl sm:text-5xl font-black text-white mb-4 tracking-tighter uppercase italic">Confirm Delete</h3>
-              <p className="text-slate-500 mb-8 text-lg font-light leading-relaxed px-2">
-                Are you sure you want to delete <span className="text-rose-500 font-black">{selectedTasks.length} tasks</span>? This cannot be undone.
+              <h3 className="text-3xl sm:text-5xl font-black text-rose-500 mb-4 tracking-tighter uppercase italic relative z-10">SYSTEM_PURGE</h3>
+              <p className="text-slate-500 mb-10 text-lg font-light leading-relaxed px-2 relative z-10">
+                Initiating permanent deletion protocol for <span className="text-rose-500 font-black tracking-widest">{selectedTasks.length} NODES</span>. This operation is irreversible. Confirm execution?
               </p>
-              <div className="grid grid-cols-1 gap-4">
-                <button onClick={deleteMultiple} className="btn-premium-rose py-4 sm:py-6 rounded-xl sm:rounded-[1.5rem] text-lg">YES, DELETE</button>
-                <button onClick={() => setIsDeleteModalOpen(false)} className="text-slate-500 font-bold tracking-widest text-[10px] sm:text-xs uppercase hover:text-white transition-colors py-2">CANCEL</button>
+              <div className="grid grid-cols-1 gap-4 relative z-10">
+                <button onClick={deleteMultiple} className="btn-premium-rose py-5 sm:py-8 rounded-2xl sm:rounded-[2rem] text-xl font-black uppercase italic tracking-[0.2em]">EXECUTE PURGE</button>
+                <button onClick={() => setIsDeleteModalOpen(false)} className="text-slate-600 font-black tracking-[0.4em] text-[10px] uppercase hover:text-white transition-all py-4 hover:scale-110 active:scale-95">ABORT OPERATION</button>
               </div>
             </div>
           </div>
