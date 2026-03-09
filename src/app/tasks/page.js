@@ -45,6 +45,7 @@ export default function Home() {
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState("list"); // 'form' or 'list'
   const router = useRouter();
 
   useEffect(() => {
@@ -266,10 +267,28 @@ export default function Home() {
         </div>
       </div>
 
+      {/* Tab Switcher - Mobile Only */}
+      <div className="w-full max-w-7xl px-4 sm:px-8 mb-6 lg:hidden relative z-20">
+        <div className="flex p-1 bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-2xl">
+          <button
+            onClick={() => setActiveTab("list")}
+            className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 ${activeTab === 'list' ? 'bg-pink-600/20 text-pink-500 shadow-[0_0_20px_rgba(255,45,149,0.2)] border border-pink-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            Your Tasks
+          </button>
+          <button
+            onClick={() => setActiveTab("form")}
+            className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 ${activeTab === 'form' ? 'bg-indigo-600/20 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.2)] border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'}`}
+          >
+            Plan {editId ? "(Edit)" : "New"}
+          </button>
+        </div>
+      </div>
+
       <div className="w-full max-w-7xl relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-12 px-4 sm:px-8 mx-auto xl:px-0">
 
         {/* Create/Edit Form */}
-        <div className="lg:col-span-5 w-full flex justify-center lg:sticky lg:top-24">
+        <div className={`lg:col-span-5 w-full flex justify-center lg:sticky lg:top-24 ${activeTab !== 'form' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
           <div className="w-full bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col justify-center text-center hover:bg-white/[0.04] hover:border-white/20 transition-all duration-500 lg:h-[620px] animate-glow">
             <div>
               <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex justify-center items-center gap-4">
@@ -347,7 +366,7 @@ export default function Home() {
         </div>
 
         {/* Task List */}
-        <div className="lg:col-span-7 w-full flex flex-col mt-10 lg:mt-0 bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] lg:h-[620px] overflow-hidden animate-glow">
+        <div className={`lg:col-span-7 w-full flex flex-col mt-10 lg:mt-0 bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] lg:h-[620px] overflow-hidden animate-glow ${activeTab !== 'list' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-4 border-b border-white/5 gap-4 text-center sm:text-left shrink-0">
             <h2 className="text-2xl sm:text-3xl font-black text-white flex justify-center sm:justify-start items-center flex-wrap gap-4 italic tracking-tighter">
