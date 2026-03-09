@@ -13,6 +13,13 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const updates = await request.json();
 
+    if (updates.taskDate) {
+        const today = new Date().toISOString().split('T')[0];
+        if (updates.taskDate < today) {
+            return NextResponse.json({ error: 'Cannot set tasks in the past' }, { status: 400 });
+        }
+    }
+
     try {
         await updateTask(userId, id, updates);
         return NextResponse.json({ message: 'Task updated successfully' });

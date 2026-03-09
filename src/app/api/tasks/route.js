@@ -22,14 +22,23 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { title, description } = await request.json();
+    const { title, description, taskDate } = await request.json();
+
+    const today = new Date().toISOString().split('T')[0];
+    const finalTaskDate = taskDate || today;
+
+    if (finalTaskDate < today) {
+        return NextResponse.json({ error: 'Cannot set tasks in the past' }, { status: 400 });
+    }
+
     const newTask = {
         id: Date.now().toString(),
         userId,
         title,
         description,
         status: 'Pending',
-        createdAt: new Date().toLocaleDateString()
+        createdAt: new Date().toLocaleDateString(),
+        taskDate: finalTaskDate
     };
 
     await addTask(userId, newTask);

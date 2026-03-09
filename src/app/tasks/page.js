@@ -37,11 +37,13 @@ export default function Home() {
   const [selectedTasks, setSelectedTasks] = useState([]);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [newTaskDesc, setNewTaskDesc] = useState("");
+  const [newTaskDate, setNewTaskDate] = useState(new Date().toISOString().split('T')[0]);
   const [editId, setEditId] = useState(null);
   const [viewTask, setViewTask] = useState(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
@@ -96,41 +98,54 @@ export default function Home() {
 
     try {
       setActionLoading(true);
+      setError("");
       if (editId) {
         const res = await fetch(`/api/tasks/${editId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: newTaskTitle, description: newTaskDesc })
+          body: JSON.stringify({ title: newTaskTitle, description: newTaskDesc, taskDate: newTaskDate })
         });
         if (res.ok) {
-          const updatedTask = await res.json();
-          setTasks(prev => prev.map(t => t.id === editId ? updatedTask : t));
+          setTasks(prev => prev.map(t => t.id === editId ? { ...t, title: newTaskTitle, description: newTaskDesc, taskDate: newTaskDate } : t));
           setEditId(null);
+        } else {
+          const errData = await res.json();
+          setError(errData.error || "System: Protocol update failed.");
+          return;
         }
       } else {
         const res = await fetch('/api/tasks', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title: newTaskTitle, description: newTaskDesc })
+          body: JSON.stringify({ title: newTaskTitle, description: newTaskDesc, taskDate: newTaskDate })
         });
         if (res.ok) {
           const newTask = await res.json();
           setTasks(prev => [newTask, ...prev]);
+        } else {
+          const errData = await res.json();
+          setError(errData.error || "System: Allocation failure.");
+          return;
         }
       }
       setNewTaskTitle("");
       setNewTaskDesc("");
+      setNewTaskDate(new Date().toISOString().split('T')[0]);
+      setError("");
     } catch (error) {
       console.error("Failed to sync task:", error);
+      setError("System: Critical connection failure.");
     } finally {
       setActionLoading(false);
+      setTimeout(() => setError(""), 5000);
     }
   };
 
   const startEdit = (task) => {
     setEditId(task.id);
     setNewTaskTitle(task.title);
-    setNewTaskDesc(task.description);
+    setNewTaskDesc(task.description || "");
+    setNewTaskDate(task.taskdate || task.taskDate || new Date().toISOString().split('T')[0]);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -138,6 +153,7 @@ export default function Home() {
     setEditId(null);
     setNewTaskTitle("");
     setNewTaskDesc("");
+    setNewTaskDate(new Date().toISOString().split('T')[0]);
   };
 
   const deleteTask = async (id) => {
@@ -284,10 +300,35 @@ export default function Home() {
                     disabled={actionLoading}
                   />
                 </div>
+                <div className="group space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full relative">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 w-full flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+                    Target Date
+                  </label>
+                  <div className="relative w-full">
+                    <input
+                      type="date"
+                      min={new Date().toISOString().split('T')[0]}
+                      value={newTaskDate}
+                      onChange={(e) => setNewTaskDate(e.target.value)}
+                      className="w-full bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all text-lg font-bold [color-scheme:dark] appearance-none cursor-pointer hover:bg-black/60 hover:border-white/10"
+                      disabled={actionLoading}
+                      required
+                    />
+                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-slate-500 group-hover:text-pink-500 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6" /></svg>
+                    </div>
+                  </div>
+                </div>
               </form>
             </div>
 
             <div className="pt-6 sm:pt-8 space-y-4 flex flex-col items-center w-full">
+              {error && (
+                <div className="w-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest py-3 rounded-xl animate-bounce">
+                  {error}
+                </div>
+              )}
               <button
                 onClick={handleAddOrUpdate}
                 type="button"
@@ -344,135 +385,154 @@ export default function Home() {
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar pb-6 sm:pr-2">
-                <div className="divide-y divide-white/[0.05] flex flex-col">
-                  {tasks.map((task, i) => (
-                    <div
-                      key={task.id}
-                      className={`group relative flex flex-col sm:flex-row items-center justify-between gap-4 py-4 sm:py-5 transition-all duration-700 hover:bg-white/[0.04] px-4 sm:px-6 rounded-2xl border border-transparent hover:border-white/5 w-full ${selectedTasks.includes(task.id) ? 'bg-white/[0.04] border-white/10' : ''}`}
-                      style={{ animation: 'slideIn 0.5s ease-out forwards', animationDelay: `${i * 0.1}s` }}
-                    >
-                      {/* Checkbox & Status Section */}
-                      <div className="flex items-center gap-4 flex-shrink-0 w-full sm:w-auto justify-center sm:justify-start">
-                        <div className="relative h-6 w-6 flex-shrink-0">
-                          <input
-                            type="checkbox"
-                            checked={selectedTasks.includes(task.id)}
-                            onChange={() => toggleSelection(task.id)}
-                            className="peer h-6 w-6 rounded-md sm:rounded-lg border-2 border-white/10 bg-black/40 text-pink-500 focus:ring-0 cursor-pointer appearance-none transition-all checked:bg-pink-600 checked:border-pink-600"
-                          />
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white opacity-0 peer-checked:opacity-100 transition-opacity">
-                            <CheckIcon />
-                          </div>
+                <div className="flex flex-col gap-8">
+                  {Object.entries(
+                    tasks.reduce((groups, task) => {
+                      const date = task.taskdate || task.taskDate || "No Date";
+                      if (!groups[date]) groups[date] = [];
+                      groups[date].push(task);
+                      return groups;
+                    }, {})
+                  )
+                    .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+                    .map(([date, dateTasks]) => (
+                      <div key={date} className="space-y-4">
+                        <div className="sticky top-0 z-20 bg-[#02000d]/80 backdrop-blur-md py-2 border-b border-pink-500/20 flex items-center gap-3">
+                          <span className="h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(255,45,149,0.5)]"></span>
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pink-500/80">
+                            {date === new Date().toISOString().split('T')[0] ? "Today" :
+                              date === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "Tomorrow" :
+                                new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                          </span>
                         </div>
+                        <div className="divide-y divide-white/[0.05] flex flex-col gap-3">
+                          {dateTasks.map((task, i) => (
+                            <div
+                              key={task.id}
+                              className={`group relative flex flex-col sm:flex-row items-center justify-between gap-4 py-4 sm:py-5 transition-all duration-700 hover:bg-white/[0.04] px-4 sm:px-6 rounded-2xl border border-transparent hover:border-white/5 w-full ${selectedTasks.includes(task.id) ? 'bg-white/[0.04] border-white/10' : ''}`}
+                            >
+                              <div className="flex items-center gap-4 flex-shrink-0 w-full sm:w-auto justify-center sm:justify-start">
+                                <div className="relative h-6 w-6 flex-shrink-0">
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedTasks.includes(task.id)}
+                                    onChange={() => toggleSelection(task.id)}
+                                    className="peer h-6 w-6 rounded-md sm:rounded-lg border-2 border-white/10 bg-black/40 text-pink-500 focus:ring-0 cursor-pointer appearance-none transition-all checked:bg-pink-600 checked:border-pink-600"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white opacity-0 peer-checked:opacity-100 transition-opacity">
+                                    <CheckIcon />
+                                  </div>
+                                </div>
 
-                        <button
-                          onClick={() => toggleStatus(task.id)}
-                          className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all duration-700 ${task.status === "Completed"
-                            ? "bg-pink-600 border-pink-600 text-white shadow-[0_0_15px_rgba(255,45,149,0.5)]"
-                            : "bg-transparent border-slate-700 text-transparent hover:border-pink-500/50 hover:text-pink-500/30"
-                            }`}
-                        >
-                          <span className="scale-[0.85]"><CheckIcon /></span>
-                        </button>
+                                <button
+                                  onClick={() => toggleStatus(task.id)}
+                                  className={`flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center border-2 transition-all duration-700 ${task.status === "Completed"
+                                    ? "bg-pink-600 border-pink-600 text-white shadow-[0_0_15px_rgba(255,45,149,0.5)]"
+                                    : "bg-transparent border-slate-700 text-transparent hover:border-pink-500/50 hover:text-pink-500/30"
+                                    }`}
+                                >
+                                  <span className="scale-[0.85]"><CheckIcon /></span>
+                                </button>
+                              </div>
 
-                        {/* Mobile Title View */}
-                        <div className="sm:hidden flex-1 text-center min-w-0">
-                          <div className={`text-base font-black break-words tracking-tight ${task.status === "Completed" ? "text-slate-700 line-through italic" : "text-white"}`}>
-                            {task.title}
-                          </div>
+                              <div className="flex flex-col flex-1 min-w-0 justify-center items-center text-center px-4">
+                                <div className={`text-lg sm:text-xl font-black transition-all duration-700 break-words tracking-tight mb-0.5 ${task.status === "Completed" ? "text-slate-700 line-through italic" : "text-white"}`}>
+                                  {task.title}
+                                </div>
+                                <div className={`text-xs transition-all duration-700 break-words font-light leading-snug w-full max-w-sm ${task.status === "Completed" ? "text-slate-800" : "text-slate-500"}`}>
+                                  {task.description || "No description provided."}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-center gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 w-full sm:w-auto border-t border-white/5 sm:border-t-0 flex-shrink-0 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
+                                <button onClick={() => setViewTask(task)} title="View Info" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-white border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
+                                  <span className="scale-[0.85]"><EyeIcon /></span>
+                                </button>
+                                <button onClick={() => startEdit(task)} title="Edit Task" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-amber-500 border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
+                                  <span className="scale-[0.85]"><EditIcon /></span>
+                                </button>
+                                <button onClick={() => deleteTask(task.id)} title="Delete Task" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-rose-500 border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
+                                  <span className="scale-[0.85]"><TrashIcon /></span>
+                                </button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-
-                      {/* Content Section (Desktop Center) */}
-                      <div className="hidden sm:flex flex-col flex-1 min-w-0 justify-center items-center text-center px-4">
-                        <div className={`text-lg sm:text-xl font-black transition-all duration-700 break-words tracking-tight mb-0.5 ${task.status === "Completed" ? "text-slate-700 line-through italic" : "text-white"}`}>
-                          {task.title}
-                        </div>
-                        <div className={`text-xs transition-all duration-700 break-words font-light leading-snug w-full max-w-sm ${task.status === "Completed" ? "text-slate-800" : "text-slate-500"}`}>
-                          {task.description || "No description provided."}
-                        </div>
-                      </div>
-
-                      {/* Actions Bar (Right Aligned or Bottom Centered) */}
-                      <div className="flex items-center justify-center gap-2 mt-2 sm:mt-0 pt-3 sm:pt-0 w-full sm:w-auto border-t border-white/5 sm:border-t-0 flex-shrink-0 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-300">
-                        <button onClick={() => setViewTask(task)} title="View Info" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-white border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
-                          <span className="scale-[0.85]"><EyeIcon /></span>
-                        </button>
-                        <button onClick={() => startEdit(task)} title="Edit Task" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-amber-500 border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
-                          <span className="scale-[0.85]"><EditIcon /></span>
-                        </button>
-                        <button onClick={() => deleteTask(task.id)} title="Delete Task" className="p-2 sm:p-2.5 bg-white/5 hover:bg-white/10 rounded-lg sm:rounded-xl transition-all text-slate-500 hover:text-rose-500 border border-white/5 shadow-lg flex justify-center items-center cursor-pointer">
-                          <span className="scale-[0.85]"><TrashIcon /></span>
-                        </button>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
             )}
           </div>
         </div>
-      </div>
+      </div >
 
       {/* View Modal */}
-      {viewTask && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 backdrop-blur-3xl">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setViewTask(null)}></div>
-          <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[5rem] p-8 sm:p-16 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-[0_100px_200px_rgba(0,0,0,1)] relative z-10 animate-in zoom-in-95 duration-700 custom-scrollbar">
-            <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+      {
+        viewTask && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 backdrop-blur-3xl">
+            <div className="absolute inset-0 bg-black/60" onClick={() => setViewTask(null)}></div>
+            <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[5rem] p-8 sm:p-16 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-[0_100px_200px_rgba(0,0,0,1)] relative z-10 animate-in zoom-in-95 duration-700 custom-scrollbar">
+              <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-            <button onClick={() => setViewTask(null)} className="absolute top-6 right-6 sm:top-12 sm:right-12 p-3 sm:p-5 text-slate-600 hover:text-white bg-white/5 rounded-full hover:rotate-90 hover:scale-110 transition-all duration-500 shadow-2xl">
-              <XIcon />
-            </button>
-            <div className="mb-8 ">
-              <span className={`inline-block px-4 sm:px-8 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] rounded-full mb-6 border ${viewTask.status === "Completed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-pink-500/10 text-pink-400 border-pink-500/20"}`}>
-                {viewTask.status}
-              </span>
-              <h3 className="text-4xl sm:text-7xl lg:text-8xl font-black text-white mb-4 tracking-tighter leading-tight sm:leading-none italic uppercase break-words">{viewTask.title}</h3>
-              <p className="text-slate-600 font-bold uppercase text-[9px] sm:text-xs px-2">Created on {viewTask.createdAt}</p>
-            </div>
-            <div className="bg-white/[0.02] rounded-2xl sm:rounded-[3.5rem] p-6 sm:p-12 border border-white/5 mb-8 min-h-[140px] shadow-inner">
-              <p className="text-slate-300 text-lg sm:text-3xl leading-snug font-light italic">
-                {viewTask.description || "No detailed information for this task."}
-              </p>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <button
-                onClick={() => { startEdit(viewTask); setViewTask(null); }}
-                className="btn-premium-pink py-5 sm:py-8 rounded-xl sm:rounded-[2rem] text-lg"
-              >
-                EDIT TASK
+              <button onClick={() => setViewTask(null)} className="absolute top-6 right-6 sm:top-12 sm:right-12 p-3 sm:p-5 text-slate-600 hover:text-white bg-white/5 rounded-full hover:rotate-90 hover:scale-110 transition-all duration-500 shadow-2xl">
+                <XIcon />
               </button>
-              <button
-                onClick={() => setViewTask(null)}
-                className="btn-premium-glass py-5 sm:py-8 rounded-xl sm:rounded-[2rem] text-lg"
-              >
-                CLOSE
-              </button>
+              <div className="mb-8 ">
+                <span className={`inline-block px-4 sm:px-8 py-1.5 sm:py-2 text-[9px] sm:text-[10px] font-black uppercase tracking-[0.4em] rounded-full mb-6 border ${viewTask.status === "Completed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-pink-500/10 text-pink-400 border-pink-500/20"}`}>
+                  {viewTask.status}
+                </span>
+                <h3 className="text-4xl sm:text-7xl lg:text-8xl font-black text-white mb-4 tracking-tighter leading-tight sm:leading-none italic uppercase break-words">{viewTask.title}</h3>
+                <p className="text-slate-600 font-bold uppercase text-[9px] sm:text-xs px-2">
+                  Target Date: <span className="text-pink-500">{viewTask.taskdate || viewTask.taskDate || "Not set"}</span>
+                </p>
+                <p className="text-slate-700 font-bold uppercase text-[8px] sm:text-[10px] px-2 mt-1">Created on {viewTask.createdAt}</p>
+              </div>
+              <div className="bg-white/[0.02] rounded-2xl sm:rounded-[3.5rem] p-6 sm:p-12 border border-white/5 mb-8 min-h-[140px] shadow-inner">
+                <p className="text-slate-300 text-lg sm:text-3xl leading-snug font-light italic">
+                  {viewTask.description || "No detailed information for this task."}
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <button
+                  onClick={() => { startEdit(viewTask); setViewTask(null); }}
+                  className="btn-premium-pink py-5 sm:py-8 rounded-xl sm:rounded-[2rem] text-lg"
+                >
+                  EDIT TASK
+                </button>
+                <button
+                  onClick={() => setViewTask(null)}
+                  className="btn-premium-glass py-5 sm:py-8 rounded-xl sm:rounded-[2rem] text-lg"
+                >
+                  CLOSE
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       {/* Delete Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-          <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsDeleteModalOpen(false)}></div>
-          <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[4rem] p-8 sm:p-16 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 text-center">
-            <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[3.5rem] bg-rose-500/10 flex items-center justify-center mx-auto mb-6 border border-rose-500/20 text-rose-500">
-              <TrashIcon />
-            </div>
-            <h3 className="text-3xl sm:text-5xl font-black text-white mb-4 tracking-tighter uppercase italic">Confirm Delete</h3>
-            <p className="text-slate-500 mb-8 text-lg font-light leading-relaxed px-2">
-              Are you sure you want to delete <span className="text-rose-500 font-black">{selectedTasks.length} tasks</span>? This cannot be undone.
-            </p>
-            <div className="grid grid-cols-1 gap-4">
-              <button onClick={deleteMultiple} className="btn-premium-rose py-4 sm:py-6 rounded-xl sm:rounded-[1.5rem] text-lg">YES, DELETE</button>
-              <button onClick={() => setIsDeleteModalOpen(false)} className="text-slate-500 font-bold tracking-widest text-[10px] sm:text-xs uppercase hover:text-white transition-colors py-2">CANCEL</button>
+      {
+        isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsDeleteModalOpen(false)}></div>
+            <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[4rem] p-8 sm:p-16 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 text-center">
+              <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[3.5rem] bg-rose-500/10 flex items-center justify-center mx-auto mb-6 border border-rose-500/20 text-rose-500">
+                <TrashIcon />
+              </div>
+              <h3 className="text-3xl sm:text-5xl font-black text-white mb-4 tracking-tighter uppercase italic">Confirm Delete</h3>
+              <p className="text-slate-500 mb-8 text-lg font-light leading-relaxed px-2">
+                Are you sure you want to delete <span className="text-rose-500 font-black">{selectedTasks.length} tasks</span>? This cannot be undone.
+              </p>
+              <div className="grid grid-cols-1 gap-4">
+                <button onClick={deleteMultiple} className="btn-premium-rose py-4 sm:py-6 rounded-xl sm:rounded-[1.5rem] text-lg">YES, DELETE</button>
+                <button onClick={() => setIsDeleteModalOpen(false)} className="text-slate-500 font-bold tracking-widest text-[10px] sm:text-xs uppercase hover:text-white transition-colors py-2">CANCEL</button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <style jsx global>{`
         @keyframes float-slow {
@@ -500,7 +560,26 @@ export default function Home() {
         @media (max-width: 480px) {
           .xs\:inline { display: inline; }
         }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+          background: transparent;
+          bottom: 0;
+          color: transparent;
+          cursor: pointer;
+          height: auto;
+          left: 0;
+          position: absolute;
+          right: 0;
+          top: 0;
+          width: auto;
+        }
+        .animate-glow {
+          box-shadow: 0 0 20px rgba(255, 45, 149, 0.1);
+          transition: box-shadow 0.3s ease;
+        }
+        .animate-glow:focus-within {
+          box-shadow: 0 0 30px rgba(255, 45, 149, 0.3);
+        }
       `}</style>
-    </main>
+    </main >
   );
 }

@@ -32,31 +32,28 @@ export async function saveTasksForUser(userId, tasks) {
     await sql`DELETE FROM tasks WHERE userId = ${userId}`;
 
     for (const task of tasks) {
-        await sql`INSERT INTO tasks (id, userId, title, description, status, createdAt) VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt})`;
+        await sql`INSERT INTO tasks (id, userId, title, description, status, createdAt, taskDate) VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})`;
     }
 }
 
 export async function addTask(userId, task) {
-    await sql`INSERT INTO tasks (id, userId, title, description, status, createdAt) VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt})`;
+    await sql`INSERT INTO tasks (id, userId, title, description, status, createdAt, taskDate) VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})`;
 }
 
 export async function updateTask(userId, taskId, updates) {
-    const fields = Object.keys(updates);
-    if (fields.length === 0) return;
+    const { title, description, status, taskDate } = updates;
 
-    // Postgres update with dynamic fields is slightly different in pg.
-    // But since we have few fields, we can do it explicitly or use a builder.
-    // Let's do it explicitly for common fields: title, description, status
-    const { title, description, status } = updates;
-
-    if (title !== undefined && description !== undefined && status !== undefined) {
-        await sql`UPDATE tasks SET title = ${title}, description = ${description}, status = ${status} WHERE userId = ${userId} AND id = ${taskId}`;
-    } else if (title !== undefined) {
+    if (title !== undefined) {
         await sql`UPDATE tasks SET title = ${title} WHERE userId = ${userId} AND id = ${taskId}`;
-    } else if (description !== undefined) {
+    }
+    if (description !== undefined) {
         await sql`UPDATE tasks SET description = ${description} WHERE userId = ${userId} AND id = ${taskId}`;
-    } else if (status !== undefined) {
+    }
+    if (status !== undefined) {
         await sql`UPDATE tasks SET status = ${status} WHERE userId = ${userId} AND id = ${taskId}`;
+    }
+    if (taskDate !== undefined) {
+        await sql`UPDATE tasks SET taskDate = ${taskDate} WHERE userId = ${userId} AND id = ${taskId}`;
     }
 }
 

@@ -160,7 +160,7 @@ export default function AdminPortal() {
                                 <span className="text-[10px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 tracking-widest">{data.users.length}</span>
                             </h2>
 
-                            <div className="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar-blue">
+                            <div className="space-y-4 h-[750px] overflow-y-auto pr-2 custom-scrollbar-blue">
                                 {data.users.map((user) => (
                                     <div key={user.id} className="flex items-center justify-between p-5 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-blue-500/10 transition-all border-l-4 border-l-transparent hover:border-l-blue-500">
                                         <div className="min-w-0 flex-1 mr-4">
@@ -192,33 +192,70 @@ export default function AdminPortal() {
                                 <span className="text-[10px] bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full border border-purple-500/30 tracking-widest">{data.tasks.length}</span>
                             </h2>
 
-                            <div className="space-y-6 max-h-[700px] overflow-y-auto pr-4 custom-scrollbar-purple">
-                                {data.tasks.map((task) => (
-                                    <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:bg-purple-500/10 transition-all border-l-4 border-l-transparent hover:border-l-purple-500 group/task">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="text-xl font-black text-white tracking-tighter mb-1 uppercase italic leading-none">{task.title}</h3>
-                                                <div className="flex items-center gap-3">
-                                                    <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/20 text-amber-500 border-amber-500/20'}`}>
-                                                        {task.status}
-                                                    </span>
-                                                    <span className="text-[9px] font-bold text-slate-700 uppercase tracking-widest">{task.createdAt}</span>
+                            <div className="space-y-12 h-[750px] overflow-y-auto pr-4 custom-scrollbar-purple">
+                                {data.tasks.length === 0 ? (
+                                    <div className="flex flex-col items-center justify-center h-full text-slate-700 space-y-4">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" className="opacity-20"><path d="m2 11 3 3 3-3" /><path d="m9 11 3 3 3-3" /><path d="M4.5 10.5 2 11V3c0-1.1.9-2 2-2h16c1.1 0 2 .9 2 2v10l-2.5-0.5M4 14v4a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-4" /></svg>
+                                        <p className="text-[10px] uppercase font-black tracking-[0.3em]">No operational data found</p>
+                                    </div>
+                                ) : (
+                                    Object.entries(
+                                        data.tasks.reduce((groups, task) => {
+                                            const date = task.taskdate || task.taskDate || "Unscheduled";
+                                            if (!groups[date]) groups[date] = [];
+                                            groups[date].push(task);
+                                            return groups;
+                                        }, {})
+                                    )
+                                        .sort(([dateA], [dateB]) => {
+                                            if (dateA === "Unscheduled") return 1;
+                                            if (dateB === "Unscheduled") return -1;
+                                            return new Date(dateA) - new Date(dateB);
+                                        })
+                                        .map(([date, dateTasks]) => (
+                                            <div key={date} className="space-y-6">
+                                                <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-md py-4 border-b border-purple-500/20 flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <span className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-ping"></span>
+                                                        <span className="text-[10px] font-black uppercase tracking-[0.4em] text-purple-400">
+                                                            {date === new Date().toISOString().split('T')[0] ? "Today" :
+                                                                date === "Unscheduled" ? "Backlog Buffer" :
+                                                                    new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-[10px] font-mono text-slate-700">NODE_BATCH: {dateTasks.length}</span>
+                                                </div>
+                                                <div className="space-y-4">
+                                                    {dateTasks.map((task) => (
+                                                        <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-6 rounded-3xl hover:bg-purple-500/10 transition-all border-l-4 border-l-transparent hover:border-l-purple-500 group/task shadow-xl">
+                                                            <div className="flex justify-between items-start mb-4">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <h3 className="text-xl font-black text-white tracking-tighter mb-1 uppercase italic leading-none">{task.title}</h3>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <span className={`text-[8px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/20 text-amber-500 border-amber-500/20'}`}>
+                                                                            {task.status}
+                                                                        </span>
+                                                                        <span className="text-[9px] font-bold text-slate-700 uppercase tracking-widest">{task.createdAt}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
+                                                                    disabled={actionLoading === task.id}
+                                                                    className="p-2 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg hover:bg-rose-500/10"
+                                                                >
+                                                                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                                                                </button>
+                                                            </div>
+                                                            <p className="text-sm text-slate-400 font-light leading-relaxed mb-6 italic">"{task.description || "System: No additional metadata recorded."}"</p>
+                                                            <div className="flex items-center gap-3 pt-4 border-t border-white/5">
+                                                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operator: <span className="text-blue-400">{task.owner}</span></span>
+                                                            </div>
+                                                        </div>
+                                                    ))}
                                                 </div>
                                             </div>
-                                            <button
-                                                onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                disabled={actionLoading === task.id}
-                                                className="p-2 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg hover:bg-rose-500/10"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                                            </button>
-                                        </div>
-                                        <p className="text-sm text-slate-400 font-light leading-relaxed mb-6 italic">"{task.description || "System: No additional metadata recorded."}"</p>
-                                        <div className="flex items-center gap-3 pt-4 border-t border-white/5">
-                                            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Operator: <span className="text-blue-400">{task.owner}</span></span>
-                                        </div>
-                                    </div>
-                                ))}
+                                        ))
+                                )}
                             </div>
                         </div>
                     </section>

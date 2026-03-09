@@ -21,9 +21,16 @@ async function setup() {
                 description TEXT,
                 status TEXT,
                 createdAt TEXT,
+                taskDate TEXT,
                 FOREIGN KEY(userId) REFERENCES users(id)
             );
         `;
+
+        try {
+            await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS taskDate TEXT;`;
+        } catch (err) {
+            console.log('Column taskDate might already exist or ALTER not supported:', err.message);
+        }
 
         console.log('Database tables created successfully.');
         process.exit(0);
