@@ -332,6 +332,7 @@ export default function Home() {
                     <input
                       type="date"
                       min={new Date().toISOString().split('T')[0]}
+                      max={new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]}
                       value={newTaskDate}
                       onChange={(e) => setNewTaskDate(e.target.value)}
                       className="w-full bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all text-lg font-bold [color-scheme:dark] appearance-none cursor-pointer hover:bg-black/60 hover:border-white/10"
@@ -417,7 +418,7 @@ export default function Home() {
                       return groups;
                     }, {})
                   )
-                    .sort(([dateA], [dateB]) => new Date(dateA) - new Date(dateB))
+                    .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
                     .map(([date, dateTasks]) => (
                       <div key={date} className="space-y-4">
                         <div className="sticky top-0 z-20 bg-[#02000d]/80 backdrop-blur-md py-2 border-b border-pink-500/20 flex items-center gap-3">
