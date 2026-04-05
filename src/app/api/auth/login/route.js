@@ -59,15 +59,13 @@ export async function POST(request) {
 
         // Use a simple cookie for "session"
         // In a real app, use a JWT or proper session store
-        if (!isRegistering) {
-            response.cookies.set('auth_session', user.id, {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
-                maxAge: 60 * 60 * 24 * 7, // 1 week
-                path: '/',
-            });
-        }
+        response.cookies.set('auth_session', user.id, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 60 * 60 * 24 * 7, // 1 week
+            path: '/',
+        });
 
         return response;
     } catch (error) {

@@ -13,6 +13,7 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const updates = await request.json();
 
+    // Validation: Don't allow changing taskDate to the past if provided
     if (updates.taskDate) {
         const today = new Date().toISOString().split('T')[0];
         if (updates.taskDate < today) {
@@ -24,6 +25,7 @@ export async function PATCH(request, { params }) {
         await updateTask(userId, id, updates);
         return NextResponse.json({ message: 'Task updated successfully' });
     } catch (error) {
+        console.error("Update error:", error);
         return NextResponse.json({ error: 'Failed to update task' }, { status: 500 });
     }
 }

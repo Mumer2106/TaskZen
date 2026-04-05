@@ -46,6 +46,9 @@ export default function Home() {
   const [error, setError] = useState("");
   const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState("list"); // 'form' or 'list'
+  const [toast, setToast] = useState(null); // { message, type }
+  const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [viewMode, setViewMode] = useState("all"); // 'all' or 'specific'
   const router = useRouter();
 
   useEffect(() => {
@@ -82,6 +85,11 @@ export default function Home() {
     }
   };
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   const handleLogout = async () => {
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });
@@ -109,6 +117,9 @@ export default function Home() {
         if (res.ok) {
           setTasks(prev => prev.map(t => t.id === editId ? { ...t, title: newTaskTitle, description: newTaskDesc, taskDate: newTaskDate } : t));
           setEditId(null);
+          showToast("Protocol updated successfully", "success");
+          if (activeTab === 'form') setActiveTab('list');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
           const errData = await res.json();
           setError(errData.error || "System: Protocol update failed.");
@@ -123,6 +134,7 @@ export default function Home() {
         if (res.ok) {
           const newTask = await res.json();
           setTasks(prev => [newTask, ...prev]);
+          showToast("New node allocated", "success");
         } else {
           const errData = await res.json();
           setError(errData.error || "System: Allocation failure.");
@@ -146,7 +158,8 @@ export default function Home() {
     setEditId(task.id);
     setNewTaskTitle(task.title);
     setNewTaskDesc(task.description || "");
-    setNewTaskDate(task.taskdate || task.taskDate || new Date().toISOString().split('T')[0]);
+    setNewTaskDate(task.taskDate || task.taskdate || new Date().toISOString().split('T')[0]);
+    setActiveTab('form');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -163,6 +176,7 @@ export default function Home() {
       if (res.ok) {
         setTasks(prev => prev.filter(t => t.id !== id));
         setSelectedTasks(prev => prev.filter(taskId => taskId !== id));
+        showToast("Node purged", "error");
       }
     } catch (error) {
       console.error("Failed to delete task:", error);
@@ -205,6 +219,7 @@ export default function Home() {
         setTasks(prev => prev.filter(t => !selectedTasks.includes(t.id)));
         setSelectedTasks([]);
         setIsDeleteModalOpen(false);
+        showToast("Multiple nodes purged", "error");
       }
     } catch (error) {
       console.error("Failed to delete tasks:", error);
@@ -292,16 +307,16 @@ export default function Home() {
       <div className="w-full max-w-7xl relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-12 px-4 sm:px-8 mx-auto xl:px-0">
 
         {/* Create/Edit Form */}
-        <div className={`lg:col-span-5 w-full flex justify-center lg:sticky lg:top-24 ${activeTab !== 'form' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
-          <div className="w-full bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col justify-center text-center hover:bg-white/[0.04] hover:border-white/20 transition-all duration-500 lg:h-[620px] animate-glow">
+        <div className={`lg:col-span-5 w-full flex lg:sticky lg:top-24 ${activeTab !== 'form' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
+          <div className="w-full bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col hover:bg-white/[0.04] hover:border-white/20 transition-all duration-500 lg:h-[700px] h-auto animate-glow">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex justify-center items-center gap-4 italic uppercase tracking-tighter">
+              <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex items-center justify-start gap-4 italic uppercase tracking-tighter text-left">
                 <span className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
                 {editId ? "Update Protocol" : "New Node"}
                 {actionLoading && <Loader />}
               </h2>
               <form onSubmit={handleAddOrUpdate} className="space-y-6 sm:space-y-8">
-                <div className="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full group">
+                <div className="space-y-3 flex flex-col items-start text-left w-full group">
                   <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full group-focus-within:text-pink-500 transition-colors">Node_Title</label>
                   <input
                     type="text"
@@ -313,7 +328,7 @@ export default function Home() {
                     disabled={actionLoading}
                   />
                 </div>
-                <div className="space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full group">
+                <div className="space-y-3 flex flex-col items-start text-left w-full group">
                   <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full group-focus-within:text-indigo-400 transition-colors">Metadata_Stream</label>
                   <textarea
                     placeholder="Record additional information..."
@@ -323,15 +338,15 @@ export default function Home() {
                     disabled={actionLoading}
                   />
                 </div>
-                <div className="group space-y-3 flex flex-col items-center sm:items-start text-center sm:text-left w-full relative">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full flex items-center justify-center sm:justify-start gap-2 group-focus-within:text-pink-500 transition-colors uppercase">
+                <div className="group space-y-3 flex flex-col items-start text-left w-full relative">
+                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full flex items-center gap-2 group-focus-within:text-pink-500 transition-colors uppercase">
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
                     Temporal_Target
                   </label>
                   <div className="relative w-full">
                     <input
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={editId ? undefined : new Date().toISOString().split('T')[0]}
                       max={new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]}
                       value={newTaskDate}
                       onChange={(e) => setNewTaskDate(e.target.value)}
@@ -371,7 +386,7 @@ export default function Home() {
         </div>
 
         {/* Task List */}
-        <div className={`lg:col-span-7 w-full flex flex-col mt-10 lg:mt-0 bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] lg:h-[620px] overflow-hidden animate-glow ${activeTab !== 'list' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
+        <div className={`lg:col-span-7 w-full flex flex-col mt-10 lg:mt-0 bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] lg:h-[700px] h-auto overflow-hidden animate-glow ${activeTab !== 'list' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-4 border-b border-white/5 gap-4 text-center sm:text-left shrink-0">
             <h2 className="text-2xl sm:text-3xl font-black text-white flex justify-center sm:justify-start items-center flex-wrap gap-4 italic tracking-tighter">
@@ -390,6 +405,10 @@ export default function Home() {
               Total: {loading ? "..." : tasks.length}
             </div>
           </div>
+ 
+          <div className="px-1 mb-8">
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">Protocol_Stream // All active nodes</p>
+          </div>
 
           <div className="flex-1 bg-transparent overflow-hidden flex flex-col min-h-0">
             {loading ? (
@@ -399,20 +418,20 @@ export default function Home() {
               </div>
             ) : tasks.length === 0 ? (
               <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-20 text-center space-y-6 sm:space-y-8">
-                <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-2xl sm:rounded-[2.5rem] bg-white/[0.02] flex items-center justify-center border border-white/5 text-slate-700 hover:scale-110 hover:border-white/20 transition-all duration-700 group cursor-pointer">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="group-hover:rotate-90 transition-transform duration-700 opacity-20 sm:w-12 sm:h-12"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
+                <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-white/[0.02] flex items-center justify-center border border-white/5 text-slate-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-20"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
                 </div>
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-500 uppercase tracking-tighter mb-2">No Tasks Found</h3>
-                  <p className="text-slate-700 font-medium text-base sm:text-lg">Add your first task to get started!</p>
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-500 uppercase tracking-tighter mb-2">Registry Empty</h3>
+                  <p className="text-slate-700 font-medium text-base sm:text-lg">No nodes found in the global stream.</p>
                 </div>
               </div>
             ) : (
               <div className="flex-1 overflow-y-auto custom-scrollbar pb-6 sm:pr-2">
                 <div className="flex flex-col gap-8">
                   {Object.entries(
-                    tasks.reduce((groups, task) => {
-                      const date = task.taskdate || task.taskDate || "No Date";
+                    [...tasks].reduce((groups, task) => {
+                      const date = task.taskDate || task.taskdate || "No Date";
                       if (!groups[date]) groups[date] = [];
                       groups[date].push(task);
                       return groups;
@@ -601,11 +620,28 @@ export default function Home() {
         )
       }
 
+      {/* Toast Notification */}
+      {toast && (
+        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 sm:px-10 py-3 sm:py-5 rounded-full sm:rounded-[2rem] border backdrop-blur-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex items-center gap-3 sm:gap-6 animate-in slide-in-from-top-10 fade-in duration-700 min-w-[280px] sm:min-w-[320px] justify-center text-center whitespace-nowrap overflow-hidden ${toast.type === 'error' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 shadow-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/20'}`}>
+          <div className="absolute inset-0 rounded-full sm:rounded-[2rem] overflow-hidden opacity-20">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent -translate-x-full animate-shimmer"></div>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className={`h-1.5 sm:h-2.5 w-1.5 sm:w-2.5 rounded-full animate-ping absolute ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+            <span className={`h-1.5 sm:h-2.5 w-1.5 sm:w-2.5 rounded-full relative ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
+          </div>
+          <span className="text-[8px] sm:text-xs font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] italic drop-shadow-sm truncate">{toast.message}</span>
+        </div>
+      )}
+
       <style jsx global>{`
         @keyframes float-slow {
           0%, 100% { transform: translate(0, 0); }
           33% { transform: translate(30px, -50px); }
           66% { transform: translate(-20px, 20px); }
+        }
+        @keyframes shimmer {
+          100% { transform: translateX(100%); }
         }
         @keyframes slideIn {
           from { opacity: 0; transform: translateY(20px); }

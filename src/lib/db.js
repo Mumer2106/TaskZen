@@ -36,7 +36,8 @@ export async function createUser(username, password) {
             await sql`INSERT INTO users (id, username, password) VALUES (${id}, ${username}, ${password})`;
             return { id, username };
         } catch (error) {
-            if (error.message.toLowerCase().includes('unique constraint failed') || error.message.toLowerCase().includes('duplicate key')) {
+            const msg = error.message.toLowerCase();
+            if (msg.includes('unique constraint') || msg.includes('duplicate key') || msg.includes('already exists')) {
                 throw new Error('User already exists');
             }
             throw error;
@@ -56,7 +57,10 @@ export async function createUser(username, password) {
 
 export async function getTasksForUser(userId) {
     if (isPostgresConfigured) {
-        const { rows } = await sql`SELECT * FROM tasks WHERE userId = ${userId} ORDER BY id DESC`;
+        const { rows } = await sql`
+            SELECT id, "userId", title, description, status, "createdAt", "taskDate" 
+            FROM tasks WHERE "userId" = ${userId} ORDER BY id DESC
+        `;
         return rows;
     } else {
         const db = await readJsonDb();
@@ -66,9 +70,12 @@ export async function getTasksForUser(userId) {
 
 export async function saveTasksForUser(userId, tasks) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE userId = ${userId}`;
+        await sql`DELETE FROM tasks WHERE "userId" = ${userId}`;
         for (const task of tasks) {
-            await sql`INSERT INTO tasks (id, userId, title, description, status, createdAt, taskDate) VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})`;
+            await sql`
+                INSERT INTO tasks (id, "userId", title, description, status, "createdAt", "taskDate") 
+                VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
+            `;
         }
     } else {
         const db = await readJsonDb();
@@ -79,7 +86,10 @@ export async function saveTasksForUser(userId, tasks) {
 
 export async function addTask(userId, task) {
     if (isPostgresConfigured) {
-        await sql`INSERT INTO tasks (id, userId, title, description, status, createdAt, taskDate) VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})`;
+        await sql`
+            INSERT INTO tasks (id, "userId", title, description, status, "createdAt", "taskDate") 
+            VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
+        `;
     } else {
         const db = await readJsonDb();
         if (!db.tasks[userId]) db.tasks[userId] = [];
@@ -91,10 +101,21 @@ export async function addTask(userId, task) {
 export async function updateTask(userId, taskId, updates) {
     if (isPostgresConfigured) {
         const { title, description, status, taskDate } = updates;
-        if (title !== undefined) await sql`UPDATE tasks SET title = ${title} WHERE userId = ${userId} AND id = ${taskId}`;
-        if (description !== undefined) await sql`UPDATE tasks SET description = ${description} WHERE userId = ${userId} AND id = ${taskId}`;
-        if (status !== undefined) await sql`UPDATE tasks SET status = ${status} WHERE userId = ${userId} AND id = ${taskId}`;
-        if (taskDate !== undefined) await sql`UPDATE tasks SET taskDate = ${taskDate} WHERE userId = ${userId} AND id = ${taskId}`;
+        const queryParts = [];
+        const values = [];
+
+        if (title !== undefined) { queryParts.push(`title = $${values.length + 1}`); values.push(title); }
+        if (description !== undefined) { queryParts.push(`description = $${values.length + 1}`); values.push(description); }
+        if (status !== undefined) { queryParts.push(`status = $${values.length + 1}`); values.push(status); }
+        if (taskDate !== undefined) { queryParts.push(`"taskDate" = $${values.length + 1}`); values.push(taskDate); }
+
+        if (queryParts.length === 0) return;
+
+        values.push(userId, taskId);
+        const query = `UPDATE tasks SET ${queryParts.join(', ')} WHERE "userId" = $${values.length - 1} AND id = $${values.length}`;
+        
+        // Manual query execution for dynamic updates
+        await sql.query(query, values);
     } else {
         const db = await readJsonDb();
         const userTasks = db.tasks[userId] || [];
@@ -109,7 +130,7 @@ export async function updateTask(userId, taskId, updates) {
 export async function deleteTasks(userId, taskIds) {
     if (isPostgresConfigured) {
         if (taskIds.length === 0) return;
-        await sql`DELETE FROM tasks WHERE userId = ${userId} AND id = ANY(${taskIds})`;
+        await sql`DELETE FROM tasks WHERE "userId" = ${userId} AND id = ANY(${taskIds})`;
     } else {
         const db = await readJsonDb();
         if (db.tasks[userId]) {
@@ -135,10 +156,14 @@ export async function getAllTasks() {
         const { rows } = await sql`
             SELECT tasks.*, users.username as owner 
             FROM tasks 
-            JOIN users ON tasks.userId = users.id 
+            JOIN users ON tasks."userId" = users.id 
             ORDER BY tasks.id DESC
         `;
-        return rows;
+        return rows.map(r => ({
+            ...r,
+            taskDate: r.taskDate || r.taskdate || 'Unscheduled', // Handle case-insensitivity
+            createdAt: r.createdAt || r.createdat
+        }));
     } else {
         const db = await readJsonDb();
         const allTasks = [];
@@ -152,7 +177,7 @@ export async function getAllTasks() {
 
 export async function deleteUser(userId) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE userId = ${userId}`;
+        await sql`DELETE FROM tasks WHERE "userId" = ${userId}`;
         await sql`DELETE FROM users WHERE id = ${userId}`;
     } else {
         const db = await readJsonDb();

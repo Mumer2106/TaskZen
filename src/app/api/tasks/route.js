@@ -37,7 +37,7 @@ export async function POST(request) {
         title,
         description,
         status: 'Pending',
-        createdAt: new Date().toLocaleDateString(),
+        createdAt: new Date().toISOString(),
         taskDate: finalTaskDate
     };
 

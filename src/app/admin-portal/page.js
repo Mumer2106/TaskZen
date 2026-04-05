@@ -12,10 +12,16 @@ export default function AdminPortal() {
     const [error, setError] = useState("");
     const [pendingDelete, setPendingDelete] = useState(null); // { id, type, label }
     const [activeTab, setActiveTab] = useState("users"); // 'users' or 'tasks' for mobile view
+    const [selectedUserId, setSelectedUserId] = useState(null);
+    const [refreshTimer, setRefreshTimer] = useState(null);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         fetchData(secret);
+        // Start auto-refresh
+        if (refreshTimer) clearInterval(refreshTimer);
+        const timer = setInterval(() => fetchData(secret), 5000);
+        setRefreshTimer(timer);
     };
 
     const fetchData = async (adminSecret) => {
@@ -185,24 +191,33 @@ export default function AdminPortal() {
                     {/* Glowing Column: Users */}
                     <section className={`lg:col-span-4 relative group ${activeTab !== 'users' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-blue-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse"></div>
-                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/20 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.1)] h-full lg:max-h-[850px] flex flex-col">
+                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/20 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.1)] flex flex-col lg:h-[800px]">
                             <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic uppercase">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]"></span>
                                     Registry
                                 </span>
-                                <span className="text-[9px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 tracking-widest">{data.users.length}</span>
+                                <div className="flex items-center gap-2">
+                                  {selectedUserId && (
+                                    <button onClick={() => setSelectedUserId(null)} className="text-[8px] text-rose-400 hover:text-rose-300 font-bold uppercase tracking-widest border border-rose-500/20 px-2 py-1 rounded-md bg-rose-500/5 transition-all">Clear Filter</button>
+                                  )}
+                                  <span className="text-[9px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 tracking-widest">{data.users.length}</span>
+                                </div>
                             </h2>
 
                             <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-2 custom-scrollbar-blue flex-1 min-h-[300px]">
                                 {data.users.map((user) => (
-                                    <div key={user.id} className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl hover:bg-blue-500/5 transition-all group/item">
+                                    <div 
+                                      key={user.id} 
+                                      onClick={() => setSelectedUserId(user.id)}
+                                      className={`flex items-center justify-between p-4 border rounded-2xl transition-all group/item cursor-pointer ${selectedUserId === user.id ? 'bg-blue-600/10 border-blue-500/40 shadow-inner' : 'bg-white/[0.02] border-white/5 hover:bg-blue-500/5 hover:border-blue-500/20'}`}
+                                    >
                                         <div className="min-w-0 flex-1 mr-3">
-                                            <p className="font-bold text-slate-200 truncate text-base tracking-tight">{user.username}</p>
+                                            <p className={`font-bold truncate text-base tracking-tight transition-colors ${selectedUserId === user.id ? 'text-blue-400' : 'text-slate-200 group-hover/item:text-blue-300'}`}>{user.username}</p>
                                             <p className="text-[8px] font-mono text-slate-600 uppercase tracking-widest">#{user.id.slice(-6)}</p>
                                         </div>
                                         <button
-                                            onClick={() => setPendingDelete({ id: user.id, type: 'user', label: user.username })}
+                                            onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: user.id, type: 'user', label: user.username }); }}
                                             disabled={actionLoading === user.id}
                                             className="px-3 py-1.5 bg-rose-600/10 text-rose-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-transparent hover:bg-rose-600 hover:text-white transition-all opacity-100 lg:opacity-0 group-hover/item:opacity-100"
                                         >
@@ -217,7 +232,7 @@ export default function AdminPortal() {
                     {/* Glowing Column: Global Tasks */}
                     <section className={`lg:col-span-8 relative group ${activeTab !== 'tasks' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-purple-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/20 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.1)] h-full lg:max-h-[850px] flex flex-col">
+                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/20 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.1)] flex flex-col lg:h-[800px]">
                             <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic uppercase">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.8)]"></span>
@@ -227,60 +242,70 @@ export default function AdminPortal() {
                             </h2>
 
                             <div className="space-y-10 overflow-y-auto pr-2 sm:pr-4 custom-scrollbar-purple flex-1 min-h-[400px]">
-                                {data.tasks.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full text-slate-700 min-h-[200px]">
-                                        <p className="text-[10px] uppercase font-black tracking-[0.3em]">No operational data</p>
-                                    </div>
-                                ) : (
-                                    Object.entries(
-                                        data.tasks.reduce((groups, task) => {
-                                            const date = task.taskdate || task.taskDate || "Unscheduled";
+                                {(() => {
+                                    const filteredTasks = data.tasks.filter(t => !selectedUserId || t.userId === selectedUserId || t.createdBy === selectedUserId);
+                                    
+                                    if (filteredTasks.length === 0) {
+                                        return (
+                                            <div className="h-full flex flex-col items-center justify-center text-center p-12">
+                                                <div className="w-20 h-20 bg-purple-500/10 rounded-[2rem] flex items-center justify-center mb-6 border border-purple-500/20 text-purple-500 opacity-40">
+                                                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                                </div>
+                                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-300">No Stream Data</h3>
+                                                <p className="text-slate-600 text-xs font-bold uppercase tracking-widest mt-2">Zero packets detected for this node</p>
+                                            </div>
+                                        );
+                                    }
+
+                                    return Object.entries(
+                                        filteredTasks.reduce((groups, task) => {
+                                            const date = task.taskDate || task.taskdate || "Unscheduled";
                                             if (!groups[date]) groups[date] = [];
                                             groups[date].push(task);
                                             return groups;
                                         }, {})
                                     )
-                                        .sort(([dateA], [dateB]) => {
-                                            if (dateA === "Unscheduled") return 1;
-                                            if (dateB === "Unscheduled") return -1;
-                                            return new Date(dateB) - new Date(dateA); // Newest first
-                                        })
-                                        .map(([date, dateTasks]) => (
-                                            <div key={date} className="space-y-4">
-                                                <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-sm py-3 border-b border-white/5 flex items-center justify-between translate-y-[-1px]">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-purple-500/80">
-                                                        {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
-                                                            date === "Unscheduled" ? "Buffer" : date}
-                                                    </span>
-                                                    <span className="text-[8px] font-mono text-slate-600">{dateTasks.length} NODES</span>
-                                                </div>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    {dateTasks.map((task) => (
-                                                        <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-4 sm:p-5 rounded-2xl hover:bg-white/[0.04] transition-all group/task">
-                                                            <div className="flex justify-between items-start mb-3">
-                                                                <div className="min-w-0 flex-1">
-                                                                    <h3 className="text-base sm:text-lg font-black text-white tracking-tighter mb-1 uppercase italic leading-none truncate">{task.title}</h3>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
-                                                                            {task.status}
-                                                                        </span>
-                                                                        <span className="text-[7px] font-bold text-slate-700 uppercase">{task.owner}</span>
-                                                                    </div>
-                                                                </div>
-                                                                <button
-                                                                    onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                                    className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg opacity-100 lg:opacity-0 group-hover/task:opacity-100"
-                                                                >
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                                                </button>
-                                                            </div>
-                                                            <p className="text-[11px] text-slate-500 font-medium line-clamp-2 italic">"{task.description || "No metadata recorded."}"</p>
-                                                        </div>
-                                                    ))}
-                                                </div>
+                                    .sort(([dateA], [dateB]) => {
+                                        if (dateA === "Unscheduled") return 1;
+                                        if (dateB === "Unscheduled") return -1;
+                                        return new Date(dateB) - new Date(dateA);
+                                    })
+                                    .map(([date, dateTasks]) => (
+                                        <div key={date} className="space-y-4">
+                                            <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-sm py-3 border-b border-white/5 flex items-center justify-between translate-y-[-1px]">
+                                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-purple-500/80">
+                                                    {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
+                                                        date === "Unscheduled" ? "Buffer" : date}
+                                                </span>
+                                                <span className="text-[8px] font-mono text-slate-600">{dateTasks.length} NODES</span>
                                             </div>
-                                        ))
-                                )}
+                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                {dateTasks.map((task) => (
+                                                    <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-4 sm:p-5 rounded-2xl hover:bg-white/[0.04] transition-all group/task">
+                                                        <div className="flex justify-between items-start mb-3">
+                                                            <div className="min-w-0 flex-1">
+                                                                <h3 className="text-base sm:text-lg font-black text-white tracking-tighter mb-1 uppercase italic leading-none truncate">{task.title}</h3>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                                                                        {task.status}
+                                                                    </span>
+                                                                    <span className="text-[7px] font-bold text-slate-700 uppercase">{task.owner || 'Unknown'}</span>
+                                                                </div>
+                                                            </div>
+                                                            <button
+                                                                onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
+                                                                className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg opacity-100 lg:opacity-0 group-hover/task:opacity-100"
+                                                            >
+                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                            </button>
+                                                        </div>
+                                                        <p className="text-[11px] text-slate-500 font-medium line-clamp-2 italic">"{task.description || "No metadata recorded."}"</p>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ));
+                                })()}
                             </div>
                         </div>
                     </section>
