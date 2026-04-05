@@ -136,8 +136,14 @@ export default function Home() {
           setTasks(prev => [newTask, ...prev]);
           showToast("New node allocated", "success");
         } else {
-          const errData = await res.json();
-          setError(errData.error || "System: Allocation failure.");
+          let errorMsg = "System: Allocation failure.";
+          try {
+            const errData = await res.json();
+            errorMsg = errData.error || errorMsg;
+          } catch (e) {
+            // Not JSON or empty body
+          }
+          setError(errorMsg);
           return;
         }
       }
@@ -347,7 +353,7 @@ export default function Home() {
                     <input
                       type="date"
                       min={editId ? undefined : new Date().toISOString().split('T')[0]}
-                      max={new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]}
+                      max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
                       value={newTaskDate}
                       onChange={(e) => setNewTaskDate(e.target.value)}
                       className="w-full bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all text-lg font-bold [color-scheme:dark] appearance-none cursor-pointer hover:bg-black/60 hover:border-white/10"
@@ -437,7 +443,11 @@ export default function Home() {
                       return groups;
                     }, {})
                   )
-                    .sort(([dateA], [dateB]) => new Date(dateB) - new Date(dateA))
+                    .sort(([dateA], [dateB]) => {
+                      if (dateA === "No Date") return 1;
+                      if (dateB === "No Date") return -1;
+                      return new Date(dateB) - new Date(dateA);
+                    })
                     .map(([date, dateTasks]) => (
                       <div key={date} className="space-y-4">
                         <div className="sticky top-0 z-20 bg-[#02000d]/80 backdrop-blur-md py-2 border-b border-pink-500/20 flex items-center gap-3">

@@ -58,8 +58,8 @@ export async function createUser(username, password) {
 export async function getTasksForUser(userId) {
     if (isPostgresConfigured) {
         const { rows } = await sql`
-            SELECT id, "userId", title, description, status, "createdAt", "taskDate" 
-            FROM tasks WHERE "userId" = ${userId} ORDER BY id DESC
+            SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
+            FROM tasks WHERE userid = ${userId} ORDER BY id DESC
         `;
         return rows;
     } else {
@@ -70,10 +70,10 @@ export async function getTasksForUser(userId) {
 
 export async function saveTasksForUser(userId, tasks) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE "userId" = ${userId}`;
+        await sql`DELETE FROM tasks WHERE userid = ${userId}`;
         for (const task of tasks) {
             await sql`
-                INSERT INTO tasks (id, "userId", title, description, status, "createdAt", "taskDate") 
+                INSERT INTO tasks (id, userid, title, description, status, createdat, taskdate) 
                 VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
             `;
         }
@@ -87,7 +87,7 @@ export async function saveTasksForUser(userId, tasks) {
 export async function addTask(userId, task) {
     if (isPostgresConfigured) {
         await sql`
-            INSERT INTO tasks (id, "userId", title, description, status, "createdAt", "taskDate") 
+            INSERT INTO tasks (id, userid, title, description, status, createdat, taskdate) 
             VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
         `;
     } else {
@@ -107,12 +107,12 @@ export async function updateTask(userId, taskId, updates) {
         if (title !== undefined) { queryParts.push(`title = $${values.length + 1}`); values.push(title); }
         if (description !== undefined) { queryParts.push(`description = $${values.length + 1}`); values.push(description); }
         if (status !== undefined) { queryParts.push(`status = $${values.length + 1}`); values.push(status); }
-        if (taskDate !== undefined) { queryParts.push(`"taskDate" = $${values.length + 1}`); values.push(taskDate); }
+        if (taskDate !== undefined) { queryParts.push(`taskdate = $${values.length + 1}`); values.push(taskDate); }
 
         if (queryParts.length === 0) return;
 
         values.push(userId, taskId);
-        const query = `UPDATE tasks SET ${queryParts.join(', ')} WHERE "userId" = $${values.length - 1} AND id = $${values.length}`;
+        const query = `UPDATE tasks SET ${queryParts.join(', ')} WHERE userid = $${values.length - 1} AND id = $${values.length}`;
         
         // Manual query execution for dynamic updates
         await sql.query(query, values);
@@ -130,7 +130,7 @@ export async function updateTask(userId, taskId, updates) {
 export async function deleteTasks(userId, taskIds) {
     if (isPostgresConfigured) {
         if (taskIds.length === 0) return;
-        await sql`DELETE FROM tasks WHERE "userId" = ${userId} AND id = ANY(${taskIds})`;
+        await sql`DELETE FROM tasks WHERE userid = ${userId} AND id = ANY(${taskIds})`;
     } else {
         const db = await readJsonDb();
         if (db.tasks[userId]) {
@@ -156,7 +156,7 @@ export async function getAllTasks() {
         const { rows } = await sql`
             SELECT tasks.*, users.username as owner 
             FROM tasks 
-            JOIN users ON tasks."userId" = users.id 
+            JOIN users ON tasks.userid = users.id 
             ORDER BY tasks.id DESC
         `;
         return rows.map(r => ({
@@ -177,7 +177,7 @@ export async function getAllTasks() {
 
 export async function deleteUser(userId) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE "userId" = ${userId}`;
+        await sql`DELETE FROM tasks WHERE userid = ${userId}`;
         await sql`DELETE FROM users WHERE id = ${userId}`;
     } else {
         const db = await readJsonDb();
