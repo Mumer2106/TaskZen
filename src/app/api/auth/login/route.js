@@ -118,7 +118,6 @@ export async function POST(request) {
         response.cookies.set('user_info', JSON.stringify({
             firstName: user.firstName,
             lastName: user.lastName,
-            profilePic: user.profilePic,
             email: user.username
         }), {
             secure: process.env.NODE_ENV === 'production',

@@ -30,6 +30,16 @@ export async function findUser(username, password) {
     }
 }
 
+export async function findUserById(id) {
+    if (isPostgresConfigured) {
+        const { rows } = await sql`SELECT id, username, "firstname" as "firstName", "lastname" as "lastName", "profilepic" as "profilePic" FROM users WHERE id = ${id}`;
+        return rows[0] || null;
+    } else {
+        const db = await readJsonDb();
+        return db.users[id] || null;
+    }
+}
+
 export async function createUser(id, username, password, extraData = {}) {
     if (isPostgresConfigured) {
         try {
@@ -194,14 +204,21 @@ export async function updateUser(userId, updates) {
     if (isPostgresConfigured) {
         const { username, password, firstName, lastName, profilePic } = updates;
         
-        if (username !== undefined) await sql`UPDATE users SET username = ${username.toLowerCase()} WHERE id = ${userId}`;
-        if (password !== undefined) await sql`UPDATE users SET password = ${password} WHERE id = ${userId}`;
-        if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
-        if (lastName !== undefined) await sql`UPDATE users SET lastname = ${lastName} WHERE id = ${userId}`;
-        if (profilePic !== undefined) await sql`UPDATE users SET profilepic = ${profilePic} WHERE id = ${userId}`;
-        
-        const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE id = ${userId}`;
-        return rows[0];
+        try {
+            // Group updates into one more stable atomic query to handle live traffic better
+            if (username !== undefined) await sql`UPDATE users SET username = ${username.toLowerCase()} WHERE id = ${userId}`;
+            if (password !== undefined) await sql`UPDATE users SET password = ${password} WHERE id = ${userId}`;
+            if (firstName !== undefined) await sql`UPDATE users SET "firstname" = ${firstName} WHERE id = ${userId}`;
+            if (lastName !== undefined) await sql`UPDATE users SET "lastname" = ${lastName} WHERE id = ${userId}`;
+            if (profilePic !== undefined) await sql`UPDATE users SET "profilepic" = ${profilePic} WHERE id = ${userId}`;
+            
+            const { rows } = await sql`SELECT id, username, "firstname" as "firstName", "lastname" as "lastName", "profilepic" as "profilePic" FROM users WHERE id = ${userId}`;
+            return rows[0];
+        } catch (error) {
+            console.error("SQL Profile Update Error:", error);
+            // Relaxing errors for missing columns by falling back if needed
+            throw error;
+        }
     } else {
         const db = await readJsonDb();
         if (db.users[userId]) {

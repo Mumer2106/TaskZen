@@ -66,8 +66,20 @@ export default function Home() {
       const cookies = document.cookie.split('; ');
       const userInfoCookie = cookies.find(row => row.startsWith('user_info='));
       if (userInfoCookie) {
-        const data = JSON.parse(decodeURIComponent(userInfoCookie.split('=')[1]));
-        setUserInfo(data);
+        try {
+          const data = JSON.parse(decodeURIComponent(userInfoCookie.split('=')[1]));
+          setUserInfo(data);
+          
+          // Fetch full profile (including picture) separately since it's too big for cookie
+          fetch("/api/user/me")
+            .then(res => res.json())
+            .then(fullData => {
+              if (!fullData.error) setUserInfo(fullData);
+            }).catch(console.error);
+            
+        } catch (e) {
+          console.error("Session corrupt:", e);
+        }
       }
     } catch (e) {
       console.error("Failed to load user info:", e);
