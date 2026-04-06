@@ -66,8 +66,8 @@ async function sendWelcomeNotification(contact, firstName) {
 export async function POST(request) {
     try {
         const { username: rawUsername, password: rawPassword, isRegistering, firstName, lastName } = await request.json();
-        const username = rawUsername?.trim();
-        const password = rawPassword?.trim();
+        const username = (rawUsername || '').trim();
+        const password = (rawPassword || '').trim();
 
         if (!username || !password) {
             return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
@@ -79,55 +79,59 @@ export async function POST(request) {
             try {
                 const id = Date.now().toString();
                 user = await createUser(id, username, password, { firstName, lastName });
-                // Send the one-time welcome message
                 notificationResult = await sendWelcomeNotification(username, firstName || 'there');
             } catch (error) {
+                console.error("User creation error:", error.message);
                 return NextResponse.json({ error: error.message }, { status: 400 });
             }
         } else {
-            user = await findUser(username, password);
-            if (!user) {
-                return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+            try {
+                user = await findUser(username, password);
+                if (!user) {
+                    return NextResponse.json({ error: 'Invalid credentials' }, { status: 401 });
+                }
+            } catch (error) {
+                console.error("Find user critical error:", error);
+                throw error;
             }
         }
 
         const response = NextResponse.json({
             message: 'Success',
             user: { 
-                id: user.id, 
-                username: user.username, 
-                firstName: user.firstName, 
-                lastName: user.lastName,
-                profilePic: user.profilePic
+                id: user.id || '', 
+                username: user.username || '', 
+                firstName: user.firstName || '', 
+                lastName: user.lastName || '',
+                profilePic: user.profilePic || null
             },
-            notificationSent: isRegistering,
-            previewUrl: notificationResult?.previewUrl
+            notificationSent: !!isRegistering,
+            previewUrl: notificationResult?.previewUrl || null
         });
 
-        // Use a simple cookie for "session"
-        // In a real app, use a JWT or proper session store
-        response.cookies.set('auth_session', user.id, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 24 * 7, // 1 week
-            path: '/',
-        });
-
-        // Store user info in a non-httpOnly cookie for frontend access
-        response.cookies.set('user_info', JSON.stringify({
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.username
-        }), {
+        const cookieOptions = {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
             maxAge: 60 * 60 * 24 * 7,
             path: '/',
+        };
+
+        // Set secure auth session (HttpOnly)
+        response.cookies.set('auth_session', user.id, {
+            ...cookieOptions,
+            httpOnly: true,
         });
+
+        // Set display info (Not HttpOnly) - No profilePic here to avoid size limits
+        response.cookies.set('user_info', JSON.stringify({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.username || ''
+        }), cookieOptions);
 
         return response;
     } catch (error) {
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        console.error("Global Auth Handler Exception:", error);
+        return NextResponse.json({ error: 'System: Internal server processing error.' }, { status: 500 });
     }
 }

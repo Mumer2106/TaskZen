@@ -205,25 +205,35 @@ export async function updateUser(userId, updates) {
         const { username, password, firstName, lastName, profilePic } = updates;
         
         try {
-            // Group updates into one more stable atomic query to handle live traffic better
+            // Group updates for atomicity and consistency
             if (username !== undefined) await sql`UPDATE users SET username = ${username.toLowerCase()} WHERE id = ${userId}`;
             if (password !== undefined) await sql`UPDATE users SET password = ${password} WHERE id = ${userId}`;
-            if (firstName !== undefined) await sql`UPDATE users SET "firstname" = ${firstName} WHERE id = ${userId}`;
-            if (lastName !== undefined) await sql`UPDATE users SET "lastname" = ${lastName} WHERE id = ${userId}`;
-            if (profilePic !== undefined) await sql`UPDATE users SET "profilepic" = ${profilePic} WHERE id = ${userId}`;
+            if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
+            if (lastName !== undefined) await sql`UPDATE users SET lastname = ${lastName} WHERE id = ${userId}`;
+            if (profilePic !== undefined) await sql`UPDATE users SET profilepic = ${profilePic} WHERE id = ${userId}`;
             
-            const { rows } = await sql`SELECT id, username, "firstname" as "firstName", "lastname" as "lastName", "profilepic" as "profilePic" FROM users WHERE id = ${userId}`;
+            const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE id = ${userId}`;
             return rows[0];
         } catch (error) {
-            console.error("SQL Profile Update Error:", error);
-            // Relaxing errors for missing columns by falling back if needed
+            console.error("Critical Postgres Update Error:", error);
             throw error;
         }
     } else {
         const db = await readJsonDb();
         if (db.users[userId]) {
-            if (updates.username) updates.username = updates.username.toLowerCase();
-            db.users[userId] = { ...db.users[userId], ...updates };
+            // Only update fields that are actually provided to avoid deleting existing data like passwords
+            const filteredUpdates = {};
+            Object.keys(updates).forEach(key => {
+                if (updates[key] !== undefined) {
+                    filteredUpdates[key] = updates[key];
+                }
+            });
+
+            if (filteredUpdates.username) {
+                filteredUpdates.username = filteredUpdates.username.toLowerCase();
+            }
+
+            db.users[userId] = { ...db.users[userId], ...filteredUpdates };
             await writeJsonDb(db);
             return db.users[userId];
         }
