@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 
 export default function LandingPage() {
@@ -15,6 +15,14 @@ export default function LandingPage() {
       }, 100);
     }
   };
+
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      const isAuth = document.cookie.includes('user_info=');
+      setIsLoggedIn(isAuth);
+    }
+  }, []);
 
   return (
     <main className="min-h-screen bg-[#02000d] text-white selection:bg-pink-500/30 relative overflow-hidden flex flex-col items-center">
@@ -41,7 +49,7 @@ export default function LandingPage() {
           </span>
         </div>
 
-        <h1 className="text-5xl sm:text-8xl md:text-9xl font-black tracking-tight leading-[0.95] sm:leading-[0.9] mb-6 sm:mb-8">
+        <h1 className="text-5xl sm:text-8xl md:text-9xl font-black tracking-tight leading-[1.1] sm:leading-[1.1] mb-6 sm:mb-8">
           <span className="text-gradient inline-block">Manage your life,</span><br />
           <span className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">simply.</span>
         </h1>
@@ -52,9 +60,9 @@ export default function LandingPage() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 w-full sm:w-auto">
-          <Link href="/login" className="w-full sm:w-auto">
+          <Link href={isLoggedIn ? "/tasks" : "/login"} className="w-full sm:w-auto">
             <button className="btn-premium-pink group w-full sm:w-auto py-4 sm:py-5">
-              Get Started
+              {isLoggedIn ? "Access Dashboard" : "Get Started"}
               <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="translate-x-0 group-hover:translate-x-1.5 transition-transform duration-300"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
             </button>
           </Link>

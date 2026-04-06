@@ -13,13 +13,8 @@ export async function PATCH(request, { params }) {
     const { id } = await params;
     const updates = await request.json();
 
-    // Validation: Don't allow changing taskDate to the past if provided
-    if (updates.taskDate) {
-        const today = new Date().toISOString().split('T')[0];
-        if (updates.taskDate < today) {
-            return NextResponse.json({ error: 'Cannot set tasks in the past' }, { status: 400 });
-        }
-    }
+    // Allow updates even to past tasks, as long as it's an update, not a new creation
+    // This allows editing titles/descriptions of historical nodes.
 
     try {
         await updateTask(userId, id, updates);

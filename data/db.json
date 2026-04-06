@@ -1,67 +1,53 @@
 {
   "users": {
-    "1773040534840": {
-      "id": "1773040534840",
+    "1775458847551": {
+      "id": "1775458847551",
+      "username": "musheraz06@gmail.com",
+      "password": "KC@210639",
+      "firstName": "Muhammad Umer",
+      "lastName": "Sheraz",
+      "profilePic": null
+    },
+    "1775459373023": {
+      "id": "1775459373023",
       "username": "musheraz.123@gmail.com",
-      "password": "KC@210639"
+      "password": "Kc@210639",
+      "firstName": "M Umer",
+      "lastName": "Sheraz",
+      "profilePic": ""
     }
   },
   "tasks": {
     "1772778335326": [],
-    "1773040534840": [
+    "1775458847551": [
       {
-        "id": "1775385295031",
-        "userId": "1773040534840",
-        "title": "Hieeee",
-        "description": "Hemlooo jii\n",
+        "id": "1775459339139",
+        "userId": "1775458847551",
+        "title": "Test Task",
+        "description": "This is my first task",
+        "status": "Completed",
+        "createdAt": "2026-04-06T07:08:59.139Z",
+        "taskDate": "2026-04-06"
+      }
+    ],
+    "1775459373023": [
+      {
+        "id": "1775459453941",
+        "userId": "1775459373023",
+        "title": "My new test task",
+        "description": "Hemloooo jiiiii",
         "status": "Pending",
-        "createdAt": "2026-04-05T10:34:55.031Z",
-        "taskDate": "2026-04-05"
+        "createdAt": "2026-04-06T07:10:53.941Z",
+        "taskDate": "2026-04-06"
       },
       {
-        "id": "1775382263651",
-        "userId": "1773040534840",
-        "title": "New test task",
-        "description": "task 001",
+        "id": "1775459422288",
+        "userId": "1775459373023",
+        "title": "My Task",
+        "description": "It is my first task.",
         "status": "Completed",
-        "createdAt": "4/5/2026",
-        "taskDate": "2026-04-05"
-      },
-      {
-        "id": "1774110182871",
-        "userId": "1773040534840",
-        "title": "Hemloo Jii",
-        "description": "Helooo 123456",
-        "status": "Completed",
-        "createdAt": "3/21/2026",
-        "taskDate": "2026-03-21"
-      },
-      {
-        "id": "1773386023136",
-        "userId": "1773040534840",
-        "title": "Hieeee",
-        "description": "odinoew dodcj doc ecokendcj c",
-        "status": "Completed",
-        "createdAt": "3/13/2026",
-        "taskDate": "2026-03-13"
-      },
-      {
-        "id": "1773053211435",
-        "userId": "1773040534840",
-        "title": "knf clkwnf clw ",
-        "description": " fclk wfclk wflcknwmlkc",
-        "status": "Completed",
-        "createdAt": "3/9/2026",
-        "taskDate": "2026-03-09"
-      },
-      {
-        "id": "1773040557923",
-        "userId": "1773040534840",
-        "title": "n fcnk wdsknc wjk fckn ",
-        "description": "c vn wnc kn wqvcleqnfv cle c",
-        "status": "Completed",
-        "createdAt": "3/9/2026",
-        "taskDate": "2026-03-09"
+        "createdAt": "2026-04-06T07:10:22.288Z",
+        "taskDate": "2026-04-06"
       }
     ]
   }

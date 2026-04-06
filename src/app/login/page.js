@@ -1,14 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function Login() {
-    const [loginMethod, setLoginMethod] = useState("email"); // 'email' | 'phone'
     const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
-    const [countryCode, setCountryCode] = useState("+1");
+    const [firstName, setFirstName] = useState("");
+    const [lastName, setLastName] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -18,18 +17,20 @@ export default function Login() {
     const [successMessage, setSuccessMessage] = useState(null); // Now using object to store message + url
     const router = useRouter();
 
+    useEffect(() => {
+        if (typeof document !== 'undefined' && document.cookie.includes('user_info=')) {
+            router.push("/tasks");
+        }
+    }, [router]);
+
     const clearForm = () => {
         setEmail("");
-        setPhone("");
+        setFirstName("");
+        setLastName("");
         setPassword("");
         setConfirmPassword("");
         setError("");
         setSuccessMessage(null);
-    };
-
-    const handleMethodChange = (method) => {
-        setLoginMethod(method);
-        clearForm();
     };
 
     const toggleRegistering = () => {
@@ -37,27 +38,7 @@ export default function Login() {
         clearForm();
     };
 
-    const COUNTRIES = [
-        { code: "+1", name: "🇺🇸 +1 (US/CA)" },
-        { code: "+44", name: "🇬🇧 +44 (UK)" },
-        { code: "+91", name: "🇮🇳 +91 (IN)" },
-        { code: "+92", name: "🇵🇰 +92 (PK)" },
-        { code: "+61", name: "🇦🇺 +61 (AU)" },
-        { code: "+81", name: "🇯🇵 +81 (JP)" },
-        { code: "+49", name: "🇩🇪 +49 (DE)" },
-        { code: "+33", name: "🇫🇷 +33 (FR)" },
-        { code: "+86", name: "🇨🇳 +86 (CN)" },
-        { code: "+971", name: "🇦🇪 +971 (AE)" },
-        { code: "+966", name: "🇸🇦 +966 (SA)" },
-        { code: "+64", name: "🇳🇿 +64 (NZ)" },
-        { code: "+55", name: "🇧🇷 +55 (BR)" },
-        { code: "+27", name: "🇿🇦 +27 (ZA)" },
-        { code: "+7", name: "🇷🇺 +7 (RU)" },
-        { code: "+82", name: "🇰🇷 +82 (KR)" },
-        { code: "+65", name: "🇸🇬 +65 (SG)" },
-        { code: "+34", name: "🇪🇸 +34 (ES)" },
-        { code: "+39", name: "🇮🇹 +39 (IT)" },
-    ];
+
 
 
     const handleSubmit = async (e) => {
@@ -80,22 +61,27 @@ export default function Login() {
             }
         }
 
-        const cleanedPhone = phone.startsWith('0') ? phone.substring(1) : phone;
-        const username = loginMethod === "email" ? email.trim() : `${countryCode}${cleanedPhone}`;
+        const username = email.trim();
         const trimmedPassword = password.trim();
 
         try {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ username, password: trimmedPassword, isRegistering }),
+                body: JSON.stringify({ 
+                    username, 
+                    password: trimmedPassword, 
+                    isRegistering,
+                    firstName: isRegistering ? firstName.trim() : undefined,
+                    lastName: isRegistering ? lastName.trim() : undefined
+                }),
             });
 
             const data = await res.json();
 
             if (res.ok) {
                 if (isRegistering) {
-                    const methodText = username.includes('@') ? "confirmation email" : "SMS notification";
+                    const methodText = "confirmation email";
                     setSuccessMessage({
                         text: `Success! Your ${methodText} has been sent. You can now sign in.`,
                         url: data.previewUrl
@@ -144,60 +130,43 @@ export default function Login() {
 
                 <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 p-8 sm:p-10 rounded-[3rem] shadow-2xl">
                     <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Toggle Email / Phone */}
-                        <div className="flex p-1 bg-black/40 border border-white/5 rounded-2xl">
-                            <button
-                                type="button"
-                                onClick={() => handleMethodChange('email')}
-                                className={`flex-1 py-3 text-[10px] font-black tracking-widest uppercase rounded-xl transition-all ${loginMethod === 'email' ? 'bg-white/10 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                Email
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => handleMethodChange('phone')}
-                                className={`flex-1 py-3 text-[10px] font-black tracking-widest uppercase rounded-xl transition-all ${loginMethod === 'phone' ? 'bg-white/10 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                Phone Number
-                            </button>
-                        </div>
-
-                        {loginMethod === 'email' ? (
-                            <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
-                                <input
-                                    type="email"
-                                    placeholder="example@mail.com"
-                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
-                                    value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
-                                />
-                            </div>
-                        ) : (
-                            <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Mobile Number</label>
-                                <div className="flex gap-2">
-                                    <select
-                                        className="bg-black/60 border border-white/10 rounded-2xl px-3 sm:px-4 py-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold text-center [&>option]:bg-[#02000d] custom-scrollbar cursor-pointer outline-none hover:bg-black/80"
-                                        value={countryCode}
-                                        onChange={(e) => setCountryCode(e.target.value)}
-                                    >
-                                        {COUNTRIES.map((c) => (
-                                            <option key={c.code} value={c.code} className="py-4 font-bold">{c.name}</option>
-                                        ))}
-                                    </select>
+                        {isRegistering && (
+                            <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">First Name</label>
                                     <input
-                                        type="tel"
-                                        placeholder="000 000 0000"
-                                        className="flex-1 w-full min-w-0 bg-black/40 border border-white/5 rounded-2xl px-4 sm:px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
-                                        value={phone}
-                                        onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                                        required
+                                        type="text"
+                                        placeholder="John"
+                                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
+                                        value={firstName}
+                                        onChange={(e) => setFirstName(e.target.value)}
+                                        required={isRegistering}
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Last Name</label>
+                                    <input
+                                        type="text"
+                                        placeholder="Doe"
+                                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
+                                        value={lastName}
+                                        onChange={(e) => setLastName(e.target.value)}
+                                        required={isRegistering}
                                     />
                                 </div>
                             </div>
                         )}
+                        <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
+                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
+                            <input
+                                type="email"
+                                placeholder="example@mail.com"
+                                className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
+                            />
+                        </div>
 
                         <div className="space-y-2">
                             <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Password</label>

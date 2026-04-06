@@ -49,12 +49,30 @@ export default function Home() {
   const [toast, setToast] = useState(null); // { message, type }
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState("all"); // 'all' or 'specific'
+  const [userInfo, setUserInfo] = useState({ firstName: '', lastName: '', profilePic: '', email: '' });
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editProfileData, setEditProfileData] = useState({ firstName: '', lastName: '', email: '', password: '', profilePic: '' });
   const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
     fetchTasks();
+    loadUserInfo();
   }, []);
+
+  const loadUserInfo = () => {
+    try {
+      const cookies = document.cookie.split('; ');
+      const userInfoCookie = cookies.find(row => row.startsWith('user_info='));
+      if (userInfoCookie) {
+        const data = JSON.parse(decodeURIComponent(userInfoCookie.split('=')[1]));
+        setUserInfo(data);
+      }
+    } catch (e) {
+      console.error("Failed to load user info:", e);
+    }
+  };
 
   const fetchTasks = async () => {
     try {
@@ -94,10 +112,70 @@ export default function Home() {
     try {
       const res = await fetch("/api/auth/logout", { method: "POST" });
       if (res.ok) {
+        setMounted(false);
         router.push("/");
       }
     } catch (error) {
       console.error("Logout failed:", error);
+    }
+  };
+
+  const startProfileEdit = () => {
+    setIsEditingProfile(true);
+    setEditProfileData({
+      firstName: userInfo.firstName,
+      lastName: userInfo.lastName,
+      email: userInfo.email,
+      password: '',
+      profilePic: userInfo.profilePic || ''
+    });
+  };
+
+  const handleProfileImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        showToast("Image too large (max 2MB)", "error");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setEditProfileData(prev => ({ ...prev, profilePic: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleUpdateProfile = async (e) => {
+    e.preventDefault();
+    try {
+      setActionLoading(true);
+      const res = await fetch("/api/user/update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: editProfileData.firstName,
+          lastName: editProfileData.lastName,
+          username: editProfileData.email,
+          password: editProfileData.password || undefined,
+          profilePic: editProfileData.profilePic
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setUserInfo(data.user);
+        setIsEditingProfile(false);
+        showToast("Profile updated successfully", "success");
+      } else {
+        const err = await res.json();
+        showToast(err.error || "Update failed", "error");
+      }
+    } catch (error) {
+      console.error("Profile update failed:", error);
+      showToast("Critical update failure", "error");
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -258,21 +336,28 @@ export default function Home() {
         ))}
       </div>
 
-      {/* Top Floating Buttons */}
       <div className="fixed top-6 left-6 z-[100] pointer-events-auto">
-        <Link href="/" className="group flex items-center gap-3 text-slate-500 hover:text-white transition-all duration-500 bg-[#02000d]/60 backdrop-blur-3xl p-3 sm:p-4 rounded-2xl border border-white/5 shadow-2xl hover:border-indigo-500/30 hover:scale-110 active:scale-95">
-          <div className="h-1.5 w-1.5 rounded-full bg-indigo-500 animate-pulse-subtle"></div>
+        {/* Home Link */}
+        <Link href="/" className="group flex items-center justify-center p-3 sm:p-4 text-slate-500 hover:text-white transition-all duration-500 bg-[#02000d]/60 backdrop-blur-3xl rounded-2xl border border-white/5 shadow-2xl hover:border-indigo-500/30 hover:scale-110 active:scale-95" title="Home">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100 transition-all"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
         </Link>
       </div>
 
       <div className="fixed top-6 right-6 z-[100] pointer-events-auto">
+        {/* Profile Icon */}
         <button
-          onClick={handleLogout}
-          className="group flex items-center gap-3 text-rose-500/60 hover:text-rose-500 transition-all duration-500 bg-[#02000d]/60 backdrop-blur-3xl p-3 sm:p-4 rounded-2xl border border-white/5 shadow-2xl hover:border-rose-500/30 hover:scale-110 active:scale-95"
+          onClick={() => setShowProfileModal(true)}
+          className="group relative flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-white/[0.03] backdrop-blur-3xl border border-white/10 shadow-2xl hover:border-pink-500/30 hover:scale-110 active:scale-95 transition-all duration-500 overflow-hidden"
+          title="Profile"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100 transition-all"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-          <div className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse"></div>
+          {userInfo.profilePic ? (
+            <img src={userInfo.profilePic} alt="Profile" className="h-full w-full object-cover" />
+          ) : (
+            <div className="text-lg sm:text-xl font-black text-pink-500 italic uppercase">
+              {userInfo.firstName?.[0] || userInfo.email?.[0] || 'U'}{userInfo.lastName?.[0] || ''}
+            </div>
+          )}
+          <div className="absolute inset-0 bg-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
         </button>
       </div>
 
@@ -604,6 +689,150 @@ export default function Home() {
           </div>
         )
       }
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 backdrop-blur-3xl">
+          <div className="absolute inset-0 bg-black/60" onClick={() => setShowProfileModal(false)}></div>
+          <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[4rem] p-8 sm:p-12 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 duration-500 overflow-hidden custom-scrollbar max-h-[90vh] overflow-y-auto">
+            <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+
+            <button onClick={() => { setShowProfileModal(false); setIsEditingProfile(false); }} className="absolute top-6 right-6 p-2 text-slate-600 hover:text-white transition-colors z-20">
+              <XIcon />
+            </button>
+
+            {!isEditingProfile ? (
+              <div className="flex flex-col items-center text-center space-y-8 relative z-10">
+                <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-[2.5rem] bg-white/[0.03] border-2 border-white/10 flex items-center justify-center overflow-hidden shadow-2xl relative group">
+                  {userInfo.profilePic ? (
+                    <img src={userInfo.profilePic} alt="Profile Big" className="h-full w-full object-cover" />
+                  ) : (
+                    <span className="text-5xl font-black text-pink-500 italic uppercase">
+                      {userInfo.firstName?.[0] || 'U'}{userInfo.lastName?.[0] || ''}
+                    </span>
+                  )}
+                </div>
+
+                <div>
+                  <h3 className="text-4xl font-black text-white italic tracking-tighter uppercase mb-2">
+                    {userInfo.firstName} {userInfo.lastName}
+                  </h3>
+                  <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[11px]">
+                    {userInfo.email}
+                  </p>
+                </div>
+
+                <div className="w-full pt-8 border-t border-white/5 grid grid-cols-1 gap-4">
+                  <button
+                    onClick={startProfileEdit}
+                    className="w-full btn-premium-pink py-5 rounded-2xl text-base uppercase font-black tracking-widest flex items-center justify-center gap-3"
+                  >
+                    <EditIcon />
+                    Edit Profile
+                  </button>
+                  <button
+                    onClick={handleLogout}
+                    className="w-full btn-premium-glass py-5 rounded-2xl text-base uppercase font-black tracking-widest text-rose-500 border-rose-500/20 hover:bg-rose-500/10 flex items-center justify-center gap-3"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+                    Sign Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleUpdateProfile} className="flex flex-col items-center space-y-6 relative z-10 w-full animate-in slide-in-from-right-10 duration-500">
+                <div className="relative group mb-4">
+                  <div className="h-24 w-24 sm:h-28 sm:w-28 rounded-[2rem] bg-white/[0.03] border-2 border-white/10 flex items-center justify-center overflow-hidden shadow-2xl relative">
+                    {editProfileData.profilePic ? (
+                      <img src={editProfileData.profilePic} alt="Editing Profite" className="h-full w-full object-cover" />
+                    ) : (
+                      <span className="text-3xl font-black text-pink-500 italic uppercase">
+                        {editProfileData.firstName?.[0] || 'U'}{editProfileData.lastName?.[0] || ''}
+                      </span>
+                    )}
+                    <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white mb-1"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" x2="12" y1="3" y2="15" /></svg>
+                      <span className="text-[8px] font-black uppercase tracking-widest text-white">Upload</span>
+                      <input type="file" accept="image/*" className="hidden" onChange={handleProfileImageUpload} />
+                    </label>
+                  </div>
+                  {editProfileData.profilePic && (
+                    <button
+                      type="button"
+                      onClick={() => setEditProfileData(prev => ({ ...prev, profilePic: '' }))}
+                      className="absolute -top-1 -right-1 h-6 w-6 bg-rose-600 rounded-full flex items-center justify-center shadow-lg hover:scale-110 active:scale-95 transition-all"
+                    >
+                      <XIcon />
+                    </button>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4 w-full">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">First Name</label>
+                    <input
+                      type="text"
+                      className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                      value={editProfileData.firstName}
+                      onChange={(e) => setEditProfileData(prev => ({ ...prev, firstName: e.target.value }))}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Last Name</label>
+                    <input
+                      type="text"
+                      className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                      value={editProfileData.lastName}
+                      onChange={(e) => setEditProfileData(prev => ({ ...prev, lastName: e.target.value }))}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2 w-full">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email / Username</label>
+                  <input
+                    type="email"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                    value={editProfileData.email}
+                    onChange={(e) => setEditProfileData(prev => ({ ...prev, email: e.target.value }))}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2 w-full">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">New Password (Optional)</label>
+                  <input
+                    type="password"
+                    placeholder="Leave blank to keep current"
+                    className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                    value={editProfileData.password}
+                    onChange={(e) => setEditProfileData(prev => ({ ...prev, password: e.target.value }))}
+                  />
+                </div>
+
+                <div className="w-full pt-4 grid grid-cols-1 gap-3">
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="w-full btn-premium-pink py-4 rounded-xl text-base uppercase font-black tracking-widest disabled:opacity-50"
+                  >
+                    {actionLoading ? "SAVING..." : "SAVE CHANGES"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(false)}
+                    className="w-full text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-colors py-2"
+                  >
+                    Cancel Modification
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Delete Modal */}
       {

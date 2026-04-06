@@ -20,36 +20,49 @@ async function writeJsonDb(data) {
 const isPostgresConfigured = !!process.env.POSTGRES_URL;
 
 export async function findUser(username, password) {
+    const normalizedUsername = username.toLowerCase();
     if (isPostgresConfigured) {
-        const { rows } = await sql`SELECT * FROM users WHERE username = ${username} AND password = ${password}`;
+        const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE LOWER(username) = ${normalizedUsername} AND password = ${password}`;
         return rows[0] || null;
     } else {
         const db = await readJsonDb();
-        return Object.values(db.users).find(u => u.username === username && u.password === password) || null;
+        return Object.values(db.users).find(u => u.username.toLowerCase() === normalizedUsername && u.password === password) || null;
     }
 }
 
-export async function createUser(username, password) {
-    const id = Date.now().toString();
+export async function createUser(id, username, password, extraData = {}) {
     if (isPostgresConfigured) {
         try {
-            await sql`INSERT INTO users (id, username, password) VALUES (${id}, ${username}, ${password})`;
-            return { id, username };
+            const normalizedUsername = username.toLowerCase();
+            const firstName = extraData?.firstName || '';
+            const lastName = extraData?.lastName || '';
+            const profilePic = extraData?.profilePic || null;
+            await sql`INSERT INTO users (id, username, password, firstName, lastName, profilePic) VALUES (${id}, ${normalizedUsername}, ${password}, ${firstName}, ${lastName}, ${profilePic})`;
+            return { id, username: normalizedUsername, firstName, lastName, profilePic };
         } catch (error) {
             const msg = error.message.toLowerCase();
             if (msg.includes('unique constraint') || msg.includes('duplicate key') || msg.includes('already exists')) {
-                throw new Error('User already exists');
+                throw new Error('An account with this email already exists');
             }
             throw error;
         }
     } else {
         const db = await readJsonDb();
-        if (Object.values(db.users).some(u => u.username === username)) {
-            throw new Error('User already exists');
+        const normalizedUsername = username.toLowerCase();
+        if (Object.values(db.users).some(u => u.username.toLowerCase() === normalizedUsername)) {
+            throw new Error('An account with this email already exists');
         }
-        const newUser = { id, username, password };
+        if (!password) throw new Error('System: Critical password mismatch in creation');
+        const newUser = { 
+            id: id, 
+            username: normalizedUsername, 
+            password: password,
+            firstName: extraData?.firstName || '',
+            lastName: extraData?.lastName || '',
+            profilePic: extraData?.profilePic || null
+        };
         db.users[id] = newUser;
-        db.tasks[id] = [];
+        if (!db.tasks[id]) db.tasks[id] = [];
         await writeJsonDb(db);
         return newUser;
     }
@@ -101,21 +114,11 @@ export async function addTask(userId, task) {
 export async function updateTask(userId, taskId, updates) {
     if (isPostgresConfigured) {
         const { title, description, status, taskDate } = updates;
-        const queryParts = [];
-        const values = [];
-
-        if (title !== undefined) { queryParts.push(`title = $${values.length + 1}`); values.push(title); }
-        if (description !== undefined) { queryParts.push(`description = $${values.length + 1}`); values.push(description); }
-        if (status !== undefined) { queryParts.push(`status = $${values.length + 1}`); values.push(status); }
-        if (taskDate !== undefined) { queryParts.push(`taskdate = $${values.length + 1}`); values.push(taskDate); }
-
-        if (queryParts.length === 0) return;
-
-        values.push(userId, taskId);
-        const query = `UPDATE tasks SET ${queryParts.join(', ')} WHERE userid = $${values.length - 1} AND id = $${values.length}`;
         
-        // Manual query execution for dynamic updates
-        await sql.query(query, values);
+        if (title !== undefined) await sql`UPDATE tasks SET title = ${title} WHERE userid = ${userId} AND id = ${taskId}`;
+        if (description !== undefined) await sql`UPDATE tasks SET description = ${description} WHERE userid = ${userId} AND id = ${taskId}`;
+        if (status !== undefined) await sql`UPDATE tasks SET status = ${status} WHERE userid = ${userId} AND id = ${taskId}`;
+        if (taskDate !== undefined) await sql`UPDATE tasks SET taskdate = ${taskDate} WHERE userid = ${userId} AND id = ${taskId}`;
     } else {
         const db = await readJsonDb();
         const userTasks = db.tasks[userId] || [];
@@ -143,11 +146,11 @@ export async function deleteTasks(userId, taskIds) {
 // Admin Helpers
 export async function getAllUsers() {
     if (isPostgresConfigured) {
-        const { rows } = await sql`SELECT id, username FROM users ORDER BY id DESC`;
+        const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users ORDER BY id DESC`;
         return rows;
     } else {
         const db = await readJsonDb();
-        return Object.values(db.users).map(u => ({ id: u.id, username: u.username }));
+        return Object.values(db.users).map(u => ({ id: u.id, username: u.username, firstName: u.firstName, lastName: u.lastName, profilePic: u.profilePic }));
     }
 }
 
@@ -184,6 +187,30 @@ export async function deleteUser(userId) {
         delete db.users[userId];
         delete db.tasks[userId];
         await writeJsonDb(db);
+    }
+}
+
+export async function updateUser(userId, updates) {
+    if (isPostgresConfigured) {
+        const { username, password, firstName, lastName, profilePic } = updates;
+        
+        if (username !== undefined) await sql`UPDATE users SET username = ${username.toLowerCase()} WHERE id = ${userId}`;
+        if (password !== undefined) await sql`UPDATE users SET password = ${password} WHERE id = ${userId}`;
+        if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
+        if (lastName !== undefined) await sql`UPDATE users SET lastname = ${lastName} WHERE id = ${userId}`;
+        if (profilePic !== undefined) await sql`UPDATE users SET profilepic = ${profilePic} WHERE id = ${userId}`;
+        
+        const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE id = ${userId}`;
+        return rows[0];
+    } else {
+        const db = await readJsonDb();
+        if (db.users[userId]) {
+            if (updates.username) updates.username = updates.username.toLowerCase();
+            db.users[userId] = { ...db.users[userId], ...updates };
+            await writeJsonDb(db);
+            return db.users[userId];
+        }
+        return null;
     }
 }
 

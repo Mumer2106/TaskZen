@@ -213,8 +213,13 @@ export default function AdminPortal() {
                                       className={`flex items-center justify-between p-4 border rounded-2xl transition-all group/item cursor-pointer ${selectedUserId === user.id ? 'bg-blue-600/10 border-blue-500/40 shadow-inner' : 'bg-white/[0.02] border-white/5 hover:bg-blue-500/5 hover:border-blue-500/20'}`}
                                     >
                                         <div className="min-w-0 flex-1 mr-3">
-                                            <p className={`font-bold truncate text-base tracking-tight transition-colors ${selectedUserId === user.id ? 'text-blue-400' : 'text-slate-200 group-hover/item:text-blue-300'}`}>{user.username}</p>
-                                            <p className="text-[8px] font-mono text-slate-600 uppercase tracking-widest">#{user.id.slice(-6)}</p>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <p className={`font-black truncate text-sm tracking-tighter uppercase italic transition-colors ${selectedUserId === user.id ? 'text-blue-400' : 'text-slate-200 group-hover/item:text-blue-300'}`}>
+                                                    {user.firstName || 'User'} {user.lastName || ''}
+                                                </p>
+                                                <span className="text-[7px] text-slate-700 font-bold px-1.5 py-0.5 rounded-full bg-white/5 lowercase border border-white/5 opacity-40">#{user.id.slice(-4)}</span>
+                                            </div>
+                                            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">{user.username}</p>
                                         </div>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: user.id, type: 'user', label: user.username }); }}

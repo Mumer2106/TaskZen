@@ -9,9 +9,20 @@ async function setup() {
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
                 username TEXT UNIQUE,
-                password TEXT
+                password TEXT,
+                firstName TEXT,
+                lastName TEXT,
+                profilePic TEXT
             );
         `;
+
+        try {
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS firstName TEXT;`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS lastName TEXT;`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profilePic TEXT;`;
+        } catch (err) {
+            console.log('ALTER user table might have failed or columns already exist.');
+        }
 
         await sql`
             CREATE TABLE IF NOT EXISTS tasks (
