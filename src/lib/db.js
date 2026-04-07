@@ -42,11 +42,19 @@ export async function findUser(username, password) {
                 FROM users 
                 WHERE LOWER(username) = ${normalizedUsername} AND password = ${password}
             `;
-            return rows[0] || null;
+            if (!rows[0]) return null;
+            return {
+                ...rows[0],
+                firstName: rows[0].firstName || rows[0].firstname,
+                lastName: rows[0].lastName || rows[0].lastname,
+                profilePic: rows[0].profilePic || rows[0].profilepic,
+                userId: rows[0].id // Fallback for userId if id is used
+            };
         } catch (error) {
             console.error("Postgres findUser error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
+
     } else {
         const db = await readJsonDb();
         return Object.values(db.users).find(u => u.username.toLowerCase() === normalizedUsername && u.password === password) || null;
@@ -61,11 +69,19 @@ export async function findUserById(id) {
                 FROM users 
                 WHERE id = ${id}
             `;
-            return rows[0] || null;
+            if (!rows[0]) return null;
+            return {
+                ...rows[0],
+                firstName: rows[0].firstName || rows[0].firstname,
+                lastName: rows[0].lastName || rows[0].lastname,
+                profilePic: rows[0].profilePic || rows[0].profilepic,
+                userId: rows[0].id // Fallback for userId if id is used
+            };
         } catch (error) {
             console.error("Postgres findUserById error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
+
     } else {
         const db = await readJsonDb();
         return db.users[id] || null;
@@ -85,8 +101,16 @@ export async function createUser(id, username, password, extraData = {}) {
                 INSERT INTO users (id, username, password, firstname, lastname, profilepic) 
                 VALUES (${id}, ${normalizedUsername}, ${password}, ${firstName}, ${lastName}, ${profilePic})
             `;
-            return { id, username: normalizedUsername, firstName, lastName, profilePic };
+            return { 
+                id, 
+                username: normalizedUsername, 
+                firstName, 
+                lastName, 
+                profilePic,
+                userId: id // Fallback
+            };
         } catch (error) {
+
             const msg = error.message.toLowerCase();
             if (msg.includes('unique constraint') || msg.includes('duplicate key') || msg.includes('already exists')) {
                 throw new Error('An account with this email already exists');
@@ -123,11 +147,17 @@ export async function getTasksForUser(userId) {
                 SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
                 FROM tasks WHERE userid = ${userId} ORDER BY id DESC
             `;
-            return rows;
+            return rows.map(r => ({
+                ...r,
+                taskDate: r.taskDate || r.taskdate || 'Unscheduled',
+                createdAt: r.createdAt || r.createdat,
+                userId: r.userId || r.userid
+            }));
         } catch (error) {
             console.error("Postgres getTasksForUser error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
+
     } else {
         const db = await readJsonDb();
         return db.tasks[userId] || [];
@@ -220,11 +250,17 @@ export async function getAllUsers() {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users ORDER BY id DESC`;
-            return rows;
+            return rows.map(r => ({
+                ...r,
+                firstName: r.firstName || r.firstname,
+                lastName: r.lastName || r.lastname,
+                profilePic: r.profilePic || r.profilepic
+            }));
         } catch (error) {
             console.error("Postgres getAllUsers error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
+
     } else {
         const db = await readJsonDb();
         return Object.values(db.users).map(u => ({ id: u.id, username: u.username, firstName: u.firstName, lastName: u.lastName, profilePic: u.profilePic }));
@@ -235,21 +271,23 @@ export async function getAllTasks() {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT tasks.*, users.username as owner 
+                SELECT tasks.id, tasks.userid as "userId", tasks.title, tasks.description, tasks.status, tasks.createdat as "createdAt", tasks.taskdate as "taskDate", users.username as owner 
                 FROM tasks 
                 JOIN users ON tasks.userid = users.id 
                 ORDER BY tasks.id DESC
             `;
             return rows.map(r => ({
                 ...r,
-                taskDate: r.taskDate || r.taskdate || 'Unscheduled', // Handle case-insensitivity
-                createdAt: r.createdAt || r.createdat
+                taskDate: r.taskDate || r.taskdate || 'Unscheduled',
+                createdAt: r.createdAt || r.createdat,
+                userId: r.userId || r.userid
             }));
         } catch (error) {
             console.error("Postgres getAllTasks error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
     } else {
+
         const db = await readJsonDb();
         const allTasks = [];
         for (const [userId, userTasks] of Object.entries(db.tasks)) {
