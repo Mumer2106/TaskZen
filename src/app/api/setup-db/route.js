@@ -1,10 +1,11 @@
-require('dotenv').config({ path: '.env.local' });
-const { sql } = require('@vercel/postgres');
+import { NextResponse } from 'next/server';
+import { sql } from '@vercel/postgres';
 
-async function setup() {
+export async function GET() {
     try {
-        console.log('Setting up database tables...');
+        console.log('Initializing database tables from browser...');
 
+        // Create Users Table
         await sql`
             CREATE TABLE IF NOT EXISTS users (
                 id TEXT PRIMARY KEY,
@@ -16,14 +17,16 @@ async function setup() {
             );
         `;
 
+        // Check and add missing columns if they don't exist
         try {
             await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS firstname TEXT;`;
             await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS lastname TEXT;`;
             await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profilepic TEXT;`;
         } catch (err) {
-            console.log('ALTER user table might have failed or columns already exist.');
+             console.log('Columns might already exist');
         }
 
+        // Create Tasks Table
         await sql`
             CREATE TABLE IF NOT EXISTS tasks (
                 id TEXT PRIMARY KEY,
@@ -40,16 +43,20 @@ async function setup() {
         try {
             await sql`ALTER TABLE tasks ADD COLUMN IF NOT EXISTS taskdate TEXT;`;
         } catch (err) {
-            console.log('Column taskdate might already exist or ALTER not supported:', err.message);
+            console.log('Task column might already exist');
         }
 
-
-        console.log('Database tables created successfully.');
-        process.exit(0);
+        return NextResponse.json({ 
+            success: true, 
+            message: "Database schema initialized successfully.",
+            timestamp: new Date().toISOString()
+        });
     } catch (error) {
-        console.error('Error setting up database:', error);
-        process.exit(1);
+        console.error('Database Setup Error:', error);
+        return NextResponse.json({ 
+            success: false, 
+            error: error.message,
+            hint: "Ensure POSTGRES_URL is correctly set in your environment variables." 
+        }, { status: 500 });
     }
 }
-
-setup();

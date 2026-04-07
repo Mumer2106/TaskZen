@@ -132,6 +132,14 @@ export async function POST(request) {
         return response;
     } catch (error) {
         console.error("Global Auth Handler Exception:", error);
-        return NextResponse.json({ error: 'System: Internal server processing error.' }, { status: 500 });
+        
+        // Provide more detailed error message in 500 response to help debugging on live platform
+        // In a strict production environment, you might want to log this instead of returning it
+        const errorMessage = error.message || 'Unknown internal error';
+        return NextResponse.json({ 
+            error: `System: ${errorMessage}`,
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        }, { status: 500 });
     }
 }
+

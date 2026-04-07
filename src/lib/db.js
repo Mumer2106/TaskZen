@@ -9,21 +9,44 @@ async function readJsonDb() {
         const data = await fs.readFile(DB_PATH, 'utf8');
         return JSON.parse(data);
     } catch (error) {
+        // Ensure data directory exists if it doesn't
+        try {
+            await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
+        } catch (e) {}
         return { users: {}, tasks: {} };
     }
 }
 
 async function writeJsonDb(data) {
-    await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
+    try {
+        await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
+        await fs.writeFile(DB_PATH, JSON.stringify(data, null, 2));
+    } catch (error) {
+        console.error("Critical JSON DB Write Error:", error);
+        throw new Error("System: Failed to save data locally.");
+    }
 }
 
-const isPostgresConfigured = !!process.env.POSTGRES_URL;
+// Explicitly choose adapter via environment variable, or fallback to auto-detection
+const DB_ADAPTER = process.env.DB_ADAPTER || (process.env.POSTGRES_URL ? 'postgres' : 'json');
+const isPostgresConfigured = DB_ADAPTER === 'postgres';
+
+console.log(`[Database] Using adapter: ${DB_ADAPTER}`);
 
 export async function findUser(username, password) {
     const normalizedUsername = username.toLowerCase();
     if (isPostgresConfigured) {
-        const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE LOWER(username) = ${normalizedUsername} AND password = ${password}`;
-        return rows[0] || null;
+        try {
+            const { rows } = await sql`
+                SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
+                FROM users 
+                WHERE LOWER(username) = ${normalizedUsername} AND password = ${password}
+            `;
+            return rows[0] || null;
+        } catch (error) {
+            console.error("Postgres findUser error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         return Object.values(db.users).find(u => u.username.toLowerCase() === normalizedUsername && u.password === password) || null;
@@ -32,8 +55,17 @@ export async function findUser(username, password) {
 
 export async function findUserById(id) {
     if (isPostgresConfigured) {
-        const { rows } = await sql`SELECT id, username, "firstname" as "firstName", "lastname" as "lastName", "profilepic" as "profilePic" FROM users WHERE id = ${id}`;
-        return rows[0] || null;
+        try {
+            const { rows } = await sql`
+                SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
+                FROM users 
+                WHERE id = ${id}
+            `;
+            return rows[0] || null;
+        } catch (error) {
+            console.error("Postgres findUserById error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         return db.users[id] || null;
@@ -47,14 +79,20 @@ export async function createUser(id, username, password, extraData = {}) {
             const firstName = extraData?.firstName || '';
             const lastName = extraData?.lastName || '';
             const profilePic = extraData?.profilePic || null;
-            await sql`INSERT INTO users (id, username, password, firstName, lastName, profilePic) VALUES (${id}, ${normalizedUsername}, ${password}, ${firstName}, ${lastName}, ${profilePic})`;
+            
+            // Use strictly lowercase column names to match standard Postgres folding
+            await sql`
+                INSERT INTO users (id, username, password, firstname, lastname, profilepic) 
+                VALUES (${id}, ${normalizedUsername}, ${password}, ${firstName}, ${lastName}, ${profilePic})
+            `;
             return { id, username: normalizedUsername, firstName, lastName, profilePic };
         } catch (error) {
             const msg = error.message.toLowerCase();
             if (msg.includes('unique constraint') || msg.includes('duplicate key') || msg.includes('already exists')) {
                 throw new Error('An account with this email already exists');
             }
-            throw error;
+            console.error("Postgres createUser error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
         }
     } else {
         const db = await readJsonDb();
@@ -80,11 +118,16 @@ export async function createUser(id, username, password, extraData = {}) {
 
 export async function getTasksForUser(userId) {
     if (isPostgresConfigured) {
-        const { rows } = await sql`
-            SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
-            FROM tasks WHERE userid = ${userId} ORDER BY id DESC
-        `;
-        return rows;
+        try {
+            const { rows } = await sql`
+                SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
+                FROM tasks WHERE userid = ${userId} ORDER BY id DESC
+            `;
+            return rows;
+        } catch (error) {
+            console.error("Postgres getTasksForUser error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         return db.tasks[userId] || [];
@@ -93,12 +136,17 @@ export async function getTasksForUser(userId) {
 
 export async function saveTasksForUser(userId, tasks) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE userid = ${userId}`;
-        for (const task of tasks) {
-            await sql`
-                INSERT INTO tasks (id, userid, title, description, status, createdat, taskdate) 
-                VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
-            `;
+        try {
+            await sql`DELETE FROM tasks WHERE userid = ${userId}`;
+            for (const task of tasks) {
+                await sql`
+                    INSERT INTO tasks (id, userid, title, description, status, createdat, taskdate) 
+                    VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
+                `;
+            }
+        } catch (error) {
+            console.error("Postgres saveTasksForUser error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
         }
     } else {
         const db = await readJsonDb();
@@ -109,10 +157,15 @@ export async function saveTasksForUser(userId, tasks) {
 
 export async function addTask(userId, task) {
     if (isPostgresConfigured) {
-        await sql`
-            INSERT INTO tasks (id, userid, title, description, status, createdat, taskdate) 
-            VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
-        `;
+        try {
+            await sql`
+                INSERT INTO tasks (id, userid, title, description, status, createdat, taskdate) 
+                VALUES (${task.id}, ${userId}, ${task.title}, ${task.description}, ${task.status}, ${task.createdAt}, ${task.taskDate})
+            `;
+        } catch (error) {
+            console.error("Postgres addTask error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         if (!db.tasks[userId]) db.tasks[userId] = [];
@@ -123,12 +176,16 @@ export async function addTask(userId, task) {
 
 export async function updateTask(userId, taskId, updates) {
     if (isPostgresConfigured) {
-        const { title, description, status, taskDate } = updates;
-        
-        if (title !== undefined) await sql`UPDATE tasks SET title = ${title} WHERE userid = ${userId} AND id = ${taskId}`;
-        if (description !== undefined) await sql`UPDATE tasks SET description = ${description} WHERE userid = ${userId} AND id = ${taskId}`;
-        if (status !== undefined) await sql`UPDATE tasks SET status = ${status} WHERE userid = ${userId} AND id = ${taskId}`;
-        if (taskDate !== undefined) await sql`UPDATE tasks SET taskdate = ${taskDate} WHERE userid = ${userId} AND id = ${taskId}`;
+        try {
+            const { title, description, status, taskDate } = updates;
+            if (title !== undefined) await sql`UPDATE tasks SET title = ${title} WHERE userid = ${userId} AND id = ${taskId}`;
+            if (description !== undefined) await sql`UPDATE tasks SET description = ${description} WHERE userid = ${userId} AND id = ${taskId}`;
+            if (status !== undefined) await sql`UPDATE tasks SET status = ${status} WHERE userid = ${userId} AND id = ${taskId}`;
+            if (taskDate !== undefined) await sql`UPDATE tasks SET taskdate = ${taskDate} WHERE userid = ${userId} AND id = ${taskId}`;
+        } catch (error) {
+            console.error("Postgres updateTask error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         const userTasks = db.tasks[userId] || [];
@@ -142,8 +199,13 @@ export async function updateTask(userId, taskId, updates) {
 
 export async function deleteTasks(userId, taskIds) {
     if (isPostgresConfigured) {
-        if (taskIds.length === 0) return;
-        await sql`DELETE FROM tasks WHERE userid = ${userId} AND id = ANY(${taskIds})`;
+        try {
+            if (taskIds.length === 0) return;
+            await sql`DELETE FROM tasks WHERE userid = ${userId} AND id = ANY(${taskIds})`;
+        } catch (error) {
+            console.error("Postgres deleteTasks error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         if (db.tasks[userId]) {
@@ -156,8 +218,13 @@ export async function deleteTasks(userId, taskIds) {
 // Admin Helpers
 export async function getAllUsers() {
     if (isPostgresConfigured) {
-        const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users ORDER BY id DESC`;
-        return rows;
+        try {
+            const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users ORDER BY id DESC`;
+            return rows;
+        } catch (error) {
+            console.error("Postgres getAllUsers error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         return Object.values(db.users).map(u => ({ id: u.id, username: u.username, firstName: u.firstName, lastName: u.lastName, profilePic: u.profilePic }));
@@ -166,17 +233,22 @@ export async function getAllUsers() {
 
 export async function getAllTasks() {
     if (isPostgresConfigured) {
-        const { rows } = await sql`
-            SELECT tasks.*, users.username as owner 
-            FROM tasks 
-            JOIN users ON tasks.userid = users.id 
-            ORDER BY tasks.id DESC
-        `;
-        return rows.map(r => ({
-            ...r,
-            taskDate: r.taskDate || r.taskdate || 'Unscheduled', // Handle case-insensitivity
-            createdAt: r.createdAt || r.createdat
-        }));
+        try {
+            const { rows } = await sql`
+                SELECT tasks.*, users.username as owner 
+                FROM tasks 
+                JOIN users ON tasks.userid = users.id 
+                ORDER BY tasks.id DESC
+            `;
+            return rows.map(r => ({
+                ...r,
+                taskDate: r.taskDate || r.taskdate || 'Unscheduled', // Handle case-insensitivity
+                createdAt: r.createdAt || r.createdat
+            }));
+        } catch (error) {
+            console.error("Postgres getAllTasks error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         const allTasks = [];
@@ -190,8 +262,13 @@ export async function getAllTasks() {
 
 export async function deleteUser(userId) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE userid = ${userId}`;
-        await sql`DELETE FROM users WHERE id = ${userId}`;
+        try {
+            await sql`DELETE FROM tasks WHERE userid = ${userId}`;
+            await sql`DELETE FROM users WHERE id = ${userId}`;
+        } catch (error) {
+            console.error("Postgres deleteUser error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         delete db.users[userId];
@@ -203,9 +280,7 @@ export async function deleteUser(userId) {
 export async function updateUser(userId, updates) {
     if (isPostgresConfigured) {
         const { username, password, firstName, lastName, profilePic } = updates;
-        
         try {
-            // Group updates for atomicity and consistency
             if (username !== undefined) await sql`UPDATE users SET username = ${username.toLowerCase()} WHERE id = ${userId}`;
             if (password !== undefined) await sql`UPDATE users SET password = ${password} WHERE id = ${userId}`;
             if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
@@ -215,13 +290,12 @@ export async function updateUser(userId, updates) {
             const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE id = ${userId}`;
             return rows[0];
         } catch (error) {
-            console.error("Critical Postgres Update Error:", error);
-            throw error;
+            console.error("Critical Postgres Update Error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
         }
     } else {
         const db = await readJsonDb();
         if (db.users[userId]) {
-            // Only update fields that are actually provided to avoid deleting existing data like passwords
             const filteredUpdates = {};
             Object.keys(updates).forEach(key => {
                 if (updates[key] !== undefined) {
@@ -243,7 +317,12 @@ export async function updateUser(userId, updates) {
 
 export async function deleteTaskAdmin(taskId) {
     if (isPostgresConfigured) {
-        await sql`DELETE FROM tasks WHERE id = ${taskId}`;
+        try {
+            await sql`DELETE FROM tasks WHERE id = ${taskId}`;
+        } catch (error) {
+            console.error("Postgres deleteTaskAdmin error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
     } else {
         const db = await readJsonDb();
         for (const userId in db.tasks) {
@@ -252,3 +331,4 @@ export async function deleteTaskAdmin(taskId) {
         await writeJsonDb(db);
     }
 }
+
