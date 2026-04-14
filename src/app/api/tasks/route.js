@@ -23,6 +23,16 @@ export async function POST(request) {
     }
 
     const { title, description, taskDate } = await request.json();
+    
+    if (!title || title.trim().length === 0) {
+        return NextResponse.json({ error: 'Task title is required' }, { status: 400 });
+    }
+    if (title.length > 100) {
+        return NextResponse.json({ error: 'Task title is too long (max 100 chars)' }, { status: 400 });
+    }
+    if (description && description.length > 1000) {
+        return NextResponse.json({ error: 'Description is too long (max 1000 chars)' }, { status: 400 });
+    }
 
     const today = new Date().toISOString().split('T')[0];
     const finalTaskDate = taskDate || today;

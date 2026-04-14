@@ -59,6 +59,13 @@ export default function Home() {
     setMounted(true);
     fetchTasks();
     loadUserInfo();
+
+    // Auto-refresh tasks every 10 seconds to keep in sync with admin actions
+    const timer = setInterval(() => {
+      fetchTasks(true);
+    }, 10000);
+
+    return () => clearInterval(timer);
   }, []);
 
   const loadUserInfo = () => {
@@ -72,9 +79,15 @@ export default function Home() {
           
           // Fetch full profile (including picture) separately since it's too big for cookie
           fetch("/api/user/me")
-            .then(res => res.json())
+            .then(res => {
+              if (res.status === 404 || res.status === 401) {
+                handleLogout();
+                return null;
+              }
+              return res.json();
+            })
             .then(fullData => {
-              if (!fullData.error) setUserInfo(fullData);
+              if (fullData && !fullData.error) setUserInfo(fullData);
             }).catch(console.error);
             
         } catch (e) {
@@ -86,13 +99,13 @@ export default function Home() {
     }
   };
 
-  const fetchTasks = async () => {
+  const fetchTasks = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent && tasks.length === 0) setLoading(true);
       const res = await fetch('/api/tasks');
 
       if (res.status === 401) {
-        router.push("/login");
+        handleLogout();
         return;
       }
 
@@ -803,7 +816,7 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email / Username</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email Stream</label>
                   <input
                     type="email"
                     className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
@@ -814,30 +827,30 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">New Password (Optional)</label>
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Security Key (Leave blank to keep current)</label>
                   <input
                     type="password"
-                    placeholder="Leave blank to keep current"
+                    placeholder="••••••••"
                     className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
                     value={editProfileData.password}
                     onChange={(e) => setEditProfileData(prev => ({ ...prev, password: e.target.value }))}
                   />
                 </div>
 
-                <div className="w-full pt-4 grid grid-cols-1 gap-3">
+                <div className="pt-4 grid grid-cols-2 gap-4 w-full">
                   <button
                     type="submit"
+                    className="btn-premium-pink py-4 rounded-xl text-sm font-black tracking-widest uppercase italic"
                     disabled={actionLoading}
-                    className="w-full btn-premium-pink py-4 rounded-xl text-base uppercase font-black tracking-widest disabled:opacity-50"
                   >
-                    {actionLoading ? "SAVING..." : "SAVE CHANGES"}
+                    {actionLoading ? 'Syncing...' : 'Update Node'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEditingProfile(false)}
-                    className="w-full text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-white transition-colors py-2"
+                    className="btn-premium-glass py-4 rounded-xl text-sm font-black tracking-widest uppercase italic"
                   >
-                    Cancel Modification
+                    Abort
                   </button>
                 </div>
               </form>
@@ -846,94 +859,37 @@ export default function Home() {
         </div>
       )}
 
-      {/* Delete Modal */}
-      {
-        isDeleteModalOpen && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setIsDeleteModalOpen(false)}></div>
-            <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[5rem] p-8 sm:p-16 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 text-center overflow-hidden">
-              {/* Pulse Effect */}
-              <div className="absolute inset-0 bg-rose-500/5 animate-pulse pointer-events-none"></div>
-
-              <div className="h-20 w-20 sm:h-32 sm:w-32 rounded-[2.5rem] bg-rose-500/10 flex items-center justify-center mx-auto mb-8 border border-rose-500/20 text-rose-500 relative z-10 shadow-[0_0_50px_rgba(244,63,94,0.2)]">
-                <TrashIcon />
-              </div>
-              <h3 className="text-3xl sm:text-5xl font-black text-rose-500 mb-4 tracking-tighter uppercase italic relative z-10">SYSTEM_PURGE</h3>
-              <p className="text-slate-500 mb-10 text-lg font-light leading-relaxed px-2 relative z-10">
-                Initiating permanent deletion protocol for <span className="text-rose-500 font-black tracking-widest">{selectedTasks.length} NODES</span>. This operation is irreversible. Confirm execution?
-              </p>
-              <div className="grid grid-cols-1 gap-4 relative z-10">
-                <button onClick={deleteMultiple} className="btn-premium-rose py-5 sm:py-8 rounded-2xl sm:rounded-[2rem] text-xl font-black uppercase italic tracking-[0.2em]">EXECUTE PURGE</button>
-                <button onClick={() => setIsDeleteModalOpen(false)} className="text-slate-600 font-black tracking-[0.4em] text-[10px] uppercase hover:text-white transition-all py-4 hover:scale-110 active:scale-95">ABORT OPERATION</button>
-              </div>
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 backdrop-blur-3xl animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-black/80" onClick={() => setIsDeleteModalOpen(false)}></div>
+          <div className="bg-[#050510] border border-rose-500/20 rounded-[3rem] p-10 sm:p-14 max-w-sm w-full text-center relative z-10 animate-in zoom-in-95 duration-500 shadow-[0_0_100px_rgba(244,63,94,0.2)]">
+            <div className="h-20 w-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-8 border border-rose-500/20">
+              <TrashIcon />
+            </div>
+            <h3 className="text-3xl font-black text-white italic uppercase tracking-tighter mb-4">Purge Nodes?</h3>
+            <p className="text-slate-500 font-medium mb-10 leading-relaxed uppercase text-[10px] tracking-widest">
+              This action will permanently delete {selectedTasks.length} allocated tasks from the system registry.
+            </p>
+            <div className="grid grid-cols-1 gap-4">
+              <button onClick={deleteMultiple} className="btn-premium-rose py-4 rounded-2xl text-sm font-black tracking-widest">
+                CONFIRM PURGE
+              </button>
+              <button onClick={() => setIsDeleteModalOpen(false)} className="btn-premium-glass py-4 rounded-2xl text-sm font-black tracking-widest">
+                ABORT
+              </button>
             </div>
           </div>
-        )
-      }
-
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 sm:px-10 py-3 sm:py-5 rounded-full sm:rounded-[2rem] border backdrop-blur-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] flex items-center gap-3 sm:gap-6 animate-in slide-in-from-top-10 fade-in duration-700 min-w-[280px] sm:min-w-[320px] justify-center text-center whitespace-nowrap overflow-hidden ${toast.type === 'error' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500 shadow-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 shadow-emerald-500/20'}`}>
-          <div className="absolute inset-0 rounded-full sm:rounded-[2rem] overflow-hidden opacity-20">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent -translate-x-full animate-shimmer"></div>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className={`h-1.5 sm:h-2.5 w-1.5 sm:w-2.5 rounded-full animate-ping absolute ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
-            <span className={`h-1.5 sm:h-2.5 w-1.5 sm:w-2.5 rounded-full relative ${toast.type === 'error' ? 'bg-rose-500' : 'bg-emerald-500'}`}></span>
-          </div>
-          <span className="text-[8px] sm:text-xs font-black uppercase tracking-[0.2em] sm:tracking-[0.4em] italic drop-shadow-sm truncate">{toast.message}</span>
         </div>
       )}
 
-      <style jsx global>{`
-        @keyframes float-slow {
-          0%, 100% { transform: translate(0, 0); }
-          33% { transform: translate(30px, -50px); }
-          66% { transform: translate(-20px, 20px); }
-        }
-        @keyframes shimmer {
-          100% { transform: translateX(100%); }
-        }
-        @keyframes slideIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-        @media (max-width: 480px) {
-          .xs\:inline { display: inline; }
-        }
-        input[type="date"]::-webkit-calendar-picker-indicator {
-          background: transparent;
-          bottom: 0;
-          color: transparent;
-          cursor: pointer;
-          height: auto;
-          left: 0;
-          position: absolute;
-          right: 0;
-          top: 0;
-          width: auto;
-        }
-        .animate-glow {
-          box-shadow: 0 0 20px rgba(255, 45, 149, 0.1);
-          transition: box-shadow 0.3s ease;
-        }
-        .animate-glow:focus-within {
-          box-shadow: 0 0 30px rgba(255, 45, 149, 0.3);
-        }
-      `}</style>
-    </main >
+      {/* Custom Toast */}
+      {toast && (
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] px-8 py-4 rounded-2xl backdrop-blur-3xl border shadow-2xl animate-in slide-in-from-bottom-10 duration-500 flex items-center gap-4 ${toast.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-500"}`}>
+          <div className={`h-2 w-2 rounded-full animate-pulse ${toast.type === "success" ? "bg-emerald-400" : "bg-rose-400"}`}></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] italic pr-2">{toast.message}</span>
+        </div>
+      )}
+    </main>
   );
 }

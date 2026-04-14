@@ -14,13 +14,14 @@ export async function PATCH(request) {
         const body = await request.json();
         const { username, password, firstName, lastName, profilePic } = body;
 
-        const updatedUser = await updateUser(userId, {
-            username,
-            password,
-            firstName,
-            lastName,
-            profilePic
-        });
+        const updates = {};
+        if (username !== undefined) updates.username = username.trim().toLowerCase();
+        if (password !== undefined) updates.password = password.trim();
+        if (firstName !== undefined) updates.firstName = firstName.trim();
+        if (lastName !== undefined) updates.lastName = lastName.trim();
+        if (profilePic !== undefined) updates.profilePic = profilePic;
+
+        const updatedUser = await updateUser(userId, updates);
 
         if (!updatedUser) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });

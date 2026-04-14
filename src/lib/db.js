@@ -342,7 +342,11 @@ export async function updateUser(userId, updates) {
             });
 
             if (filteredUpdates.username) {
-                filteredUpdates.username = filteredUpdates.username.toLowerCase();
+                const newUsername = filteredUpdates.username.toLowerCase();
+                if (Object.values(db.users).some(u => u.id !== userId && u.username.toLowerCase() === newUsername)) {
+                    throw new Error('This email is already in use by another account');
+                }
+                filteredUpdates.username = newUsername;
             }
 
             db.users[userId] = { ...db.users[userId], ...filteredUpdates };

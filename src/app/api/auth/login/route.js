@@ -68,6 +68,8 @@ export async function POST(request) {
         const { username: rawUsername, password: rawPassword, isRegistering, firstName, lastName } = await request.json();
         const username = (rawUsername || '').trim();
         const password = (rawPassword || '').trim();
+        const cleanFirstName = (firstName || '').trim();
+        const cleanLastName = (lastName || '').trim();
 
         if (!username || !password) {
             return NextResponse.json({ error: 'Username and password are required' }, { status: 400 });
@@ -78,7 +80,7 @@ export async function POST(request) {
         if (isRegistering) {
             try {
                 const id = Date.now().toString();
-                user = await createUser(id, username, password, { firstName, lastName });
+                user = await createUser(id, username, password, { firstName: cleanFirstName, lastName: cleanLastName });
                 notificationResult = await sendWelcomeNotification(username, firstName || 'there');
             } catch (error) {
                 console.error("User creation error:", error.message);
@@ -117,17 +119,19 @@ export async function POST(request) {
         };
 
         // Set secure auth session (HttpOnly)
-        response.cookies.set('auth_session', user.id, {
-            ...cookieOptions,
-            httpOnly: true,
-        });
+        if (!isRegistering) {
+            response.cookies.set('auth_session', user.id, {
+                ...cookieOptions,
+                httpOnly: true,
+            });
 
-        // Set display info (Not HttpOnly) - No profilePic here to avoid size limits
-        response.cookies.set('user_info', JSON.stringify({
-            firstName: user.firstName || '',
-            lastName: user.lastName || '',
-            email: user.username || ''
-        }), cookieOptions);
+            // Set display info (Not HttpOnly) - No profilePic here to avoid size limits
+            response.cookies.set('user_info', JSON.stringify({
+                firstName: user.firstName || '',
+                lastName: user.lastName || '',
+                email: user.username || ''
+            }), cookieOptions);
+        }
 
         return response;
     } catch (error) {
