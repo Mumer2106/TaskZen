@@ -82,7 +82,7 @@ export default function Home() {
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 0); // Delay removed for immediate response as requested
+    }, 2500); // Re-implemented 2.5s delay for optimized searching
 
     return () => clearTimeout(handler);
   }, [search]);
