@@ -140,13 +140,26 @@ export async function createUser(id, username, password, extraData = {}) {
     }
 }
 
-export async function getTasksForUser(userId) {
+export async function getTasksForUser(userId, search = '') {
     if (isPostgresConfigured) {
         try {
-            const { rows } = await sql`
-                SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
-                FROM tasks WHERE userid = ${userId} ORDER BY id DESC
-            `;
+            let rows;
+            if (search) {
+                const searchTerm = `%${search.toLowerCase()}%`;
+                const result = await sql`
+                    SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
+                    FROM tasks 
+                    WHERE userid = ${userId} AND (LOWER(title) LIKE ${searchTerm} OR LOWER(description) LIKE ${searchTerm})
+                    ORDER BY id DESC
+                `;
+                rows = result.rows;
+            } else {
+                const result = await sql`
+                    SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
+                    FROM tasks WHERE userid = ${userId} ORDER BY id DESC
+                `;
+                rows = result.rows;
+            }
             return rows.map(r => ({
                 ...r,
                 taskDate: r.taskDate || r.taskdate || 'Unscheduled',
@@ -160,7 +173,15 @@ export async function getTasksForUser(userId) {
 
     } else {
         const db = await readJsonDb();
-        return db.tasks[userId] || [];
+        let tasks = db.tasks[userId] || [];
+        if (search) {
+            const query = search.toLowerCase();
+            tasks = tasks.filter(t => 
+                (t.title && t.title.toLowerCase().includes(query)) || 
+                (t.description && t.description.toLowerCase().includes(query))
+            );
+        }
+        return tasks;
     }
 }
 

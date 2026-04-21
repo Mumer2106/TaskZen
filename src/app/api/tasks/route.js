@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { getTasksForUser, addTask, deleteTasks } from '@/lib/db';
 import { cookies } from 'next/headers';
 
-export async function GET() {
+export async function GET(request) {
+    const { searchParams } = new URL(request.url);
+    const search = searchParams.get('search') || '';
+
     const cookieStore = await cookies();
     const userId = cookieStore.get('auth_session')?.value;
 
@@ -10,7 +13,7 @@ export async function GET() {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const tasks = await getTasksForUser(userId);
+    const tasks = await getTasksForUser(userId, search);
     return NextResponse.json(tasks);
 }
 

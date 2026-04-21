@@ -101,7 +101,7 @@ export default function AdminPortal() {
                     <h1 className="text-4xl sm:text-5xl font-black mb-2 tracking-tighter text-white uppercase italic drop-shadow-2xl">
                         Vault <span className="text-rose-500">Access</span>
                     </h1>
-                    <p className="text-slate-500 mb-10 font-black uppercase tracking-[0.4em] text-[10px]">Secure Gateway Protocol — v4.0</p>
+                    <p className="text-slate-300 mb-10 font-black uppercase tracking-[0.4em] text-[10px]">Secure Gateway Protocol — v4.0</p>
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="relative group">
@@ -129,7 +129,7 @@ export default function AdminPortal() {
                             <div className="absolute inset-0 bg-gradient-to-r from-rose-600 to-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                         </button>
                     </form>
-                    <Link href="/" className="inline-block mt-12 text-slate-700 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors border-b border-transparent hover:border-white/20 pb-1">
+                    <Link href="/" className="inline-block mt-12 text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors border-b border-transparent hover:border-white/20 pb-1">
                         Return to Signal
                     </Link>
                 </div>
@@ -158,7 +158,7 @@ export default function AdminPortal() {
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
                                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                             </span>
-                            <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">Live Feed — v2.4.0</p>
+                            <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.3em]">Live Feed — v2.4.0</p>
                         </div>
                     </div>
                     <div className="flex gap-3 w-full sm:w-auto">
@@ -183,7 +183,7 @@ export default function AdminPortal() {
                     ].map((stat, i) => (
                         <div key={i} className={`relative group bg-white/[0.03] border border-white/10 rounded-2xl lg:rounded-[2rem] p-5 lg:p-8 transition-all hover:bg-white/[0.05] hover:-translate-y-1 shadow-2xl ${stat.glow}`}>
                             <div className={`mb-3 ${stat.color} opacity-50`}>{stat.icon}</div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 mb-1">{stat.label}</p>
+                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-1">{stat.label}</p>
                             <p className={`text-3xl lg:text-5xl font-black tracking-tighter ${stat.color}`}>{stat.value}</p>
                         </div>
                     ))}
@@ -237,7 +237,7 @@ export default function AdminPortal() {
                                                 </p>
                                                 <span className="text-[7px] text-slate-700 font-bold px-1.5 py-0.5 rounded-full bg-white/5 lowercase border border-white/5 opacity-40">#{user.id.slice(-4)}</span>
                                             </div>
-                                            <p className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">{user.username}</p>
+                                            <p className="text-[9px] font-mono text-slate-300 uppercase tracking-widest">{user.username}</p>
                                         </div>
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: user.id, type: 'user', label: user.username }); }}
@@ -274,8 +274,8 @@ export default function AdminPortal() {
                                                 <div className="w-20 h-20 bg-purple-500/10 rounded-[2rem] flex items-center justify-center mb-6 border border-purple-500/20 text-purple-500 opacity-40">
                                                   <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                                                 </div>
-                                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-300">No Stream Data</h3>
-                                                <p className="text-slate-600 text-xs font-bold uppercase tracking-widest mt-2">Zero packets detected for this node</p>
+                                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-200">No Stream Data</h3>
+                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Zero packets detected for this node</p>
                                             </div>
                                         );
                                     }
@@ -300,7 +300,7 @@ export default function AdminPortal() {
                                                     {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
                                                         date === "Unscheduled" ? "Buffer" : date}
                                                 </span>
-                                                <span className="text-[8px] font-mono text-slate-600">{dateTasks.length} NODES</span>
+                                                <span className="text-[8px] font-mono text-slate-400">{dateTasks.length} NODES</span>
                                             </div>
                                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                 {dateTasks.map((task) => (
@@ -312,7 +312,7 @@ export default function AdminPortal() {
                                                                     <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
                                                                         {task.status}
                                                                     </span>
-                                                                    <span className="text-[7px] font-bold text-slate-700 uppercase">{task.owner || 'Unknown'}</span>
+                                                                    <span className="text-[7px] font-bold text-slate-400 uppercase">{task.owner || 'Unknown'}</span>
                                                                 </div>
                                                             </div>
                                                             <button
@@ -322,7 +322,7 @@ export default function AdminPortal() {
                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                                                             </button>
                                                         </div>
-                                                        <p className="text-[11px] text-slate-500 font-medium line-clamp-2 italic">"{task.description || "No metadata recorded."}"</p>
+                                                        <p className="text-[11px] text-slate-300 font-medium line-clamp-2 italic">"{task.description || "No metadata recorded."}"</p>
                                                     </div>
                                                 ))}
                                             </div>
@@ -344,7 +344,7 @@ export default function AdminPortal() {
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-500"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="m4.93 4.93 14.14 14.14" /></svg>
                         </div>
                         <h3 className="text-3xl font-black text-white mb-3 tracking-tighter uppercase italic">Confirm Purge</h3>
-                        <p className="text-slate-500 mb-8 text-sm leading-relaxed font-medium italic">
+                        <p className="text-slate-300 mb-8 text-sm leading-relaxed font-bold italic">
                             Deleting <span className="text-rose-500">"{pendingDelete.label}"</span> will permanently remove it from the secure ledger.
                         </p>
                         <div className="grid grid-cols-2 gap-4">

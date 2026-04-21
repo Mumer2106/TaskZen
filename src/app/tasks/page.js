@@ -50,23 +50,48 @@ export default function Home() {
   const [filterDate, setFilterDate] = useState(new Date().toISOString().split('T')[0]);
   const [viewMode, setViewMode] = useState("all"); // 'all' or 'specific'
   const [userInfo, setUserInfo] = useState({ firstName: '', lastName: '', profilePic: '', email: '' });
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editProfileData, setEditProfileData] = useState({ firstName: '', lastName: '', email: '', password: '', profilePic: '' });
   const router = useRouter();
 
+  const handleResetSearch = () => {
+    setSearch("");
+    setDebouncedSearch("");
+    fetchTasks(true, "");
+  };
+
   useEffect(() => {
     setMounted(true);
     fetchTasks();
     loadUserInfo();
+  }, []);
 
+  useEffect(() => {
     // Auto-refresh tasks every 10 seconds to keep in sync with admin actions
+    // This now respects the current debounced search term
     const timer = setInterval(() => {
-      fetchTasks(true);
+      fetchTasks(true, debouncedSearch);
     }, 10000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [debouncedSearch]);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 0); // Delay removed for immediate response as requested
+
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  useEffect(() => {
+    if (mounted) {
+      fetchTasks(true, debouncedSearch);
+    }
+  }, [debouncedSearch]);
 
   const loadUserInfo = () => {
     try {
@@ -99,10 +124,10 @@ export default function Home() {
     }
   };
 
-  const fetchTasks = async (silent = false) => {
+  const fetchTasks = async (silent = false, query = debouncedSearch) => {
     try {
       if (!silent && tasks.length === 0) setLoading(true);
-      const res = await fetch('/api/tasks');
+      const res = await fetch(`/api/tasks${query ? `?search=${encodeURIComponent(query)}` : ''}`);
 
       if (res.status === 401) {
         handleLogout();
@@ -439,7 +464,7 @@ export default function Home() {
                     placeholder="Enter objective..."
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all text-lg font-bold shadow-inner"
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all text-lg font-bold shadow-inner"
                     required
                     disabled={actionLoading}
                   />
@@ -450,7 +475,7 @@ export default function Home() {
                     placeholder="Record additional information..."
                     value={newTaskDesc}
                     onChange={(e) => setNewTaskDesc(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all min-h-[120px] resize-none pb-4 text-base italic leading-relaxed shadow-inner"
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all min-h-[120px] resize-none pb-4 text-base italic leading-relaxed shadow-inner"
                     disabled={actionLoading}
                   />
                 </div>
@@ -522,8 +547,26 @@ export default function Home() {
             </div>
           </div>
  
-          <div className="px-1 mb-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 mb-2">Protocol_Stream // All active nodes</p>
+          <div className="px-1 mb-8 w-full">
+            <div className="relative w-full group">
+              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              </div>
+              <input 
+                type="text" 
+                placeholder="SEARCH ALL PROTOCOLS..." 
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-black/40 border border-white/5 rounded-2xl pl-14 pr-14 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all shadow-inner"
+              />
+              <button 
+                onClick={handleResetSearch}
+                title="Refresh Registry"
+                className="absolute inset-y-0 right-4 flex items-center text-slate-500 hover:text-pink-500 transition-all hover:scale-110 active:scale-95"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={search ? "animate-spin-once" : ""}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 bg-transparent overflow-hidden flex flex-col min-h-0">
@@ -538,8 +581,8 @@ export default function Home() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-20"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
                 </div>
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-500 uppercase tracking-tighter mb-2">Registry Empty</h3>
-                  <p className="text-slate-700 font-medium text-base sm:text-lg">No nodes found in the global stream.</p>
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-300 uppercase tracking-tighter mb-2">Registry Empty</h3>
+                  <p className="text-slate-500 font-medium text-base sm:text-lg">No nodes found in the global stream.</p>
                 </div>
               </div>
             ) : (
@@ -560,9 +603,9 @@ export default function Home() {
                     })
                     .map(([date, dateTasks]) => (
                       <div key={date} className="space-y-4">
-                        <div className="sticky top-0 z-20 bg-[#02000d]/80 backdrop-blur-md py-2 border-b border-pink-500/20 flex items-center gap-3">
-                          <span className="h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(255,45,149,0.5)]"></span>
-                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-pink-500/80">
+                        <div className="sticky top-0 z-20 bg-[#02000d] py-3 border-b border-pink-500/30 flex items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
+                          <span className="h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
+                          <span className="text-[11px] font-black uppercase tracking-[0.4em] text-pink-500">
                             {date === new Date().toISOString().split('T')[0] ? "Today" :
                               date === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "Tomorrow" :
                                 new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -613,10 +656,10 @@ export default function Home() {
                               </div>
 
                               <div className="flex flex-col mb-8 relative z-10">
-                                <div className={`text-2xl font-black transition-all duration-700 break-words tracking-tighter mb-2 leading-[0.9] uppercase italic ${task.status === "Completed" ? "text-slate-600 line-through" : "text-white"}`}>
+                                <div className={`text-2xl font-black transition-all duration-700 break-words tracking-tighter mb-2 leading-[0.9] uppercase italic ${task.status === "Completed" ? "text-slate-400 line-through" : "text-white"}`}>
                                   {task.title}
                                 </div>
-                                <div className={`text-sm transition-all duration-700 break-words font-light leading-relaxed italic line-clamp-2 pr-4 ${task.status === "Completed" ? "text-slate-800" : "text-slate-400"}`}>
+                                <div className={`text-sm transition-all duration-700 break-words font-light leading-relaxed italic line-clamp-2 pr-4 ${task.status === "Completed" ? "text-slate-500" : "text-slate-300"}`}>
                                   {task.description || "System: Default protocol active. No additional metadata recorded."}
                                 </div>
                               </div>
@@ -627,7 +670,7 @@ export default function Home() {
                                     <div className="w-2 h-2 rounded-full bg-pink-500/40"></div>
                                     <div className="w-2 h-2 rounded-full bg-indigo-500/40"></div>
                                   </div>
-                                  <span className="text-[10px] font-black text-slate-800 uppercase tracking-[0.3em]">P_v2</span>
+                                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">P_v2</span>
                                 </div>
                                 <div className="flex items-center gap-2">
                                   <button onClick={() => setViewTask(task)} title="View Info" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-white border border-white/5 hover:scale-110 active:scale-95">
