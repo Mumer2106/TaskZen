@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -56,8 +56,13 @@ export default function Home() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editProfileData, setEditProfileData] = useState({ firstName: '', lastName: '', email: '', password: '', profilePic: '' });
   const router = useRouter();
+  const lastRefreshTime = useRef(0);
 
   const handleResetSearch = () => {
+    const now = Date.now();
+    if (now - lastRefreshTime.current < 5000) return; // 5-second throttle to prevent spamming
+    lastRefreshTime.current = now;
+
     setSearch("");
     setDebouncedSearch("");
     fetchTasks(true, "");
