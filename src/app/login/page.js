@@ -120,35 +120,35 @@ export default function Login() {
                             TaskZen
                         </h1>
                     </Link>
-                    <h2 className="text-3xl font-black text-white tracking-tight mb-2 uppercase italic">
-                        {isRegistering ? "Join the Flow" : "Welcome Back"}
-                    </h2>
+                        <h2 className="text-4xl font-black mb-2 text-white italic tracking-tighter drop-shadow-[0_0_20px_rgba(255,45,149,0.3)]">
+                            {isRegistering ? "Create Account" : "Sign In"}
+                        </h2>
                     <p className="text-slate-500 font-light">
                         {isRegistering ? "Create an account to save your tasks." : "Sign in to access your dashboard."}
                     </p>
                 </div>
 
-                <div className="bg-white/[0.03] backdrop-blur-3xl border border-white/10 p-8 sm:p-10 rounded-[3rem] shadow-2xl">
+                <div className="bg-[#050510]/95 backdrop-blur-3xl border-2 border-pink-500/30 p-8 sm:p-10 rounded-[3rem] shadow-[0_0_100px_rgba(255,45,149,0.1)]">
                     <form onSubmit={handleSubmit} className="space-y-6">
                         {isRegistering && (
                             <div className="grid grid-cols-2 gap-4 animate-in slide-in-from-top-2 duration-300">
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">First Name</label>
+                                    <label className="text-[13px] font-black tracking-wider text-slate-300 ml-1">First Name</label>
                                     <input
                                         type="text"
                                         placeholder="John"
-                                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
                                         required={isRegistering}
                                     />
                                 </div>
                                 <div className="space-y-2">
-                                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Last Name</label>
+                                    <label className="text-[13px] font-black tracking-wider text-slate-300 ml-1">Last Name</label>
                                     <input
                                         type="text"
                                         placeholder="Doe"
-                                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
                                         required={isRegistering}
@@ -157,11 +157,11 @@ export default function Login() {
                             </div>
                         )}
                         <div className="space-y-2 animate-in fade-in zoom-in-95 duration-300">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email Address</label>
+                            <label className="text-[13px] font-black tracking-wider text-slate-300 ml-1">Email Address</label>
                             <input
                                 type="email"
-                                placeholder="example@mail.com"
-                                className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold"
+                                placeholder="Example@mail.com"
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -169,12 +169,12 @@ export default function Login() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Password</label>
+                            <label className="text-[13px] font-black tracking-wider text-slate-300 ml-1">Password</label>
                             <div className="relative">
                                 <input
                                     type={showPassword ? "text" : "password"}
-                                    placeholder="Enter password"
-                                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700/80 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold pr-12"
+                                    placeholder="Enter Password"
+                                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold pr-12"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -195,12 +195,12 @@ export default function Login() {
 
                         {isRegistering && (
                             <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Confirm Password</label>
+                                <label className="text-[13px] font-black tracking-wider text-slate-300 ml-1">Confirm Password</label>
                                 <div className="relative">
                                     <input
                                         type={showPassword ? "text" : "password"}
-                                        placeholder="Confirm your password"
-                                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-700/80 focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all font-bold pr-12"
+                                        placeholder="Confirm Your Password"
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold pr-12"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required
@@ -220,7 +220,7 @@ export default function Login() {
                                 {successMessage.text}
                                 {successMessage.url && (
                                     <div className="mt-3">
-                                        <a href={successMessage.url} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-white rounded-lg transition-colors border border-emerald-500/30 text-xs tracking-wide uppercase">
+                                        <a href={successMessage.url} target="_blank" rel="noopener noreferrer" className="inline-block px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 text-white rounded-lg transition-colors border border-emerald-500/30 text-xs font-bold tracking-tight">
                                             View Real Email
                                         </a>
                                     </div>
@@ -231,29 +231,28 @@ export default function Login() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full btn-premium-pink py-5 rounded-2xl text-base disabled:opacity-50"
+                            className="w-full btn-premium-pink py-5 rounded-2xl text-[17px] font-bold tracking-tight disabled:opacity-50"
                         >
-                            {loading ? "PROCESSING..." : isRegistering ? "CREATE ACCOUNT" : "SIGN IN"}
+                            {loading ? "Processing..." : isRegistering ? "Create Account" : "Sign In"}
                         </button>
                     </form>
 
                     <div className="mt-8 flex items-center justify-center gap-2">
-                        <span className="text-[10px] font-black tracking-widest uppercase text-slate-600">
+                        <span className="text-[11px] font-bold tracking-tight text-slate-400">
                             {isRegistering ? "Already have an account?" : "Don't have an account?"}
                         </span>
                         <button
                             type="button"
                             onClick={toggleRegistering}
-                            className="text-[10px] font-black tracking-widest uppercase text-pink-500 hover:text-pink-400 hover:underline underline-offset-4 transition-all"
+                            className="text-[11px] font-bold tracking-tight text-pink-500 hover:text-pink-400 hover:underline underline-offset-4 transition-all"
                         >
                             {isRegistering ? "Sign In" : "Sign Up"}
                         </button>
                     </div>
                 </div>
 
-                <footer className="mt-12 text-center text-slate-800 uppercase tracking-widest text-[9px] font-bold opacity-40">
+                <footer className="mt-12 text-center text-slate-500 uppercase tracking-widest text-[9px] font-black opacity-60">
                     Your data is encrypted and secure.
-                    <Link href="/admin-portal" className="ml-2 hover:text-rose-900 transition-colors opacity-10 hover:opacity-100">Portal</Link>
                 </footer>
             </div>
         </main>

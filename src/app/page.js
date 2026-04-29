@@ -37,21 +37,21 @@ export default function LandingPage() {
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]"></div>
       </div>
 
-      <div className="relative z-10 w-full max-w-6xl px-6 pt-20 sm:pt-32 pb-16 sm:pb-24 text-center flex flex-col items-center">
+      <div className="relative z-10 w-full max-w-6xl px-6 py-12 flex-1 text-center flex flex-col justify-center items-center">
         {/* Floating Badge */}
-        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white/[0.03] border border-white/10 backdrop-blur-md mb-6 sm:mb-8 hover:border-white/20 transition-all cursor-default group">
+        <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/[0.05] border-2 border-pink-500/30 backdrop-blur-2xl mb-8 hover:border-pink-500/50 transition-all cursor-default group shadow-[0_0_20px_rgba(255,45,149,0.15)] hover:shadow-[0_0_30px_rgba(255,45,149,0.25)]">
           <span className="relative flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-pink-500 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-pink-500 shadow-[0_0_8px_rgba(255,45,149,0.8)]"></span>
           </span>
-          <span className="text-[10px] sm:text-sm font-medium text-pink-200/80 tracking-wide uppercase">
+          <span className="text-[11px] font-black tracking-[0.25em] text-slate-200 uppercase">
             Simple Task Management
           </span>
         </div>
 
-        <h1 className="text-5xl sm:text-8xl md:text-9xl font-black tracking-tight leading-[1.1] sm:leading-[1.1] mb-6 sm:mb-8">
-          <span className="text-gradient inline-block">Manage your life,</span><br />
-          <span className="text-white drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">simply.</span>
+        <h1 className="text-5xl sm:text-8xl md:text-9xl font-black tracking-tighter leading-[0.95] mb-8">
+          <span className="text-gradient inline-block drop-shadow-[0_0_30px_rgba(255,45,149,0.3)]">Manage your life,</span><br />
+          <span className="text-white drop-shadow-[0_0_40px_rgba(255,255,255,0.25)] italic">simply.</span>
         </h1>
 
         <p className="text-lg sm:text-xl md:text-2xl text-slate-400 font-light max-w-2xl mx-auto leading-relaxed mb-10 sm:mb-12">
@@ -68,7 +68,7 @@ export default function LandingPage() {
           </Link>
           <button
             onClick={toggleFeatures}
-            className={`btn-premium-glass px-10 py-4 sm:py-5 w-full sm:w-auto transition-all duration-500 ${showFeatures ? 'bg-white/10 border-white/30' : ''}`}
+            className={`btn-premium-glass px-10 py-4 sm:py-5 w-full sm:w-auto transition-all duration-500 border border-white/10 hover:border-white/30 hover:bg-white/5 ${showFeatures ? 'bg-white/10 border-white/30' : ''}`}
           >
             How it works
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`ml-3 transition-transform duration-500 ${showFeatures ? 'rotate-180' : 'opacity-60'}`}><path d="m6 9 6 6 6-6" /></svg>
@@ -125,8 +125,8 @@ export default function LandingPage() {
         </div>
       </div>
 
-      <footer className="w-full text-center py-8 sm:py-12 text-slate-600 relative z-10 border-t border-white/[0.02] mt-auto">
-        <p className="text-[10px] sm:text-sm font-medium tracking-widest uppercase opacity-40">
+      <footer className="w-full text-center py-8 sm:py-12 text-slate-500 relative z-10 border-t border-white/[0.03] mt-auto">
+        <p className="text-[10px] sm:text-xs font-black tracking-[0.3em] uppercase opacity-60">
           Designed for the ambitious. © {new Date().getFullYear()}
         </p>
       </footer>

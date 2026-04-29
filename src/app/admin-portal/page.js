@@ -3,6 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 
+const CheckIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
+);
+
+const UndoIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+);
+
 export default function AdminPortal() {
     const [secret, setSecret] = useState("");
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -13,30 +21,15 @@ export default function AdminPortal() {
     const [pendingDelete, setPendingDelete] = useState(null); // { id, type, label }
     const [activeTab, setActiveTab] = useState("users"); // 'users' or 'tasks' for mobile view
     const [selectedUserId, setSelectedUserId] = useState(null);
-    const [refreshTimer, setRefreshTimer] = useState(null);
-    useEffect(() => {
-        return () => {
-            if (refreshTimer) clearInterval(refreshTimer);
-        };
-    }, [refreshTimer]);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         fetchData(secret);
-        // Start auto-refresh
-        if (refreshTimer) clearInterval(refreshTimer);
-        const timer = setInterval(() => {
-            setSecret(prevSecret => {
-                fetchData(prevSecret);
-                return prevSecret;
-            });
-        }, 5000);
-        setRefreshTimer(timer);
+        // Automatic 5s refresh removed to prevent unexpected background loading.
+        // Use the manual 'Refresh' button in the header for updates.
     };
 
     const handleLock = () => {
-        if (refreshTimer) clearInterval(refreshTimer);
-        setRefreshTimer(null);
         setIsAuthenticated(false);
         setSecret("");
         setData(null);
@@ -59,6 +52,25 @@ export default function AdminPortal() {
             setError("Connection failed");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const toggleTaskStatus = async (id, currentStatus) => {
+        const newStatus = currentStatus === "Completed" ? "Pending" : "Completed";
+        setActionLoading(id);
+        try {
+            const res = await fetch(`/api/admin/data?secret=${secret}&id=${id}&type=task`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: newStatus })
+            });
+            if (res.ok) {
+                fetchData(secret);
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setActionLoading(null);
         }
     };
 
@@ -108,8 +120,8 @@ export default function AdminPortal() {
                             <div className="absolute -inset-0.5 bg-gradient-to-r from-rose-600/50 to-indigo-600/50 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
                             <input
                                 type="password"
-                                placeholder="ENTER SECURITY KEY"
-                                className="relative w-full bg-black/80 border border-white/10 rounded-2xl px-6 py-5 text-center text-white placeholder-slate-700 focus:outline-none focus:border-rose-500/50 transition-all font-black text-lg sm:text-xl tracking-widest uppercase"
+                                placeholder="Enter Security Key"
+                                className="relative w-full bg-black/80 border border-white/10 rounded-2xl px-6 py-5 text-center text-white placeholder-slate-700 placeholder:normal-case focus:outline-none focus:border-rose-500/50 transition-all font-black text-lg sm:text-xl tracking-widest uppercase"
                                 value={secret}
                                 onChange={(e) => setSecret(e.target.value)}
                                 required
@@ -176,7 +188,7 @@ export default function AdminPortal() {
                 {/* Cyberpunk Stats Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-16">
                     {[
-                        { label: "Active Nodes", value: data.stats.totalUsers, color: "text-blue-500", glow: "shadow-blue-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="m23 21-2-2 2-2" /><path d="m19 21 2-2-2-2" /></svg> },
+                        { label: "Active Users", value: data.stats.totalUsers, color: "text-blue-500", glow: "shadow-blue-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="m23 21-2-2 2-2" /><path d="m19 21 2-2-2-2" /></svg> },
                         { label: "Data Tasks", value: data.stats.totalTasks, color: "text-purple-500", glow: "shadow-purple-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /></svg> },
                         { label: "Processing", value: data.stats.pendingTasks, color: "text-amber-500", glow: "shadow-amber-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg> },
                         { label: "Finalized", value: data.stats.completedTasks, color: "text-emerald-500", glow: "shadow-emerald-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11 3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg> },
@@ -209,7 +221,7 @@ export default function AdminPortal() {
                     {/* Glowing Column: Users */}
                     <section className={`lg:col-span-4 relative group ${activeTab !== 'users' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-blue-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse"></div>
-                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/20 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.1)] flex flex-col lg:h-[800px]">
+                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.35)] flex flex-col lg:h-[800px]">
                             <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic uppercase">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]"></span>
@@ -255,7 +267,7 @@ export default function AdminPortal() {
                     {/* Glowing Column: Global Tasks */}
                     <section className={`lg:col-span-8 relative group ${activeTab !== 'tasks' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-purple-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/20 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.1)] flex flex-col lg:h-[800px]">
+                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col lg:h-[800px]">
                             <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic uppercase">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.8)]"></span>
@@ -315,9 +327,47 @@ export default function AdminPortal() {
                                                                     <span className="text-[7px] font-bold text-slate-400 uppercase">{task.owner || 'Unknown'}</span>
                                                                 </div>
                                                             </div>
+
+                                                            {/* Mobile Done Toggle - Absolute */}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
+                                                                disabled={actionLoading === task.id}
+                                                                className={`lg:hidden absolute top-2 right-2 p-1.5 flex items-center gap-1 rounded-lg transition-all z-20 ${
+                                                                    task.status === 'Completed' 
+                                                                    ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20' 
+                                                                    : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
+                                                                }`}
+                                                            >
+                                                                {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
+                                                                <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
+                                                            </button>
+
+                                                            <div className="hidden lg:flex items-center gap-2">
+                                                                <button
+                                                                    onClick={() => toggleTaskStatus(task.id, task.status)}
+                                                                    disabled={actionLoading === task.id}
+                                                                    title={task.status === 'Completed' ? "Undo" : "Done"}
+                                                                    className={`p-1.5 flex items-center gap-1 rounded-lg transition-all opacity-0 group-hover/task:opacity-100 ${
+                                                                        task.status === 'Completed' 
+                                                                        ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white' 
+                                                                        : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
+                                                                    }`}
+                                                                >
+                                                                    {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
+                                                                    <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
+                                                                    className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5 opacity-0 group-hover/task:opacity-100"
+                                                                >
+                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                                </button>
+                                                            </div>
+
+                                                            {/* Mobile Delete Button */}
                                                             <button
                                                                 onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                                className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg opacity-100 lg:opacity-0 group-hover/task:opacity-100"
+                                                                className="lg:hidden p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5"
                                                             >
                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                                                             </button>

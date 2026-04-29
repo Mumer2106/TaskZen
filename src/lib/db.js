@@ -395,3 +395,25 @@ export async function deleteTaskAdmin(taskId) {
     }
 }
 
+export async function updateTaskAdmin(taskId, updates) {
+    if (isPostgresConfigured) {
+        try {
+            const { status } = updates;
+            if (status !== undefined) await sql`UPDATE tasks SET status = ${status} WHERE id = ${taskId}`;
+        } catch (error) {
+            console.error("Postgres updateTaskAdmin error:", error.message);
+            throw new Error(`Database Error: ${error.message}`);
+        }
+    } else {
+        const db = await readJsonDb();
+        for (const userId in db.tasks) {
+            const taskIndex = db.tasks[userId].findIndex(t => t.id === taskId);
+            if (taskIndex !== -1) {
+                db.tasks[userId][taskIndex] = { ...db.tasks[userId][taskIndex], ...updates };
+                await writeJsonDb(db);
+                break;
+            }
+        }
+    }
+}
+

@@ -7,6 +7,7 @@ const outfit = Outfit({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://task-zen-olive.vercel.app"),
   title: "TaskZen | The Evolution of Flow",
   description: "A premium productivity experience designed for high-achievers.",
   openGraph: {
@@ -26,6 +27,15 @@ export const metadata = {
     title: "TaskZen | The Evolution of Flow",
     description: "A premium productivity experience designed for high-achievers.",
     images: ["/og-image.png"],
+  },
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/favicon.ico",
+    apple: "/icon.png",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

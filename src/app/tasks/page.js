@@ -24,6 +24,10 @@ const XIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
 );
 
+const UndoIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
+);
+
 const Loader = () => (
   <div className="flex items-center gap-2">
     <div className="h-2 w-2 bg-pink-500 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
@@ -54,6 +58,7 @@ export default function Home() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [editProfileData, setEditProfileData] = useState({ firstName: '', lastName: '', email: '', password: '', profilePic: '' });
   const router = useRouter();
   const lastRefreshTime = useRef(0);
@@ -75,19 +80,14 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    // Auto-refresh tasks every 10 seconds to keep in sync with admin actions
-    // This now respects the current debounced search term
-    const timer = setInterval(() => {
-      fetchTasks(true, debouncedSearch);
-    }, 10000);
-
-    return () => clearInterval(timer);
+    // Note: Automatic 10s refresh removed to prevent unexpected 'khud load' behavior 
+    // and respect the manual throttle/refresh control.
   }, [debouncedSearch]);
 
   useEffect(() => {
     const handler = setTimeout(() => {
       setDebouncedSearch(search);
-    }, 2500); // Re-implemented 2.5s delay for optimized searching
+    }, 500); // Re-implemented 2.5s delay for optimized searching
 
     return () => clearTimeout(handler);
   }, [search]);
@@ -106,7 +106,7 @@ export default function Home() {
         try {
           const data = JSON.parse(decodeURIComponent(userInfoCookie.split('=')[1]));
           setUserInfo(data);
-          
+
           // Fetch full profile (including picture) separately since it's too big for cookie
           fetch("/api/user/me")
             .then(res => {
@@ -119,7 +119,7 @@ export default function Home() {
             .then(fullData => {
               if (fullData && !fullData.error) setUserInfo(fullData);
             }).catch(console.error);
-            
+
         } catch (e) {
           console.error("Session corrupt:", e);
         }
@@ -322,10 +322,10 @@ export default function Home() {
     }
   };
 
-  const toggleStatus = async (id) => {
+  const toggleTaskStatus = async (id) => {
     const task = tasks.find(t => t.id === id);
     if (!task) return;
-    const newStatus = task.status === "Pending" ? "Completed" : "Pending";
+    const newStatus = task.status === "Completed" ? "Pending" : "Completed";
 
     try {
       const res = await fetch(`/api/tasks/${id}`, {
@@ -335,6 +335,7 @@ export default function Home() {
       });
       if (res.ok) {
         setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+        showToast(newStatus === "Completed" ? "Task completed!" : "Task marked as pending", "success");
       }
     } catch (error) {
       console.error("Failed to update status:", error);
@@ -393,8 +394,8 @@ export default function Home() {
 
       <div className="fixed top-6 left-6 z-[100] pointer-events-auto">
         {/* Home Link */}
-        <Link href="/" className="group flex items-center justify-center p-3 sm:p-4 text-slate-500 hover:text-white transition-all duration-500 bg-[#02000d]/60 backdrop-blur-3xl rounded-2xl border border-white/5 shadow-2xl hover:border-indigo-500/30 hover:scale-110 active:scale-95" title="Home">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-60 group-hover:opacity-100 transition-all"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
+        <Link href="/" className="group flex items-center justify-center p-3 sm:p-4 text-indigo-400 hover:text-white transition-all duration-500 bg-white/[0.05] backdrop-blur-3xl rounded-2xl border border-white/10 hover:border-indigo-500/40 shadow-2xl hover:scale-110 active:scale-95" title="Home">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-500"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" /><polyline points="9 22 9 12 15 12 15 22" /></svg>
         </Link>
       </div>
 
@@ -402,51 +403,71 @@ export default function Home() {
         {/* Profile Icon */}
         <button
           onClick={() => setShowProfileModal(true)}
-          className="group relative flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-white/[0.03] backdrop-blur-3xl border border-white/10 shadow-2xl hover:border-pink-500/30 hover:scale-110 active:scale-95 transition-all duration-500 overflow-hidden"
+          className="group relative flex items-center justify-center h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-black backdrop-blur-3xl border-2 border-pink-500/30 shadow-[0_0_20px_rgba(255,45,149,0.1)] hover:shadow-[0_0_30px_rgba(255,45,149,0.3)] hover:border-pink-500/60 hover:scale-110 active:scale-95 transition-all duration-700 overflow-hidden"
           title="Profile"
         >
           {userInfo.profilePic ? (
-            <img src={userInfo.profilePic} alt="Profile" className="h-full w-full object-cover" />
+            <img src={userInfo.profilePic} alt="Profile" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110" />
           ) : (
-            <div className="text-lg sm:text-xl font-black text-pink-500 italic uppercase">
+            <div className="text-lg sm:text-xl font-black text-pink-500 italic uppercase drop-shadow-[0_0_10px_rgba(255,45,149,0.5)]">
               {userInfo.firstName?.[0] || userInfo.email?.[0] || 'U'}{userInfo.lastName?.[0] || ''}
             </div>
           )}
-          <div className="absolute inset-0 bg-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+          <div className="absolute inset-0 bg-pink-500/10 opacity-0 group-hover:opacity-100 transition-opacity duration-700"></div>
         </button>
       </div>
 
       {/* Header */}
       <div className="w-full max-w-7xl pt-16 sm:pt-24 mb-10 sm:mb-16 relative z-10 px-4 sm:px-8 text-center flex flex-col justify-center items-center mx-auto animate-in fade-in slide-in-from-top-10 duration-1000">
         <div className="flex flex-col items-center text-center">
-          <div className="flex items-center gap-2 mb-4 px-4 py-1.5 rounded-full bg-white/[0.02] border border-white/5 animate-pulse-subtle">
-            <span className="h-1.5 w-1.5 rounded-full bg-pink-500 shadow-[0_0_10px_rgba(255,45,149,0.8)]"></span>
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500">Node_Feed v4.0.2 // Stable</span>
-          </div>
+
           <h1 className="text-5xl sm:text-7xl lg:text-9xl font-black tracking-tighter mb-4 text-gradient leading-[0.9] sm:leading-none italic uppercase">
             TaskZen
           </h1>
           <p className="text-base sm:text-xl text-slate-500 font-light max-w-2xl leading-relaxed italic pr-2">
             Interface with your objectives. A <span className="text-white font-bold">high-bandwidth system</span> for managing node life-cycles and neural-protocol execution with absolute precision.
           </p>
+
+          {/* Absolute Overlaid Notification */}
+          {toast && (
+            <div className="absolute top-[105%] left-1/2 -translate-x-1/2 z-[300] w-fit">
+              <div className={`px-6 py-3 rounded-2xl backdrop-blur-3xl border shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center gap-3 whitespace-nowrap animate-in fade-in zoom-in-95 duration-500 ${toast.type === "success"
+                  ? "bg-[#05110a]/90 border-emerald-500/40 text-emerald-400 shadow-emerald-500/20"
+                  : "bg-[#110505]/90 border-rose-500/40 text-rose-500 shadow-rose-500/20"
+                }`}>
+                <div className={`h-1.5 w-1.5 rounded-full animate-pulse ${toast.type === "success" ? "bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.5)]" : "bg-rose-400 shadow-[0_0_10px_rgba(251,113,133,0.5)]"}`}></div>
+                <span className="text-[10px] font-black tracking-[0.2em] italic uppercase">{toast.message}</span>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Tab Switcher - Mobile Only */}
-      <div className="w-full max-w-7xl px-4 sm:px-8 mb-6 lg:hidden relative z-20">
-        <div className="flex p-1 bg-white/[0.03] backdrop-blur-3xl border border-white/10 rounded-2xl">
-          <button
-            onClick={() => setActiveTab("list")}
-            className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 ${activeTab === 'list' ? 'bg-pink-600/20 text-pink-500 shadow-[0_0_20px_rgba(255,45,149,0.2)] border border-pink-500/30' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            Your Tasks
-          </button>
-          <button
-            onClick={() => setActiveTab("form")}
-            className={`flex-1 py-3.5 text-[10px] font-black uppercase tracking-[0.2em] rounded-xl transition-all duration-500 ${activeTab === 'form' ? 'bg-indigo-600/20 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.2)] border border-indigo-500/30' : 'text-slate-500 hover:text-slate-300'}`}
-          >
-            Plan {editId ? "(Edit)" : "New"}
-          </button>
+      {/* Premium Floating Bottom Nav - Mobile Only */}
+      <div className="lg:hidden fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-sm">
+        <div className="relative p-1.5 bg-black/60 backdrop-blur-3xl border border-white/10 rounded-[2rem] shadow-[0_10px_50px_rgba(0,0,0,0.8)] overflow-hidden group">
+          {/* Animated background glow */}
+          <div className={`absolute inset-0 bg-gradient-to-r from-pink-500/10 via-indigo-500/10 to-pink-500/10 transition-all duration-1000 ${activeTab === 'list' ? 'translate-x-[-20%]' : 'translate-x-[20%]'}`} />
+
+          <div className="relative flex items-center">
+            <button
+              onClick={() => setActiveTab("list")}
+              className={`flex-1 py-4 flex flex-col items-center justify-center gap-1.5 rounded-[1.5rem] transition-all duration-500 ${activeTab === 'list' ? 'bg-white/10 text-white shadow-inner border border-white/10' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={activeTab === 'list' ? "text-pink-500 animate-pulse" : ""}><rect width="7" height="7" x="3" y="3" rx="1" /><rect width="7" height="7" x="14" y="3" rx="1" /><rect width="7" height="7" x="14" y="14" rx="1" /><rect width="7" height="7" x="3" y="14" rx="1" /></svg>
+               <span className="text-[10px] font-black tracking-[0.15em] opacity-80">Registry</span>
+            </button>
+
+            <div className="w-[1px] h-8 bg-white/5 mx-1" />
+
+            <button
+              onClick={() => setActiveTab("form")}
+              className={`flex-1 py-4 flex flex-col items-center justify-center gap-1.5 rounded-[1.5rem] transition-all duration-500 ${activeTab === 'form' ? 'bg-white/10 text-white shadow-inner border border-white/10' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={activeTab === 'form' ? "text-indigo-400 animate-bounce" : ""}><path d="M12 5v14M5 12h14" /></svg>
+               <span className="text-[10px] font-black tracking-[0.15em] opacity-80">{editId ? "Update Node" : "Allocate Node"}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -454,40 +475,46 @@ export default function Home() {
 
         {/* Create/Edit Form */}
         <div className={`lg:col-span-5 w-full flex lg:sticky lg:top-24 ${activeTab !== 'form' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
-          <div className="w-full bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex flex-col hover:bg-white/[0.04] hover:border-white/20 transition-all duration-500 lg:h-[700px] h-auto animate-glow">
+          <div className="w-full bg-[#050510]/95 backdrop-blur-[40px] border-2 border-indigo-500/30 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_80px_rgba(79,70,229,0.1)] flex flex-col hover:border-indigo-500/50 transition-all duration-500 lg:h-[700px] h-auto animate-glow">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex items-center justify-start gap-4 italic uppercase tracking-tighter text-left">
+              <h2 className="text-2xl sm:text-3xl font-black mb-8 sm:mb-10 text-white flex items-center justify-start gap-4 italic capitalize tracking-tighter text-left">
                 <span className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
                 {editId ? "Update Protocol" : "New Node"}
                 {actionLoading && <Loader />}
               </h2>
               <form onSubmit={handleAddOrUpdate} className="space-y-6 sm:space-y-8">
                 <div className="space-y-3 flex flex-col items-start text-left w-full group">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full group-focus-within:text-pink-500 transition-colors">Node_Title</label>
+                  <label className="text-[13px] font-black tracking-wider text-slate-300 w-full flex items-center gap-2 group-focus-within:text-pink-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
+                    Task Title
+                  </label>
                   <input
                     type="text"
-                    placeholder="Enter objective..."
+                    placeholder="Enter Objective..."
                     value={newTaskTitle}
                     onChange={(e) => setNewTaskTitle(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all text-lg font-bold shadow-inner"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-sm placeholder:font-black placeholder:normal-case placeholder:tracking-[0.1em] placeholder:text-slate-500 placeholder:not-italic focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all text-lg font-bold shadow-inner"
                     required
                     disabled={actionLoading}
                   />
                 </div>
                 <div className="space-y-3 flex flex-col items-start text-left w-full group">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full group-focus-within:text-indigo-400 transition-colors">Metadata_Stream</label>
+                  <label className="text-[13px] font-black tracking-wider text-slate-300 w-full flex items-center gap-2 group-focus-within:text-indigo-400 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="21" x2="3" y1="6" y2="6" /><line x1="15" x2="3" y1="12" y2="12" /><line x1="17" x2="3" y1="18" y2="18" /></svg>
+                    Task Description
+                  </label>
                   <textarea
-                    placeholder="Record additional information..."
+                    placeholder="Record Additional Information..."
                     value={newTaskDesc}
                     onChange={(e) => setNewTaskDesc(e.target.value)}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/30 transition-all min-h-[120px] resize-none pb-4 text-base italic leading-relaxed shadow-inner"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-sm placeholder:font-black placeholder:normal-case placeholder:tracking-[0.1em] placeholder:text-slate-500 placeholder:not-italic focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white/[0.08] focus:border-indigo-500/30 transition-all min-h-[120px] resize-none pb-4 text-base italic leading-relaxed shadow-inner"
                     disabled={actionLoading}
                   />
                 </div>
                 <div className="group space-y-3 flex flex-col items-start text-left w-full relative">
-                  <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 w-full flex items-center gap-2 group-focus-within:text-pink-500 transition-colors uppercase">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
-                    Temporal_Target
+                  <label className="text-[13px] font-black tracking-wider text-slate-300 w-full flex items-center gap-2 group-focus-within:text-pink-500 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" x2="16" y1="2" y2="6" /><line x1="8" x2="8" y1="2" y2="6" /><line x1="3" x2="21" y1="10" y2="10" /></svg>
+                    Date
                   </label>
                   <div className="relative w-full">
                     <input
@@ -496,7 +523,7 @@ export default function Home() {
                       max={new Date(new Date().setFullYear(new Date().getFullYear() + 1)).toISOString().split('T')[0]}
                       value={newTaskDate}
                       onChange={(e) => setNewTaskDate(e.target.value)}
-                      className="w-full bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/40 transition-all text-lg font-bold [color-scheme:dark] appearance-none cursor-pointer hover:bg-black/60 hover:border-white/10"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl sm:rounded-2xl px-5 py-4 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all text-lg font-bold [color-scheme:dark] appearance-none cursor-pointer hover:bg-white/5 shadow-inner"
                       disabled={actionLoading}
                       required
                     />
@@ -517,14 +544,14 @@ export default function Home() {
               <button
                 onClick={handleAddOrUpdate}
                 type="button"
-                className="w-full btn-premium-pink py-4 rounded-2xl sm:rounded-3xl disabled:opacity-50 text-sm sm:text-base animate-glow"
+                className="w-full btn-premium-pink py-4 rounded-2xl sm:rounded-3xl disabled:opacity-50 text-lg animate-glow"
                 disabled={actionLoading || !newTaskTitle.trim()}
               >
-                {actionLoading ? "SAVING..." : editId ? "SAVE CHANGES" : "CREATE TASK"}
+                {actionLoading ? "Saving..." : editId ? "Save Changes" : "Create Task"}
               </button>
               {editId && (
-                <button type="button" onClick={cancelEdit} className="w-full btn-premium-glass py-4 rounded-2xl sm:rounded-3xl disabled:opacity-50 text-sm sm:text-base">
-                  CANCEL
+                <button type="button" onClick={cancelEdit} className="w-full btn-premium-glass py-4 rounded-2xl sm:rounded-3xl disabled:opacity-50 text-lg">
+                  Cancel
                 </button>
               )}
             </div>
@@ -532,171 +559,271 @@ export default function Home() {
         </div>
 
         {/* Task List */}
-        <div className={`lg:col-span-7 w-full flex flex-col mt-10 lg:mt-0 bg-white/[0.03] backdrop-blur-[40px] border border-white/10 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] lg:h-[700px] h-auto overflow-hidden animate-glow ${activeTab !== 'list' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
+        <div className={`lg:col-span-7 w-full flex flex-col mt-10 lg:mt-0 ${activeTab !== 'list' ? 'hidden lg:flex' : 'flex animate-in fade-in slide-in-from-bottom-5 duration-700'}`}>
+          <div className="w-full flex flex-col bg-[#050510]/95 backdrop-blur-[40px] border-2 border-pink-500/30 rounded-3xl sm:rounded-[3.5rem] p-6 sm:p-10 shadow-[0_0_80px_rgba(255,45,149,0.1)] lg:h-[700px] h-auto overflow-hidden animate-glow">
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-4 border-b border-white/5 gap-4 text-center sm:text-left shrink-0">
-            <h2 className="text-2xl sm:text-3xl font-black text-white flex justify-center sm:justify-start items-center flex-wrap gap-4 italic tracking-tighter">
-              Your Tasks
-              {selectedTasks.length > 1 && (
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-4 border-b border-white/5 gap-4 text-center sm:text-left shrink-0">
+              <h2 className="text-2xl sm:text-3xl font-black text-white flex justify-center sm:justify-start items-center flex-wrap gap-4 italic tracking-tighter">
+                <span className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
+                Your Tasks
+                {selectedTasks.length > 1 && (
+                  <button
+                    onClick={() => setIsDeleteModalOpen(true)}
+                    className="text-[9px] sm:text-[10px] font-black tracking-widest uppercase px-4 sm:px-6 py-2 sm:py-2.5 btn-premium-rose rounded-full animate-bounce"
+                  >
+                    Delete Selected ({selectedTasks.length})
+                  </button>
+                )}
+              </h2>
+              <div className="w-fit mx-auto sm:mx-0 px-4 py-2 rounded-xl sm:rounded-2xl bg-white/[0.05] border border-white/10 shadow-lg cursor-default flex justify-center items-center gap-3">
+                <span className="h-1.5 w-1.5 rounded-full bg-pink-500 shadow-[0_0_8px_rgba(255,45,149,0.5)]"></span>
+                <span className="text-[11px] font-black tracking-widest text-slate-300">Total: {loading ? "..." : tasks.length}</span>
+              </div>
+            </div>
+
+            <div className="px-1 mb-8 w-full">
+              <div className="relative w-full group">
+                <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+                </div>
+                <input
+                  type="text"
+                  placeholder="Search All Protocols..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-2xl pl-14 pr-14 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white placeholder:text-sm placeholder:font-black placeholder:normal-case placeholder:tracking-[0.1em] placeholder:text-slate-500 placeholder:not-italic focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all shadow-inner"
+                />
                 <button
-                  onClick={() => setIsDeleteModalOpen(true)}
-                  className="text-[9px] sm:text-[10px] font-black tracking-widest uppercase px-4 sm:px-6 py-2 sm:py-2.5 btn-premium-rose rounded-full animate-bounce"
+                  onClick={handleResetSearch}
+                  title="Refresh Registry"
+                  className="absolute inset-y-0 right-4 flex items-center text-slate-500 hover:text-pink-500 transition-all hover:scale-110 active:scale-95"
                 >
-                  Delete Selected ({selectedTasks.length})
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={search ? "animate-spin-once" : ""}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M3 21v-5h5" /></svg>
                 </button>
-              )}
-            </h2>
-            <div className="w-fit mx-auto sm:mx-0 px-4 py-2 rounded-xl sm:rounded-2xl bg-white/[0.02] border border-white/5 text-[10px] sm:text-xs font-black tracking-[0.2em] uppercase text-slate-500 cursor-default flex justify-center items-center gap-3">
-              <span className="h-1.5 w-1.5 rounded-full bg-pink-500"></span>
-              Total: {loading ? "..." : tasks.length}
-            </div>
-          </div>
- 
-          <div className="px-1 mb-8 w-full">
-            <div className="relative w-full group">
-              <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
               </div>
-              <input 
-                type="text" 
-                placeholder="SEARCH ALL PROTOCOLS..." 
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-black/40 border border-white/5 rounded-2xl pl-14 pr-14 py-4 text-[11px] font-black uppercase tracking-[0.2em] text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/30 transition-all shadow-inner"
-              />
-              <button 
-                onClick={handleResetSearch}
-                title="Refresh Registry"
-                className="absolute inset-y-0 right-4 flex items-center text-slate-500 hover:text-pink-500 transition-all hover:scale-110 active:scale-95"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={search ? "animate-spin-once" : ""}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
-              </button>
             </div>
-          </div>
 
-          <div className="flex-1 bg-transparent overflow-hidden flex flex-col min-h-0">
-            {loading ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-20 text-center space-y-4">
-                <Loader />
-                <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] sm:text-xs">Loading tasks...</p>
-              </div>
-            ) : tasks.length === 0 ? (
-              <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-20 text-center space-y-6 sm:space-y-8">
-                <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-white/[0.02] flex items-center justify-center border border-white/5 text-slate-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-20"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
+            <div className="flex-1 bg-transparent overflow-hidden flex flex-col min-h-0">
+              {loading ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-20 text-center space-y-4">
+                  <Loader />
+                  <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] sm:text-xs">Loading tasks...</p>
                 </div>
-                <div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-slate-300 uppercase tracking-tighter mb-2">Registry Empty</h3>
-                  <p className="text-slate-500 font-medium text-base sm:text-lg">No nodes found in the global stream.</p>
+              ) : tasks.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center p-12 sm:p-20 text-center space-y-6 sm:space-y-8">
+                  <div className="h-24 w-24 sm:h-32 sm:w-32 rounded-3xl bg-white/[0.02] flex items-center justify-center border border-white/5 text-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-20"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl sm:text-3xl font-black text-slate-300 uppercase tracking-tighter mb-2">Registry Empty</h3>
+                    <p className="text-slate-500 font-medium text-base sm:text-lg">No nodes found in the global stream.</p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="flex-1 overflow-y-auto custom-scrollbar pb-6 sm:pr-2">
-                <div className="flex flex-col gap-8">
-                  {Object.entries(
-                    [...tasks].reduce((groups, task) => {
-                      const date = task.taskDate || task.taskdate || "No Date";
-                      if (!groups[date]) groups[date] = [];
-                      groups[date].push(task);
-                      return groups;
-                    }, {})
-                  )
-                    .sort(([dateA], [dateB]) => {
-                      if (dateA === "No Date") return 1;
-                      if (dateB === "No Date") return -1;
-                      return new Date(dateB) - new Date(dateA);
-                    })
-                    .map(([date, dateTasks]) => (
-                      <div key={date} className="space-y-4">
-                        <div className="sticky top-0 z-20 bg-[#02000d] py-3 border-b border-pink-500/30 flex items-center gap-3 shadow-[0_4px_20px_rgba(0,0,0,0.5)]">
-                          <span className="h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
-                          <span className="text-[11px] font-black uppercase tracking-[0.4em] text-pink-500">
-                            {date === new Date().toISOString().split('T')[0] ? "Today" :
-                              date === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "Tomorrow" :
-                                new Date(date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                          </span>
-                        </div>
-                        <div className="flex flex-col gap-4">
-                          {dateTasks.map((task, i) => (
-                            <div
-                              key={task.id}
-                              className={`group relative bg-white/[0.02] border border-white/5 p-6 rounded-[2.5rem] overflow-hidden hover:bg-white/[0.04] transition-all duration-700 hover:scale-[1.02] hover:border-white/10 shadow-2xl ${selectedTasks.includes(task.id) ? 'bg-pink-500/5 border-pink-500/20 shadow-[0_0_40px_rgba(255,45,149,0.1)]' : ''}`}
-                            >
-                              {/* Holographic Scanline */}
-                              <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-700">
-                                <div className="absolute inset-x-0 h-full w-full bg-gradient-to-b from-transparent via-white/[0.03] to-transparent animate-scanline"></div>
+              ) : (
+                <div className="flex-1 overflow-y-auto custom-scrollbar pb-6 sm:pr-2">
+                  <div className="flex flex-col gap-8">
+                    {Object.entries(
+                      [...tasks].reduce((groups, task) => {
+                        const date = task.taskDate || task.taskdate || "No Date";
+                        if (!groups[date]) groups[date] = [];
+                        groups[date].push(task);
+                        return groups;
+                      }, {})
+                    )
+                      .sort(([dateA], [dateB]) => {
+                        if (dateA === "No Date") return 1;
+                        if (dateB === "No Date") return -1;
+                        return new Date(dateB) - new Date(dateA);
+                      })
+                      .map(([date, dateTasks]) => (
+                        <div key={date} className="group/date relative">
+                          {/* Dynamic Header */}
+                          <div className="sticky top-0 z-30 mb-2 group-first/date:mt-0 mt-3">
+                            <div className="absolute inset-0 bg-[#02000d]/60 backdrop-blur-xl border-b border-white/[0.05] shadow-[0_4px_30px_rgba(0,0,0,0.4)]" />
+                            <div className="relative px-6 py-2 flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <div className="absolute inset-0 bg-pink-500 blur-md opacity-40 animate-pulse" />
+                                  <div className="relative h-2.5 w-2.5 rounded-full bg-pink-500 border-2 border-white/20 shadow-[0_0_10px_rgba(255,45,149,0.8)]" />
+                                </div>
+                                <h3 className="text-[12px] font-black uppercase tracking-[0.4em] text-white italic">
+                                  {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
+                                    date === new Date(Date.now() + 86400000).toISOString().split('T')[0] ? "Incoming" :
+                                      new Date(date).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                </h3>
                               </div>
+                              <div className="px-3 py-1 bg-white/[0.03] border border-white/10 rounded-full">
+                                <span className="text-[9px] font-mono text-slate-500 tracking-[0.2em]">{dateTasks.length} NODES</span>
+                              </div>
+                            </div>
+                            {/* Animated accent line */}
+                            <div className="absolute bottom-0 left-0 h-[2px] w-0 group-hover/date:w-full bg-gradient-to-r from-transparent via-pink-500 to-transparent transition-all duration-1000" />
+                          </div>
 
-                              <div className="flex items-start justify-between gap-4 mb-6 relative z-10">
-                                <div className="flex items-center gap-4">
-                                  {/* Selection Checkbox */}
-                                  <div className="relative h-6 w-6 flex-shrink-0">
-                                    <input
-                                      type="checkbox"
-                                      checked={selectedTasks.includes(task.id)}
-                                      onChange={() => toggleSelection(task.id)}
-                                      className="peer h-6 w-6 rounded-xl border-2 border-white/10 bg-black/40 text-pink-500 focus:ring-0 cursor-pointer appearance-none transition-all checked:bg-pink-600 checked:border-pink-600"
-                                    />
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white opacity-0 peer-checked:opacity-100 transition-opacity">
-                                      <CheckIcon />
+                          <div className="px-1 space-y-2.5 pb-4">
+                            {dateTasks.map((task, i) => (
+                              <div
+                                key={task.id}
+                                className={`group relative overflow-hidden rounded-[2rem] transition-all duration-500
+                                ${selectedTasks.includes(task.id)
+                                    ? 'shadow-[0_0_40px_rgba(255,45,149,0.18)]'
+                                    : 'shadow-[0_8px_40px_rgba(0,0,0,0.4)] hover:shadow-[0_8px_60px_rgba(255,45,149,0.12)]'}
+                              `}
+                              >
+                                {/* Gradient border shell */}
+                                <div className={`absolute inset-0 rounded-[2rem] p-[1px] pointer-events-none z-0
+                                ${selectedTasks.includes(task.id)
+                                    ? 'bg-gradient-to-br from-pink-500/50 via-fuchsia-500/20 to-indigo-500/30'
+                                    : 'bg-gradient-to-br from-white/10 via-white/[0.03] to-white/5 group-hover:from-pink-500/30 group-hover:via-fuchsia-500/10 group-hover:to-indigo-500/20'}
+                                transition-all duration-700`}>
+                                  <div className="absolute inset-0 rounded-[2rem] bg-[#06030f]" />
+                                </div>
+
+                                {/* Holographic Scanline */}
+                                <div className="absolute inset-0 pointer-events-none overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-700 z-0">
+                                  <div className="absolute inset-x-0 h-full w-full bg-gradient-to-b from-transparent via-white/[0.025] to-transparent animate-scanline"></div>
+                                </div>
+
+                                {/* Left accent bar */}
+                                <div className={`absolute left-0 top-4 bottom-4 w-[3px] rounded-full z-10 transition-all duration-500
+                                ${task.status === "Completed"
+                                    ? 'bg-gradient-to-b from-emerald-400/80 to-emerald-600/20 shadow-[0_0_12px_rgba(16,185,129,0.6)]'
+                                    : 'bg-gradient-to-b from-pink-500/80 to-fuchsia-600/20 shadow-[0_0_12px_rgba(255,45,149,0.6)]'}`}
+                                />
+
+                                {/* Card inner */}
+                                <div className="relative z-10 p-5 sm:p-6 pl-6 sm:pl-7">
+
+                                  {/* Top row: checkbox + status + node ID */}
+                                  <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-3">
+                                      {/* Checkbox */}
+                                      <div className="relative h-5 w-5 flex-shrink-0">
+                                        <input
+                                          type="checkbox"
+                                          checked={selectedTasks.includes(task.id)}
+                                          onChange={() => toggleSelection(task.id)}
+                                          className="peer h-5 w-5 rounded-lg border-2 border-white/10 bg-black/40 text-pink-500 focus:ring-0 cursor-pointer appearance-none transition-all checked:bg-pink-600 checked:border-pink-600"
+                                        />
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-white opacity-0 peer-checked:opacity-100 transition-opacity scale-75">
+                                          <CheckIcon />
+                                        </div>
+                                      </div>
+
+                                      {/* Status pill */}
+                                      <div className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border transition-all duration-500 cursor-default
+                                      ${task.status === "Completed"
+                                          ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25 shadow-[0_0_14px_rgba(16,185,129,0.12)]"
+                                          : "bg-pink-500/10 text-pink-400 border-pink-500/25 shadow-[0_0_14px_rgba(255,45,149,0.12)]"}`}
+                                      >
+                                        <span className={`h-1.5 w-1.5 rounded-full ${task.status === "Completed" ? "bg-emerald-400 shadow-[0_0_6px_rgba(16,185,129,1)]" : "bg-pink-500 shadow-[0_0_6px_rgba(255,45,149,1)]"} animate-pulse`}></span>
+                                        {task.status}
+                                      </div>
+                                    </div>
+
+                                    {/* Node ID */}
+                                    <span className="text-[9px] font-mono text-slate-700 tracking-widest uppercase opacity-40">
+                                      #{task.id.slice(-4)}
+                                    </span>
+                                  </div>
+
+                                  {/* Mobile Done Button - Absolute Corner */}
+                                  <button
+                                    onClick={() => toggleTaskStatus(task.id)}
+                                    className={`sm:hidden absolute top-2.5 right-2.5 z-30 flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-white text-[10px] font-black tracking-wider transition-all duration-300 active:scale-95 shadow-lg border ${task.status === "Completed"
+                                        ? "bg-gradient-to-r from-amber-600 to-orange-600 border-amber-400/20 shadow-amber-500/20"
+                                        : "bg-gradient-to-r from-pink-600 to-fuchsia-600 border-pink-400/20 shadow-pink-500/20"
+                                      }`}
+                                  >
+                                    <span className="scale-[0.75]">
+                                      {task.status === "Completed" ? <UndoIcon /> : <CheckIcon />}
+                                    </span>
+                                    {task.status === "Completed" ? "Undo" : "Done"}
+                                  </button>
+
+                                  {/* Title */}
+                                  <div className="flex items-center gap-3 mb-2 flex-wrap">
+                                    <div className={`text-xl sm:text-2xl font-black tracking-tighter leading-tight uppercase italic break-words transition-all duration-700
+                                    ${task.status === "Completed" ? "text-emerald-500/30 blur-[0.4px] select-none scale-95" : "text-white"}`}>
+                                      {task.title}
+                                    </div>
+                                    {task.status === "Completed" && (
+                                      <div className="px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[8px] font-black tracking-[0.25em] uppercase animate-in fade-in zoom-in-95 duration-1000 shadow-[0_0_15px_rgba(16,185,129,0.1)]">
+                                        Done
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Description */}
+                                  <div className={`text-[13px] sm:text-sm font-light leading-relaxed italic line-clamp-2 mb-5 transition-all duration-500
+                                  ${task.status === "Completed" ? "text-slate-600" : "text-slate-400"}`}>
+                                    {task.description || "No additional metadata recorded for this node."}
+                                  </div>
+
+                                  {/* ── MOBILE footer (< sm) ── */}
+                                  <div className="sm:hidden flex flex-col gap-3">
+                                    <div className="flex items-center justify-between pt-1">
+                                      <div className="flex items-center gap-2">
+                                      </div>
+                                      <div className="flex items-center gap-1.5">
+                                        <button onClick={() => setViewTask(task)} title="View" className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-indigo-500/20 border border-white/5 text-indigo-400 hover:text-white transition-all duration-300 active:scale-90 shadow-[0_0_15px_rgba(99,102,241,0.12)]">
+                                          <EyeIcon />
+                                        </button>
+                                        <button onClick={() => startEdit(task)} title="Edit" className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-pink-500/20 border border-white/5 text-pink-500 hover:text-white transition-all duration-300 active:scale-90 shadow-[0_0_15px_rgba(255,45,149,0.12)]">
+                                          <EditIcon />
+                                        </button>
+                                        <button onClick={() => deleteTask(task.id)} title="Delete" className="p-2.5 rounded-xl bg-white/[0.04] hover:bg-rose-500/20 border border-white/5 text-rose-500 hover:text-white transition-all duration-300 active:scale-90 shadow-[0_0_15px_rgba(225,29,72,0.12)]">
+                                          <TrashIcon />
+                                        </button>
+                                      </div>
                                     </div>
                                   </div>
 
-                                  {/* Status Node */}
-                                  <button
-                                    onClick={() => toggleStatus(task.id)}
-                                    className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] border transition-all duration-500 flex items-center gap-2 ${task.status === "Completed"
-                                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_20px_rgba(16,185,129,0.1)]"
-                                      : "bg-pink-500/10 text-pink-500 border-pink-500/20 shadow-[0_0_20px_rgba(255,45,149,0.1)]"
-                                      }`}
-                                  >
-                                    <span className={`h-1.5 w-1.5 rounded-full animate-pulse-subtle ${task.status === "Completed" ? "bg-emerald-400" : "bg-pink-500"}`}></span>
-                                    {task.status}
-                                  </button>
-                                </div>
-
-                                <div className="text-[11px] font-mono text-slate-700 tracking-widest uppercase opacity-50">
-                                  NODE_{task.id.slice(-4)}
-                                </div>
-                              </div>
-
-                              <div className="flex flex-col mb-8 relative z-10">
-                                <div className={`text-2xl font-black transition-all duration-700 break-words tracking-tighter mb-2 leading-[0.9] uppercase italic ${task.status === "Completed" ? "text-slate-400 line-through" : "text-white"}`}>
-                                  {task.title}
-                                </div>
-                                <div className={`text-sm transition-all duration-700 break-words font-light leading-relaxed italic line-clamp-2 pr-4 ${task.status === "Completed" ? "text-slate-500" : "text-slate-300"}`}>
-                                  {task.description || "System: Default protocol active. No additional metadata recorded."}
-                                </div>
-                              </div>
-
-                              <div className="flex items-center justify-between pt-6 border-t border-white/[0.03] bg-transparent relative z-10">
-                                <div className="flex items-center gap-3">
-                                  <div className="flex -space-x-1">
-                                    <div className="w-2 h-2 rounded-full bg-pink-500/40"></div>
-                                    <div className="w-2 h-2 rounded-full bg-indigo-500/40"></div>
+                                  {/* ── DESKTOP footer (sm+) ── */}
+                                  <div className="hidden sm:flex items-center justify-between pt-4 border-t border-white/[0.04]">
+                                    <div className="flex items-center gap-3">
+                                    </div>
+                                    <div className="hidden sm:flex items-center p-0.5 bg-white/[0.02] border border-white/20 rounded-2xl gap-0 transition-all hover:border-white/30">
+                                      <button
+                                        onClick={() => toggleTaskStatus(task.id)}
+                                        title={task.status === "Completed" ? "Undo" : "Done"}
+                                        className={`flex items-center gap-1.5 px-3 py-2 rounded-xl transition-all duration-300 hover:bg-white/[0.03] active:scale-95 whitespace-nowrap ${task.status === "Completed"
+                                            ? "text-amber-500"
+                                            : "text-emerald-400"
+                                          }`}
+                                      >
+                                        <span className="scale-[0.8] block relative">
+                                          {task.status === "Completed" ? <UndoIcon /> : <CheckIcon />}
+                                        </span>
+                                        <span className="text-[9px] font-black tracking-[0.1em]">
+                                          {task.status === "Completed" ? "Undo" : "Done"}
+                                        </span>
+                                      </button>
+                                      <div className="w-[1px] h-4 bg-white/20" />
+                                      <button onClick={() => setViewTask(task)} title="View Info" className="p-2.5 hover:bg-white/[0.03] transition-all duration-300 text-indigo-400/60 hover:text-white active:scale-90">
+                                        <span className="scale-[0.8] block relative"><EyeIcon /></span>
+                                      </button>
+                                      <div className="w-[1px] h-4 bg-white/20" />
+                                      <button onClick={() => startEdit(task)} title="Edit Task" className="p-2.5 hover:bg-white/[0.03] transition-all duration-300 text-pink-500/60 hover:text-white active:scale-90">
+                                        <span className="scale-[0.8] block relative"><EditIcon /></span>
+                                      </button>
+                                      <div className="w-[1px] h-4 bg-white/20" />
+                                      <button onClick={() => deleteTask(task.id)} title="Delete Task" className="p-2.5 hover:bg-white/[0.03] transition-all duration-300 text-rose-500/60 hover:text-white active:scale-90">
+                                        <span className="scale-[0.8] block relative"><TrashIcon /></span>
+                                      </button>
+                                    </div>
                                   </div>
-                                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">P_v2</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <button onClick={() => setViewTask(task)} title="View Info" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-white border border-white/5 hover:scale-110 active:scale-95">
-                                    <span className="scale-[0.85] block relative"><EyeIcon /></span>
-                                  </button>
-                                  <button onClick={() => startEdit(task)} title="Edit Task" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-indigo-400 border border-white/5 hover:scale-110 active:scale-95">
-                                    <span className="scale-[0.85] block relative"><EditIcon /></span>
-                                  </button>
-                                  <button onClick={() => deleteTask(task.id)} title="Delete Task" className="p-2.5 bg-white/[0.03] hover:bg-white/[0.08] rounded-2xl transition-all duration-300 text-slate-600 hover:text-rose-500 border border-white/5 hover:scale-110 active:scale-95">
-                                    <span className="scale-[0.85] block relative"><TrashIcon /></span>
-                                  </button>
+
                                 </div>
                               </div>
-                            </div>
-                          ))}
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -763,20 +890,20 @@ export default function Home() {
         )
       }
 
-      {/* Profile Modal */}
       {showProfileModal && (
         <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-500 backdrop-blur-3xl">
-          <div className="absolute inset-0 bg-black/60" onClick={() => setShowProfileModal(false)}></div>
-          <div className="bg-[#050510] border border-white/10 rounded-3xl sm:rounded-[4rem] p-8 sm:p-12 max-w-lg w-full shadow-[0_50px_100px_rgba(0,0,0,0.8)] relative z-10 animate-in zoom-in-95 duration-500 overflow-hidden custom-scrollbar max-h-[90vh] overflow-y-auto">
-            <div className="absolute top-[-20%] left-[-20%] w-[60%] h-[60%] bg-pink-600/10 rounded-full blur-[100px] pointer-events-none"></div>
+          <div className="absolute inset-0 bg-black/80" onClick={() => setShowProfileModal(false)}></div>
+          <div className="bg-[#050510] border-2 border-pink-500/30 rounded-[3.5rem] p-12 sm:p-16 max-w-[420px] w-full text-center relative z-10 animate-in zoom-in-95 duration-500 shadow-[0_0_80px_rgba(255,45,149,0.1)]">
 
-            <button onClick={() => { setShowProfileModal(false); setIsEditingProfile(false); }} className="absolute top-6 right-6 p-2 text-slate-600 hover:text-white transition-colors z-20">
-              <XIcon />
+            <button onClick={() => { setShowProfileModal(false); setIsEditingProfile(false); }} className="absolute top-8 right-8 text-slate-500 hover:text-white transition-all hover:rotate-90 duration-500 z-20 group">
+              <div className="bg-white/5 p-3 rounded-full group-hover:bg-pink-500/10 border border-white/5 group-hover:border-pink-500/30 transition-all shadow-xl">
+                <XIcon />
+              </div>
             </button>
 
             {!isEditingProfile ? (
-              <div className="flex flex-col items-center text-center space-y-8 relative z-10">
-                <div className="h-28 w-28 sm:h-36 sm:w-36 rounded-[2.5rem] bg-white/[0.03] border-2 border-white/10 flex items-center justify-center overflow-hidden shadow-2xl relative group">
+              <div className="flex flex-col items-center text-center space-y-10 relative z-10">
+                <div className="h-32 w-32 sm:h-40 sm:w-40 rounded-[2.8rem] bg-black border-2 border-pink-500/30 flex items-center justify-center overflow-hidden shadow-[0_0_50px_rgba(255,45,149,0.2)] relative group transition-transform duration-700 hover:scale-[1.02]">
                   {userInfo.profilePic ? (
                     <img src={userInfo.profilePic} alt="Profile Big" className="h-full w-full object-cover" />
                   ) : (
@@ -795,17 +922,17 @@ export default function Home() {
                   </p>
                 </div>
 
-                <div className="w-full pt-8 border-t border-white/5 grid grid-cols-1 gap-4">
+                <div className="w-full pt-10 border-t border-white/5 grid grid-cols-1 gap-4">
                   <button
                     onClick={startProfileEdit}
-                    className="w-full btn-premium-pink py-5 rounded-2xl text-base uppercase font-black tracking-widest flex items-center justify-center gap-3"
+                    className="w-full btn-premium-pink py-5 rounded-2xl text-[17px] font-bold tracking-tight flex items-center justify-center gap-3"
                   >
                     <EditIcon />
                     Edit Profile
                   </button>
                   <button
                     onClick={handleLogout}
-                    className="w-full btn-premium-glass py-5 rounded-2xl text-base uppercase font-black tracking-widest text-rose-500 border-rose-500/20 hover:bg-rose-500/10 flex items-center justify-center gap-3"
+                    className="w-full btn-premium-glass py-5 rounded-2xl text-[17px] font-bold tracking-tight text-slate-300 border-white/10 hover:bg-rose-500/10 hover:text-rose-500 flex items-center justify-center gap-3"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
                     Sign Out
@@ -842,20 +969,20 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 gap-4 w-full">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">First Name</label>
+                    <label className="text-[11px] font-black tracking-wider text-slate-300 ml-1">First Name</label>
                     <input
                       type="text"
-                      className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold text-sm"
                       value={editProfileData.firstName}
                       onChange={(e) => setEditProfileData(prev => ({ ...prev, firstName: e.target.value }))}
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Last Name</label>
+                    <label className="text-[11px] font-black tracking-wider text-slate-300 ml-1">Last Name</label>
                     <input
                       type="text"
-                      className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold text-sm"
                       value={editProfileData.lastName}
                       onChange={(e) => setEditProfileData(prev => ({ ...prev, lastName: e.target.value }))}
                       required
@@ -864,10 +991,10 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Email Stream</label>
+                  <label className="text-[11px] font-black tracking-wider text-slate-300 ml-1">Email Stream</label>
                   <input
                     type="email"
-                    className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold text-sm"
                     value={editProfileData.email}
                     onChange={(e) => setEditProfileData(prev => ({ ...prev, email: e.target.value }))}
                     required
@@ -875,28 +1002,41 @@ export default function Home() {
                 </div>
 
                 <div className="space-y-2 w-full">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 ml-1">Security Key (Leave blank to keep current)</label>
-                  <input
-                    type="password"
-                    placeholder="••••••••"
-                    className="w-full bg-black/40 border border-white/5 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 transition-all font-bold text-sm"
-                    value={editProfileData.password}
-                    onChange={(e) => setEditProfileData(prev => ({ ...prev, password: e.target.value }))}
-                  />
+                  <label className="text-[11px] font-black tracking-wider text-slate-300 ml-1">Security Key (Leave blank to keep current)</label>
+                  <div className="relative group">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-5 py-3.5 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold text-sm"
+                      value={editProfileData.password}
+                      onChange={(e) => setEditProfileData(prev => ({ ...prev, password: e.target.value }))}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-pink-500 transition-colors p-1"
+                    >
+                      {showPassword ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24" /><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68" /><path d="M6.61 6.61A13.52 13.52 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61" /><line x1="2" x2="22" y1="2" y2="22" /></svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0z" /><circle cx="12" cy="12" r="3" /></svg>
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="pt-4 grid grid-cols-2 gap-4 w-full">
                   <button
                     type="submit"
-                    className="btn-premium-pink py-4 rounded-xl text-sm font-black tracking-widest uppercase italic"
+                    className="btn-premium-pink py-3 rounded-xl text-xs font-black tracking-wider italic whitespace-nowrap overflow-hidden"
                     disabled={actionLoading}
                   >
-                    {actionLoading ? 'Syncing...' : 'Update Node'}
+                    {actionLoading ? 'Syncing...' : 'Update User'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setIsEditingProfile(false)}
-                    className="btn-premium-glass py-4 rounded-xl text-sm font-black tracking-widest uppercase italic"
+                    className="btn-premium-glass py-3 rounded-xl text-xs font-black tracking-wider italic whitespace-nowrap overflow-hidden"
                   >
                     Abort
                   </button>
@@ -928,14 +1068,6 @@ export default function Home() {
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Custom Toast */}
-      {toast && (
-        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 z-[300] px-8 py-4 rounded-2xl backdrop-blur-3xl border shadow-2xl animate-in slide-in-from-bottom-10 duration-500 flex items-center gap-4 ${toast.type === "success" ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-rose-500/10 border-rose-500/20 text-rose-500"}`}>
-          <div className={`h-2 w-2 rounded-full animate-pulse ${toast.type === "success" ? "bg-emerald-400" : "bg-rose-400"}`}></div>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] italic pr-2">{toast.message}</span>
         </div>
       )}
     </main>

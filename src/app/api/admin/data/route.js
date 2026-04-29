@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getAllUsers, getAllTasks, deleteUser, deleteTaskAdmin } from '@/lib/db';
+import { getAllUsers, getAllTasks, deleteUser, deleteTaskAdmin, updateTaskAdmin } from '@/lib/db';
 
 const ADMIN_SECRET = "KC@210639";
 
@@ -27,6 +27,27 @@ export async function GET(request) {
         });
     } catch (error) {
         return NextResponse.json({ error: 'Failed' }, { status: 500 });
+    }
+}
+
+export async function PATCH(request) {
+    const { searchParams } = new URL(request.url);
+    const secret = searchParams.get('secret');
+    const targetId = searchParams.get('id');
+    const type = searchParams.get('type');
+    
+    if (secret !== ADMIN_SECRET) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    try {
+        const body = await request.json();
+        if (type === 'task') {
+            await updateTaskAdmin(targetId, body);
+        }
+        return NextResponse.json({ message: 'Updated successfully' });
+    } catch (error) {
+        return NextResponse.json({ error: 'Update failed' }, { status: 500 });
     }
 }
 
