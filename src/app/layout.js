@@ -28,11 +28,6 @@ export const metadata = {
     description: "A premium productivity experience designed for high-achievers.",
     images: ["/og-image.png"],
   },
-  icons: {
-    icon: "/icon.png",
-    shortcut: "/favicon.ico",
-    apple: "/icon.png",
-  },
   robots: {
     index: true,
     follow: true,
