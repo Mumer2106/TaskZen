@@ -9,6 +9,7 @@ import TaskList from "@/components/dashboard/TaskList";
 import TaskViewModal from "@/components/dashboard/TaskViewModal";
 import DeleteConfirmModal from "@/components/dashboard/DeleteConfirmModal";
 import ProfileModal from "@/components/dashboard/ProfileModal";
+import EditTaskModal from "@/components/dashboard/EditTaskModal";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function Dashboard() {
@@ -247,12 +248,10 @@ export default function Dashboard() {
 
   const startEditing = (task) => {
     setEditingTask(task);
-    setActiveTab("add");
   };
 
   const stopEditing = () => {
     setEditingTask(null);
-    setActiveTab("list");
   };
 
   const handleProfileUpdate = (updatedUser) => {
@@ -263,10 +262,7 @@ export default function Dashboard() {
   return (
     <DashboardLayout 
       activeTab={activeTab} 
-      setActiveTab={(tab) => {
-        if (tab !== 'add') setEditingTask(null);
-        setActiveTab(tab);
-      }}
+      setActiveTab={setActiveTab}
       userInfo={userInfo}
       onLogout={handleLogout}
       onProfileClick={() => setIsProfileModalOpen(true)}
@@ -344,6 +340,13 @@ export default function Dashboard() {
 
       {/* Overlays */}
       <TaskViewModal task={viewingTask} onClose={() => setViewingTask(null)} />
+      <EditTaskModal
+        task={editingTask}
+        onClose={stopEditing}
+        onTaskUpdated={handleUpdateTask}
+        actionLoading={actionLoading}
+        error={error}
+      />
       <DeleteConfirmModal 
         isOpen={!!taskToDelete} 
         onConfirm={confirmDelete} 

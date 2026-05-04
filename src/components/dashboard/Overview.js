@@ -72,8 +72,6 @@ export default function Overview({ tasks, activities = [] }) {
             >
               <div className={`absolute -inset-1 bg-gradient-to-br ${stat.color} to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-1000`} />
 
-              <div className="absolute inset-x-0 h-full w-[1px] bg-gradient-to-b from-transparent via-white/10 to-transparent left-0 translate-x-[-100%] group-hover:translate-x-[1000%] transition-transform duration-1000 ease-in-out" />
-
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-4">
                   <div className="text-[12px] font-black tracking-[0.3em] text-slate-300 drop-shadow-sm">{stat.tag}</div>
