@@ -301,13 +301,13 @@ export default function Dashboard() {
               placeholder="Search neural registry sequences..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-[#050510]/60 backdrop-blur-[10px] border-2 border-white/5 rounded-[2.5rem] pl-16 pr-8 py-6 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:border-pink-500/40 transition-all font-bold italic text-lg"
+              className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-[2.5rem] pl-16 pr-8 py-6 text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-lg shadow-inner"
             />
           </div>
           <button 
             onClick={handleRefresh}
             disabled={isRefreshing}
-            className={`px-8 rounded-[2.5rem] bg-[#050510]/60 backdrop-blur-[10px] border-2 border-white/5 transition-all active:scale-90 ${isRefreshing ? "text-pink-500" : "text-slate-500 hover:text-white hover:border-white/30"}`}
+            className={`px-8 rounded-[2.5rem] bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
             title="Refresh Sequence"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : "transition-transform group-hover:rotate-180"}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.2 2 7.4 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.2-2-7.4-4.9"></path></svg>

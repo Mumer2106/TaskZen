@@ -47,7 +47,7 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
               exit={{ opacity: 0, scale: 0.9 }}
               transition={{ duration: 0.6, delay: i * 0.05, ease: [0.16, 1, 0.3, 1] }}
               key={task.id}
-              className="group relative bg-[#050510]/40 backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-9 flex flex-col lg:flex-row items-center justify-between gap-8 border border-white/[0.08] hover:border-pink-500/40 transition-all duration-700 hover:shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_40px_rgba(255,45,149,0.1)] overflow-hidden"
+              className="group relative bg-white/[0.04] backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-9 flex flex-col lg:flex-row items-center justify-between gap-8 border-2 border-white/10 hover:border-pink-500/40 transition-all duration-700 hover:shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_40px_rgba(255,45,149,0.1)] overflow-hidden"
             >
               {/* Background Glow */}
               <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[300px] h-[300px] bg-pink-500/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />

@@ -91,8 +91,7 @@ export default function Overview({ tasks, activities = [] }) {
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,45,149,0.05),transparent)] pointer-events-none" />
           <div className="max-w-md relative z-10 font-bold">
             <h3 className="text-4xl font-black text-white italic tracking-tight mb-6 leading-[0.9] overflow-visible">
-              System <br />
-              <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-400 to-indigo-400 drop-shadow-[0_0_15px_rgba(255,45,149,0.3)] pr-[0.3em] -mr-[0.3em] whitespace-nowrap">Core Harmony</span>
+              System <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-400 to-indigo-400 drop-shadow-[0_0_15px_rgba(255,45,149,0.3)] pr-[0.3em] -mr-[0.3em] whitespace-nowrap">Core Harmony</span>
             </h3>
             <p className="text-slate-400 text-lg leading-relaxed font-light italic mb-8">
               The neural cluster is processing at <span className="text-white font-bold">{completionRate}% parity</span>.
