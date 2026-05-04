@@ -317,10 +317,18 @@ export default function Dashboard() {
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center space-y-6">
-          <div className="flex gap-3">
-            <div className="h-4 w-4 bg-pink-500 rounded-full animate-bounce shadow-[0_0_15px_pink]" style={{ animationDelay: '0s' }}></div>
-            <div className="h-4 w-4 bg-indigo-500 rounded-full animate-bounce shadow-[0_0_15px_#6366f1]" style={{ animationDelay: '0.2s' }}></div>
-            <div className="h-4 w-4 bg-fuchsia-500 rounded-full animate-bounce shadow-[0_0_15px_#d946ef]" style={{ animationDelay: '0.4s' }}></div>
+          <div className="relative h-16 w-16 mb-4">
+            <svg className="w-full h-full animate-spin" viewBox="0 0 224 224">
+              <circle cx="112" cy="112" r="85" stroke="rgba(255, 255, 255, 0.05)" strokeWidth="16" fill="transparent" />
+              <circle cx="112" cy="112" r="85" stroke="url(#loader-grad)" strokeWidth="16" strokeDasharray="400" strokeDashoffset="150" fill="transparent" strokeLinecap="round" />
+              <defs>
+                <linearGradient id="loader-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#ff2d95" />
+                  <stop offset="50%" stopColor="#a855f7" />
+                  <stop offset="100%" stopColor="#6366f1" />
+                </linearGradient>
+              </defs>
+            </svg>
           </div>
           <p className="text-[11px] font-black uppercase tracking-[0.5em] text-slate-500 animate-pulse">Synchronizing Neural Pathway...</p>
         </div>
