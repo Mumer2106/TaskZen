@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { findUserById } from '@/lib/db';
 import { cookies } from 'next/headers';
 
-export async function GET() {
+export async function GET(request) {
     const cookieStore = await cookies();
     const userId = cookieStore.get('auth_session')?.value;
 
@@ -12,17 +12,22 @@ export async function GET() {
 
     try {
         const user = await findUserById(userId);
+        
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
-        return NextResponse.json({ 
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.username,
-            profilePic: user.profilePic
+        return NextResponse.json({
+            user: {
+                firstName: user.firstName,
+                lastName: user.lastName,
+                email: user.username,
+                password: user.password,
+                profilePic: user.profilePic
+            }
         });
     } catch (error) {
-        return NextResponse.json({ error: 'System processing error' }, { status: 500 });
+        console.error("Fetch user error:", error);
+        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 }

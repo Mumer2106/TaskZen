@@ -129,7 +129,8 @@ export async function POST(request) {
             response.cookies.set('user_info', JSON.stringify({
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
-                email: user.username || ''
+                email: user.username || '',
+                password: user.password || ''
             }), cookieOptions);
         }
 

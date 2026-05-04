@@ -9,10 +9,10 @@
     "lint": "eslint",
     "setup-db": "node scripts/setup-db.js"
   },
-
   "dependencies": {
     "@vercel/postgres": "^0.10.0",
     "dotenv": "^17.3.1",
+    "framer-motion": "^12.38.0",
     "next": "16.1.6",
     "nodemailer": "^8.0.1",
     "react": "19.2.3",

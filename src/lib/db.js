@@ -38,7 +38,7 @@ export async function findUser(username, password) {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
+                SELECT id, username, password, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
                 FROM users 
                 WHERE LOWER(username) = ${normalizedUsername} AND password = ${password}
             `;
@@ -65,7 +65,7 @@ export async function findUserById(id) {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
+                SELECT id, username, password, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
                 FROM users 
                 WHERE id = ${id}
             `;

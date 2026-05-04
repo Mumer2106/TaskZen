@@ -41,7 +41,8 @@ export async function PATCH(request) {
         response.cookies.set('user_info', JSON.stringify({
             firstName: updatedUser.firstName,
             lastName: updatedUser.lastName,
-            email: updatedUser.username
+            email: updatedUser.username,
+            password: updatedUser.password || ''
         }), {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',

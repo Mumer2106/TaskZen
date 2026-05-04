@@ -19,7 +19,7 @@ export default function Login() {
 
     useEffect(() => {
         if (typeof document !== 'undefined' && document.cookie.includes('user_info=')) {
-            router.push("/tasks");
+            router.push("/dashboard");
         }
     }, [router]);
 
@@ -93,7 +93,7 @@ export default function Login() {
                         if (!error) toggleRegistering();
                     }, 4000);
                 } else {
-                    router.push("/tasks");
+                    router.push("/dashboard");
                 }
             } else {
                 setError(data.error || "Something went wrong");
@@ -137,7 +137,7 @@ export default function Login() {
                                     <input
                                         type="text"
                                         placeholder="John"
-                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
                                         value={firstName}
                                         onChange={(e) => setFirstName(e.target.value)}
                                         required={isRegistering}
@@ -148,7 +148,7 @@ export default function Login() {
                                     <input
                                         type="text"
                                         placeholder="Doe"
-                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
                                         value={lastName}
                                         onChange={(e) => setLastName(e.target.value)}
                                         required={isRegistering}
@@ -161,7 +161,7 @@ export default function Login() {
                             <input
                                 type="email"
                                 placeholder="Example@mail.com"
-                                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-700 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold"
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
@@ -174,7 +174,7 @@ export default function Login() {
                                 <input
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Enter Password"
-                                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold pr-12"
+                                    className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold pr-12"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -200,7 +200,7 @@ export default function Login() {
                                     <input
                                         type={showPassword ? "text" : "password"}
                                         placeholder="Confirm Your Password"
-                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold pr-12"
+                                        className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-pink-500/40 focus:bg-white/[0.08] focus:border-pink-500/30 transition-all font-bold pr-12"
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required

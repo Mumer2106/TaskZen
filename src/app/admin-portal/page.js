@@ -121,7 +121,7 @@ export default function AdminPortal() {
                             <input
                                 type="password"
                                 placeholder="Enter Security Key"
-                                className="relative w-full bg-black/80 border border-white/10 rounded-2xl px-6 py-5 text-center text-white placeholder-slate-700 placeholder:normal-case focus:outline-none focus:border-rose-500/50 transition-all font-black text-lg sm:text-xl tracking-widest uppercase"
+                                className="relative w-full bg-black/80 border border-white/10 rounded-2xl px-6 py-5 text-center text-white placeholder:text-slate-600 placeholder:normal-case focus:outline-none focus:border-rose-500/50 transition-all font-black text-lg sm:text-xl tracking-widest uppercase"
                                 value={secret}
                                 onChange={(e) => setSecret(e.target.value)}
                                 required
@@ -174,9 +174,12 @@ export default function AdminPortal() {
                         </div>
                     </div>
                     <div className="flex gap-3 w-full sm:w-auto">
-                        <button onClick={() => fetchData(secret)} className="flex-1 sm:flex-none px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all backdrop-blur-xl flex items-center justify-center gap-2 group">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-active:rotate-180 transition-transform duration-500 tracking-tighter"><path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /></svg>
-                            Refresh
+                        <button onClick={() => fetchData(secret)} disabled={loading} className="flex-1 sm:flex-none px-6 py-3 bg-white/5 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all backdrop-blur-xl flex items-center justify-center gap-2 group">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className={`${loading ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-500 tracking-tighter`}>
+                                <path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8" />
+                                <path d="M21 3v5h-5" />
+                            </svg>
+                            {loading ? "Decrypting..." : "Refresh"}
                         </button>
                         <button onClick={handleLock} className="flex-1 sm:flex-none px-6 py-3 bg-rose-600/10 border border-rose-600/20 text-rose-500 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-rose-600 transition-all hover:text-white shadow-lg flex items-center justify-center gap-2 group">
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>
@@ -420,10 +423,6 @@ export default function AdminPortal() {
                 @media (max-width: 640px) {
                     .custom-scrollbar-blue::-webkit-scrollbar, 
                     .custom-scrollbar-purple::-webkit-scrollbar { width: 2px; }
-                }
-
-                input::placeholder {
-                    color: rgba(100, 116, 139, 0.5);
                 }
             `}</style>
         </main>

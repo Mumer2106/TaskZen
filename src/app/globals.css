@@ -12,12 +12,24 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --font-sans: "Outfit", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  font-family: "Outfit", system-ui, -apple-system, sans-serif !important;
+  letter-spacing: -0.01em;
+}
+
+::placeholder {
+  font-family: "Outfit", system-ui, -apple-system, sans-serif;
+  font-weight: 300; /* Reduced font weight */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
+  font-family: "Outfit", system-ui, -apple-system, sans-serif;
+  letter-spacing: -0.01em;
   overflow-x: hidden;
 }
 
@@ -148,13 +160,65 @@ body {
     border-color: rgba(255, 255, 255, 0.2);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   }
+
+  /* Smooth Height Transition Trick */
+  .expandable-grid {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .expandable-grid.expanded {
+    grid-template-rows: 1fr;
+  }
+
+  .expandable-content {
+    overflow: hidden;
+  }
+}
+
+/* Premium Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-20px) rotate(1deg); }
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; filter: blur(40px); }
+  50% { opacity: 0.8; filter: blur(60px); }
+}
+
+@keyframes scanline {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100%); }
+}
+
+.animate-float {
+  animation: float 10s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 6s ease-in-out infinite;
+}
+
+.scanline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 10px;
+  background: linear-gradient(to bottom, transparent, rgba(255, 45, 149, 0.05), transparent);
+  animation: scanline 8s linear infinite;
+  pointer-events: none;
+  z-index: 5;
 }
 
 .text-gradient {
-  background: linear-gradient(to bottom right, #fff 30%, rgba(255, 255, 255, 0.5));
+  background: linear-gradient(135deg, #fff 0%, #fff 50%, rgba(255, 45, 149, 0.6) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
+  background-size: 200% auto;
   padding-right: 0.15em;
   margin-right: -0.15em;
   padding-bottom: 0.15em;
