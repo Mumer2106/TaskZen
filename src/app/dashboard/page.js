@@ -33,6 +33,10 @@ export default function Dashboard() {
   const [taskToDelete, setTaskToDelete] = useState(null);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [toast, setToast] = useState(null); // { message, type }
+
+  // Multi-select States
+  const [selectedIds, setSelectedIds] = useState(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   
   const router = useRouter();
 
@@ -231,6 +235,13 @@ export default function Dashboard() {
 
   const confirmDelete = async () => {
     if (!taskToDelete) return;
+
+    if (taskToDelete === "BULK") {
+      await handleBulkDelete();
+      setTaskToDelete(null);
+      return;
+    }
+
     const taskTitle = tasks.find(t => t.id === taskToDelete)?.title || "Unknown Node";
     try {
       const res = await fetch(`/api/tasks/${taskToDelete}`, { method: "DELETE" });
@@ -252,6 +263,43 @@ export default function Dashboard() {
 
   const stopEditing = () => {
     setEditingTask(null);
+  };
+
+  const toggleSelectId = (id) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  };
+
+  const selectAll = () => setSelectedIds(new Set(tasks.map(t => t.id)));
+  const deselectAll = () => setSelectedIds(new Set());
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0 || bulkDeleting) return;
+    setBulkDeleting(true);
+    try {
+      const ids = [...selectedIds];
+      const res = await fetch('/api/tasks', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (res.ok) {
+        setTasks(prev => prev.filter(t => !selectedIds.has(t.id)));
+        ids.forEach(id => {
+          const title = tasks.find(t => t.id === id)?.title || 'Node';
+          logActivity('Purged', title);
+        });
+        showToast(`${ids.length} Node${ids.length > 1 ? 's' : ''} Decommissioned`, 'error');
+        setSelectedIds(new Set());
+      }
+    } catch (err) {
+      console.error('Bulk delete failed:', err);
+    } finally {
+      setBulkDeleting(false);
+    }
   };
 
   const handleProfileUpdate = (updatedUser) => {
@@ -286,28 +334,30 @@ export default function Dashboard() {
       {activeTab === "list" && !loading && (
         <motion.div 
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-4xl mb-12 flex gap-4"
+          className="w-full max-w-4xl mb-12 flex flex-col gap-4"
         >
-          <div className="relative flex-1 group">
-            <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <div className="flex gap-4">
+            <div className="relative flex-1 group">
+              <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+              </div>
+              <input 
+                type="text" 
+                placeholder="Search neural registry sequences..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-[2.5rem] pl-16 pr-8 py-6 text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-lg shadow-inner"
+              />
             </div>
-            <input 
-              type="text" 
-              placeholder="Search neural registry sequences..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-[2.5rem] pl-16 pr-8 py-6 text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-lg shadow-inner"
-            />
+            <button 
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className={`px-8 rounded-[2.5rem] bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
+              title="Refresh Sequence"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : "transition-transform group-hover:rotate-180"}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.2 2 7.4 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.2-2-7.4-4.9"></path></svg>
+            </button>
           </div>
-          <button 
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className={`px-8 rounded-[2.5rem] bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
-            title="Refresh Sequence"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : "transition-transform group-hover:rotate-180"}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.2 2 7.4 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.2-2-7.4-4.9"></path></svg>
-          </button>
         </motion.div>
       )}
 
@@ -333,7 +383,7 @@ export default function Dashboard() {
           <AnimatePresence mode="wait">
             {activeTab === "overview" && <motion.div className="w-full" key="ov" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><Overview tasks={tasks} activities={activities} /></motion.div>}
             {activeTab === "add" && <motion.div className="w-full flex justify-center" key="ad" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><AddTask onTaskAdded={handleAddTask} onTaskUpdated={handleUpdateTask} initialData={editingTask} onCancel={stopEditing} actionLoading={actionLoading} error={error} /></motion.div>}
-            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask}/></motion.div>}
+            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask} selectedIds={selectedIds} onToggleSelect={toggleSelectId}/></motion.div>}
           </AnimatePresence>
         </div>
       )}
@@ -351,6 +401,7 @@ export default function Dashboard() {
         isOpen={!!taskToDelete} 
         onConfirm={confirmDelete} 
         onCancel={() => setTaskToDelete(null)} 
+        count={taskToDelete === "BULK" ? selectedIds.size : 1}
       />
       <ProfileModal 
         isOpen={isProfileModalOpen} 

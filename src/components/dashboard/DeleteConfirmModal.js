@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function DeleteConfirmModal({ isOpen, onConfirm, onCancel }) {
+export default function DeleteConfirmModal({ isOpen, onConfirm, onCancel, count = 1 }) {
   const [deleting, setDeleting] = useState(false);
 
   if (!isOpen) return null;
@@ -50,7 +50,7 @@ export default function DeleteConfirmModal({ isOpen, onConfirm, onCancel }) {
             </h2>
 
             <p className="text-slate-400 text-base leading-relaxed italic mb-10">
-              This node will be <span className="text-rose-500 font-bold">permanently decommissioned</span> from the global registry. This protocol cannot be reversed.
+              {count > 1 ? `These ${count} nodes` : "This node"} will be <span className="text-rose-500 font-bold">permanently decommissioned</span> from the global registry. This protocol cannot be reversed.
             </p>
 
             <div className="flex gap-4 w-full">
