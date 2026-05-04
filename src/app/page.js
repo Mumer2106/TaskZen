@@ -11,11 +11,10 @@ export default function LandingPage() {
   const featuresRef = useRef(null);
 
   const toggleFeatures = () => {
-    setShowFeatures(!showFeatures);
-    if (!showFeatures) {
-      setTimeout(() => {
-        featuresRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
+    const newState = !showFeatures;
+    setShowFeatures(newState);
+    if (newState) {
+      featuresRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -29,15 +28,15 @@ export default function LandingPage() {
 
   // Animation variants
   const fadeInUp = {
-    initial: { opacity: 0, y: 30 },
+    initial: { opacity: 0, y: 20 },
     animate: { opacity: 1, y: 0 },
-    transition: { duration: 0.8, ease: [0.2, 0.4, 0.3, 1] }
+    transition: { duration: 0.5, ease: "easeOut" }
   };
 
   const staggerContainer = {
     animate: {
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05
       }
     }
   };
@@ -61,11 +60,9 @@ export default function LandingPage() {
         className="relative z-20 w-full max-w-6xl px-6 py-12 flex-1 text-center flex flex-col justify-center items-center"
       >
         {/* Content */}
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-pink-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl rounded-full pointer-events-none z-0"
-        ></motion.div>
+        <div
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-pink-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none z-0"
+        ></div>
 
         <motion.h1
           variants={fadeInUp}
@@ -110,11 +107,10 @@ export default function LandingPage() {
       </motion.div>
 
       <div
-        ref={featuresRef}
         id="features"
-        className={`relative z-10 w-full max-w-7xl px-6 transition-all duration-1000 ease-in-out expandable-grid ${showFeatures ? 'expanded opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`relative z-10 w-full max-w-7xl px-6 transition-all duration-0 ease-in-out expandable-grid ${showFeatures ? 'expanded opacity-100' : 'opacity-0 pointer-events-none'}`}
       >
-        <div className="expandable-content">
+        <div className="expandable-content" ref={featuresRef}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 text-left border-t border-white/5 pt-12 sm:pt-16 pb-12 sm:pb-20">
             {[
               {

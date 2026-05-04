@@ -170,18 +170,8 @@ export default function GalaxyBackground() {
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
-      // Cosmic Dust (Nebulae)
-      const drawNebula = (x, y, radius, color) => {
-        const g = ctx.createRadialGradient(x, y, 0, x, y, radius);
-        g.addColorStop(0, color);
-        g.addColorStop(1, "rgba(2, 0, 13, 0)");
-        ctx.fillStyle = g;
-        ctx.globalCompositeOperation = "screen";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.globalCompositeOperation = "source-over";
-      };
-
-      drawNebula(centerX(), centerY(), 1000, "rgba(107, 91, 255, 0.03)");
+      // Cosmic Dust (Nebulae) removed due to performance lag. 
+      // AestheticBackground.js provides overlapping auroras natively via CSS.
 
       stars.forEach(s => {
         s.update();

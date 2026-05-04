@@ -161,11 +161,11 @@ body {
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
   }
 
-  /* Smooth Height Transition Trick */
+  /* Zero-Latency Expansion */
   .expandable-grid {
     display: grid;
     grid-template-rows: 0fr;
-    transition: grid-template-rows 0.8s cubic-bezier(0.23, 1, 0.32, 1);
+    transition: none;
   }
 
   .expandable-grid.expanded {
