@@ -1,9 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DeleteConfirmModal({ isOpen, onConfirm, onCancel }) {
+  const [deleting, setDeleting] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleConfirm = async () => {
+    if (deleting) return;
+    setDeleting(true);
+    try {
+      await onConfirm();
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -13,7 +26,7 @@ export default function DeleteConfirmModal({ isOpen, onConfirm, onCancel }) {
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
           exit={{ opacity: 0 }}
-          onClick={onCancel}
+          onClick={deleting ? undefined : onCancel}
           className="fixed inset-0 bg-[#02000d]/90 backdrop-blur-md" 
         />
         
@@ -43,15 +56,25 @@ export default function DeleteConfirmModal({ isOpen, onConfirm, onCancel }) {
             <div className="flex gap-4 w-full">
               <button
                 onClick={onCancel}
-                className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[11px] font-black tracking-widest transition-all text-slate-300"
+                disabled={deleting}
+                className="flex-1 py-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl text-[11px] font-black tracking-widest transition-all text-slate-300 disabled:opacity-40 disabled:cursor-not-allowed"
               >
                 Abort
               </button>
               <button
-                onClick={onConfirm}
-                className="flex-1 py-4 bg-rose-600 hover:bg-rose-500 border border-rose-500/50 rounded-2xl text-[11px] font-black tracking-widest transition-all text-white shadow-[0_10px_20px_rgba(244,63,94,0.3)]"
+                onClick={handleConfirm}
+                disabled={deleting}
+                className="flex-1 py-4 bg-rose-600 hover:bg-rose-500 border border-rose-500/50 rounded-2xl text-[11px] font-black tracking-widest transition-all text-white shadow-[0_10px_20px_rgba(244,63,94,0.3)] disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
-                Execute Purge
+                {deleting ? (
+                  <>
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                    </svg>
+                    Purging...
+                  </>
+                ) : "Execute Purge"}
               </button>
             </div>
           </div>

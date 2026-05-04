@@ -157,9 +157,17 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
                 <button
                   type="submit"
                   disabled={actionLoading || !title.trim() || !isDirty}
-                  className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-black tracking-widest hover:shadow-[0_0_30px_rgba(255,45,149,0.4)] transition-all active:scale-95 text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex-1 py-4 rounded-2xl bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-black tracking-widest hover:shadow-[0_0_30px_rgba(255,45,149,0.4)] transition-all active:scale-95 text-sm disabled:opacity-30 disabled:cursor-not-allowed flex items-center justify-center gap-3"
                 >
-                  {actionLoading ? "Updating..." : "Save Changes"}
+                  {actionLoading ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                      </svg>
+                      Saving...
+                    </>
+                  ) : "Save Changes"}
                 </button>
               </div>
             </form>

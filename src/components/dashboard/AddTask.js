@@ -105,10 +105,18 @@ export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCan
         <div className="flex gap-4">
           <button
             type="submit"
-            className="flex-1 btn-premium-pink py-5 rounded-[2rem] text-lg font-black tracking-widest transition-all duration-500 shadow-[0_10px_20px_rgba(255,45,149,0.1)] disabled:opacity-50"
+            className="flex-1 btn-premium-pink py-5 rounded-[2rem] text-lg font-black tracking-widest transition-all duration-500 shadow-[0_10px_20px_rgba(255,45,149,0.1)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             disabled={actionLoading || !title.trim()}
           >
-            {actionLoading ? "Establishing Link..." : initialData ? "Save Changes" : "Initialize Node"}
+            {actionLoading ? (
+              <>
+                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                  <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                </svg>
+                {initialData ? "Saving..." : "Initializing..."}
+              </>
+            ) : (initialData ? "Save Changes" : "Initialize Node")}
           </button>
           
           {initialData && (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
 const CheckIcon = () => (
@@ -19,6 +20,26 @@ const ViewIcon = () => (
 );
 
 export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTask, onViewTask }) {
+  const [loadingIds, setLoadingIds] = useState(new Set());
+
+  const setLoading = (id, val) => setLoadingIds(prev => {
+    const next = new Set(prev);
+    val ? next.add(id) : next.delete(id);
+    return next;
+  });
+
+  const handleToggle = async (id) => {
+    if (loadingIds.has(id)) return;
+    setLoading(id, true);
+    try { await onToggleStatus(id); } finally { setLoading(id, false); }
+  };
+
+  const handleDelete = async (id) => {
+    if (loadingIds.has(id)) return;
+    setLoading(id, true);
+    try { await onDeleteTask(id); } finally { setLoading(id, false); }
+  };
+
   if (tasks.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-8">
@@ -58,11 +79,17 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
               <div className="flex items-start sm:items-center gap-6 sm:gap-8 w-full">
                 {/* Status Checkbox */}
                 <button 
-                  onClick={() => onToggleStatus(task.id)}
-                  className={`flex-shrink-0 h-14 w-14 rounded-[1.25rem] border-2 flex items-center justify-center transition-all duration-700 relative overflow-hidden group/check ${task.status === "Completed" ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]" : "bg-white/[0.04] border-white/10 text-slate-600 hover:border-pink-500/50 hover:bg-pink-500/5"}`}
+                  onClick={() => handleToggle(task.id)}
+                  disabled={loadingIds.has(task.id)}
+                  className={`flex-shrink-0 h-14 w-14 rounded-[1.25rem] border-2 flex items-center justify-center transition-all duration-700 relative overflow-hidden group/check disabled:cursor-not-allowed ${task.status === "Completed" ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]" : "bg-white/[0.04] border-white/10 text-slate-600 hover:border-pink-500/50 hover:bg-pink-500/5"}`}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover/check:opacity-100 transition-opacity" />
-                  {task.status === "Completed" ? (
+                  {loadingIds.has(task.id) ? (
+                    <svg className="animate-spin h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                    </svg>
+                  ) : task.status === "Completed" ? (
                     <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckIcon /></motion.div>
                   ) : (
                     <div className="opacity-40 group-hover/check:opacity-100 group-hover/check:scale-110 transition-all"><CheckIcon /></div>
@@ -115,11 +142,19 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
                   <motion.div whileHover={{ scale: 1.1 }}><EditIcon /></motion.div>
                 </button>
                 <button 
-                  onClick={() => onDeleteTask(task.id)}
-                  className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all duration-500 active:scale-90 flex items-center justify-center"
+                  onClick={() => handleDelete(task.id)}
+                  disabled={loadingIds.has(task.id)}
+                  className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all duration-500 active:scale-90 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
                   title="Delete Node"
                 >
-                  <motion.div whileHover={{ scale: 1.1 }}><TrashIcon /></motion.div>
+                  {loadingIds.has(task.id) ? (
+                    <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                      <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                      <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                    </svg>
+                  ) : (
+                    <motion.div whileHover={{ scale: 1.1 }}><TrashIcon /></motion.div>
+                  )}
                 </button>
               </div>
 
