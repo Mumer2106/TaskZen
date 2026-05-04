@@ -148,7 +148,7 @@ export default function Overview({ tasks, activities = [] }) {
             })}
           </div>
 
-          <div className="mt-8 pt-8 border-t border-white/[0.05]">
+          <div className="mt-auto border-t border-white/[0.05] pt-8">
             <div className="flex items-center gap-4 mb-6">
               <div className="h-4 w-4 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/40">
                 <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />

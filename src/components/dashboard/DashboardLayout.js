@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function DashboardLayout({ children, activeTab, setActiveTab, userInfo, onLogout, onProfileClick }) {
   const [mounted, setMounted] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -40,7 +41,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={onLogout}
+            onClick={() => setShowLogoutConfirm(true)}
             className="h-12 w-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-slate-500 transition-colors shadow-lg group"
             title="Disconnect Session"
           >
@@ -76,7 +77,53 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
         {children}
       </div>
 
+      {/* Logout Confirmation Modal */}
+      <AnimatePresence>
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-[400] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowLogoutConfirm(false)}
+              className="absolute inset-0 bg-[#02000d]/80 backdrop-blur-xl"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-sm bg-gradient-to-b from-[#050510]/95 to-black/95 border border-rose-500/20 rounded-[2.5rem] shadow-[0_30px_100px_rgba(244,63,94,0.15)] overflow-hidden p-8 text-center"
+            >
+              <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
+              
+              <div className="mx-auto h-16 w-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(244,63,94,0.2)] text-rose-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+              </div>
 
+              <h3 className="text-2xl font-black text-white italic tracking-tighter mb-2">Disconnect Session</h3>
+              <p className="text-sm font-medium italic text-slate-400 mb-8 leading-relaxed">
+                Are you sure you want to terminate your neural connection?
+              </p>
+
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-4 rounded-2xl bg-white/[0.04] border-2 border-white/10 text-slate-400 font-bold hover:bg-white/[0.08] hover:text-white transition-all active:scale-95 text-sm tracking-widest"
+                >
+                  Abort
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="flex-1 py-4 rounded-2xl bg-rose-500/10 border-2 border-rose-500/30 text-rose-500 font-bold hover:bg-rose-500/20 hover:border-rose-500/50 hover:shadow-[0_0_20px_rgba(244,63,94,0.3)] transition-all active:scale-95 text-sm tracking-widest"
+                >
+                  Log Out
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
