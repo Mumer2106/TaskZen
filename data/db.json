@@ -45,15 +45,6 @@
     "1775459373023": [],
     "1775461573907": [
       {
-        "id": "1777636431785",
-        "userId": "1775461573907",
-        "title": "Test Task00003",
-        "description": "That was my third test task.",
-        "status": "Completed",
-        "createdAt": "2026-05-01T11:53:51.785Z",
-        "taskDate": "2026-05-05"
-      },
-      {
         "id": "1776753547162",
         "userId": "1775461573907",
         "title": "Test Task 00002",
@@ -61,15 +52,6 @@
         "status": "Completed",
         "createdAt": "2026-04-21T06:39:07.162Z",
         "taskDate": "2026-04-21"
-      },
-      {
-        "id": "1776149492100",
-        "userId": "1775461573907",
-        "title": "Test Task 00001",
-        "description": "This is my test task number (mujy nh pta)",
-        "status": "Completed",
-        "createdAt": "2026-04-14T06:51:32.100Z",
-        "taskDate": "2026-04-14"
       },
       {
         "id": "1775546769296",

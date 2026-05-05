@@ -75,6 +75,11 @@ export default function Dashboard() {
     fetchTasks(debouncedSearch);
   }, [debouncedSearch]);
 
+  // Reset selection when tab changes
+  useEffect(() => {
+    setSelectedIds(new Set());
+  }, [activeTab]);
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast(null), 3000);
@@ -146,6 +151,7 @@ export default function Dashboard() {
     setIsRefreshing(true);
     setSearch("");
     setDebouncedSearch("");
+    setSelectedIds(new Set());
     fetchTasks();
     showToast("Registry Synchronized", "success");
   };
@@ -260,6 +266,11 @@ export default function Dashboard() {
       const res = await fetch(`/api/tasks/${taskToDelete}`, { method: "DELETE" });
       if (res.ok) {
         setTasks((prev) => prev.filter((t) => t.id !== taskToDelete));
+        setSelectedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(taskToDelete);
+          return next;
+        });
         logActivity("Purged", taskTitle);
         showToast("Node Decommissioned", "error");
       }
