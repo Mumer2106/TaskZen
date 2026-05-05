@@ -128,24 +128,14 @@ export async function createUser(id, username, password, extraData = {}) {
             const firstName = extraData?.firstName || '';
             const lastName = extraData?.lastName || '';
             const profilePic = extraData?.profilePic || null;
-            const role = extraData?.role || 'user';
 
-            try {
-                await sql`
-                    INSERT INTO users (id, username, password, firstname, lastname, profilepic, role) 
-                    VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic}, ${role})
-                `;
-            } catch (innerError) {
-                if (innerError.message.includes('column "role" does not exist')) {
-                    // Fallback: Insert without role column
-                    await sql`
-                        INSERT INTO users (id, username, password, firstname, lastname, profilepic) 
-                        VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic})
-                    `;
-                } else {
-                    throw innerError;
-                }
-            }
+            // We don't include 'role' in the INSERT to maintain compatibility 
+            // with older database schemas that lack the 'role' column. 
+            // If the column exists, it will use the DEFAULT 'user'.
+            await sql`
+                INSERT INTO users (id, username, password, firstname, lastname, profilepic) 
+                VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic})
+            `;
 
             return {
                 id,
@@ -153,7 +143,7 @@ export async function createUser(id, username, password, extraData = {}) {
                 firstName,
                 lastName,
                 profilePic,
-                role,
+                role: 'user', // Default to user in the response
                 userId: id,
             };
         } catch (error) {

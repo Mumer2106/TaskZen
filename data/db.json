@@ -29,10 +29,10 @@
       "verificationToken": "fe2206e4f23f4ffe990533fd2467ac79c8c0952d121a036d53c972cd0d930d4a",
       "tokenExpiresAt": "2026-05-05T08:17:41.289Z"
     },
-    "1777975866783": {
-      "id": "1777975866783",
-      "username": "sameer123@gmail.com",
-      "password": "$2b$12$VCrVaDcalbOn5ki5bNvK8O5fLHlJpwV5slTaUxgSWc7s902KHpvIC",
+    "1777977214439": {
+      "id": "1777977214439",
+      "username": "sameerakhtar@gmail.com",
+      "password": "$2b$12$SMXeJGxQSNHRB2My8QJLOuS/w3McG1.LqsyC.8Jvdw2qNkd5hcncm",
       "firstName": "Sameer",
       "lastName": "Akhtar",
       "profilePic": null,
@@ -102,7 +102,7 @@
       }
     ],
     "1777965460621": [],
-    "1777975866783": []
+    "1777977214439": []
   },
   "lists": {
     "1777962592896": {

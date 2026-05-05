@@ -14,7 +14,10 @@ export async function GET(request) {
         const user = await findUserById(userId);
 
         if (!user) {
-            return NextResponse.json({ error: 'User not found' }, { status: 404 });
+            return NextResponse.json({ 
+                error: 'User not found',
+                hint: 'Your session may be stale. Please log out and sign in again.'
+            }, { status: 404 });
         }
 
         // Return user data with safe fallbacks
