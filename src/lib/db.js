@@ -130,10 +130,23 @@ export async function createUser(id, username, password, extraData = {}) {
             const profilePic = extraData?.profilePic || null;
             const role = extraData?.role || 'user';
 
-            await sql`
-                INSERT INTO users (id, username, password, firstname, lastname, profilepic, role) 
-                VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic}, ${role})
-            `;
+            try {
+                await sql`
+                    INSERT INTO users (id, username, password, firstname, lastname, profilepic, role) 
+                    VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic}, ${role})
+                `;
+            } catch (innerError) {
+                if (innerError.message.includes('column "role" does not exist')) {
+                    // Fallback: Insert without role column
+                    await sql`
+                        INSERT INTO users (id, username, password, firstname, lastname, profilepic) 
+                        VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic})
+                    `;
+                } else {
+                    throw innerError;
+                }
+            }
+
             return {
                 id,
                 username: normalizedUsername,
@@ -149,7 +162,7 @@ export async function createUser(id, username, password, extraData = {}) {
                 throw new Error('An account with this email already exists');
             }
             console.error("Postgres createUser error:", error.message);
-            throw new Error(`Database Error: ${error.message}`);
+            throw new Error(`Database Error: ${error.message}. Hint: Visit /api/setup-db to fix your schema.`);
         }
     } else {
         const db = await readJsonDb();
@@ -316,21 +329,17 @@ export async function deleteTasks(userId, taskIds) {
 export async function getAllUsers() {
     if (isPostgresConfigured) {
         try {
-            const { rows } = await sql`
-                SELECT id, username, firstname as "firstName", lastname as "lastName",
-                       profilepic as "profilePic", role
-                FROM users ORDER BY id DESC
-            `;
+            const { rows } = await sql`SELECT * FROM users ORDER BY id DESC`;
             return rows.map(r => ({
                 ...r,
-                firstName: r.firstName || r.firstname,
-                lastName: r.lastName || r.lastname,
-                profilePic: r.profilePic || r.profilepic,
+                firstName: r.firstName || r.firstname || '',
+                lastName: r.lastName || r.lastname || '',
+                profilePic: r.profilePic || r.profilepic || null,
                 role: r.role || 'user',
             }));
         } catch (error) {
             console.error("Postgres getAllUsers error:", error.message);
-            throw new Error(`Database Error: ${error.message}`);
+            throw new Error(`Database Error: ${error.message}. Hint: Visit /api/setup-db to fix your schema.`);
         }
     } else {
         const db = await readJsonDb();
@@ -406,23 +415,29 @@ export async function updateUser(userId, updates) {
             if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
             if (lastName !== undefined) await sql`UPDATE users SET lastname = ${lastName} WHERE id = ${userId}`;
             if (profilePic !== undefined) await sql`UPDATE users SET profilepic = ${profilePic} WHERE id = ${userId}`;
-            if (role !== undefined) await sql`UPDATE users SET role = ${role} WHERE id = ${userId}`;
+            
+            if (role !== undefined) {
+                try {
+                    await sql`UPDATE users SET role = ${role} WHERE id = ${userId}`;
+                } catch (e) {
+                    console.warn("Failed to update role:", e.message);
+                }
+            }
 
-            const { rows } = await sql`
-                SELECT id, username, firstname as "firstName", lastname as "lastName",
-                       profilepic as "profilePic", role
-                FROM users WHERE id = ${userId}
-            `;
-            return rows[0] ? {
-                ...rows[0],
-                firstName: rows[0].firstName || rows[0].firstname,
-                lastName: rows[0].lastName || rows[0].lastname,
-                profilePic: rows[0].profilePic || rows[0].profilepic,
-                role: rows[0].role || 'user',
+            const { rows } = await sql`SELECT * FROM users WHERE id = ${userId}`;
+            const updated = rows[0];
+            
+            return updated ? {
+                ...updated,
+                firstName: updated.firstName || updated.firstname || '',
+                lastName: updated.lastName || updated.lastname || '',
+                profilePic: updated.profilePic || updated.profilepic || null,
+                role: updated.role || 'user',
+                userId: updated.id,
             } : null;
         } catch (error) {
             console.error("Critical Postgres Update Error:", error.message);
-            throw new Error(`Database Error: ${error.message}`);
+            throw new Error(`Database Error: ${error.message}. Hint: Visit /api/setup-db to fix your schema.`);
         }
     } else {
         const db = await readJsonDb();
