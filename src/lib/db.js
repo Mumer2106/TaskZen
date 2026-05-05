@@ -62,6 +62,7 @@ export async function findUser(username, password) {
                 lastName: user.lastName || user.lastname || '',
                 profilePic: user.profilePic || user.profilepic || null,
                 role: user.role || 'user',
+                isBanned: !!user.isbanned || !!user.banned, // Safe check for Postgres/JSON
                 userId: user.id,
             });
         } catch (error) {
@@ -86,7 +87,7 @@ export async function findUser(username, password) {
             console.log(`[Security] Migrated user ${user.username} password to bcrypt.`);
         }
 
-        return sanitizeUser({ ...user, role: user.role || 'user' });
+        return sanitizeUser({ ...user, role: user.role || 'user', isBanned: !!user.banned });
     }
 }
 
@@ -105,6 +106,7 @@ export async function findUserById(id) {
                 lastName: r.lastName || r.lastname || '',
                 profilePic: r.profilePic || r.profilepic || null,
                 role: r.role || 'user',
+                isBanned: !!r.isbanned || !!r.banned,
                 userId: r.id,
             };
         } catch (error) {
@@ -115,7 +117,7 @@ export async function findUserById(id) {
         const db = await readJsonDb();
         const user = db.users[id];
         if (!user) return null;
-        return sanitizeUser({ ...user, role: user.role || 'user' });
+        return sanitizeUser({ ...user, role: user.role || 'user', isBanned: !!user.banned });
     }
 }
 
@@ -326,6 +328,7 @@ export async function getAllUsers() {
                 lastName: r.lastName || r.lastname || '',
                 profilePic: r.profilePic || r.profilepic || null,
                 role: r.role || 'user',
+                isBanned: !!r.isbanned || !!r.banned,
             }));
         } catch (error) {
             console.error("Postgres getAllUsers error:", error.message);
@@ -340,6 +343,7 @@ export async function getAllUsers() {
             lastName: u.lastName,
             profilePic: u.profilePic,
             role: u.role || 'user',
+            isBanned: !!u.banned,
         }));
     }
 }

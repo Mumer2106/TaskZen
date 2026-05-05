@@ -23,7 +23,8 @@ export async function GET() {
             { name: 'firstname', type: 'TEXT' },
             { name: 'lastname', type: 'TEXT' },
             { name: 'profilepic', type: 'TEXT' },
-            { name: 'role', type: 'TEXT DEFAULT \'user\'' }
+            { name: 'role', type: 'TEXT DEFAULT \'user\'' },
+            { name: 'banned', type: 'BOOLEAN DEFAULT FALSE' }
         ];
 
         for (const col of columnsToEnsure) {

@@ -1,29 +1,15 @@
 import { NextResponse } from 'next/server';
-import { findUserById } from '@/lib/db';
-import { cookies } from 'next/headers';
+import { validateSession } from '@/lib/auth-server';
 
 export async function GET(request) {
     try {
-        const cookieStore = await cookies();
-        const userId = cookieStore.get('auth_session')?.value;
-
-        if (!userId) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-        }
-
-        const user = await findUserById(userId);
-
-        if (!user) {
-            return NextResponse.json({ 
-                error: 'User not found',
-                hint: 'Your session may be stale. Please log out and sign in again.'
-            }, { status: 404 });
-        }
+        const { response, user } = await validateSession();
+        if (response) return response;
 
         // Return user data with safe fallbacks
         return NextResponse.json({
             user: {
-                id: user.id || user.userId || userId,
+                id: user.id || user.userId,
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 email: user.username || '',

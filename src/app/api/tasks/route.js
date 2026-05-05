@@ -1,29 +1,21 @@
 import { NextResponse } from 'next/server';
 import { getTasksForUser, addTask, deleteTasks } from '@/lib/db';
-import { cookies } from 'next/headers';
+import { validateSession } from '@/lib/auth-server';
 
 export async function GET(request) {
+    const { response, userId } = await validateSession();
+    if (response) return response;
+
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
-
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
 
     const tasks = await getTasksForUser(userId, search);
     return NextResponse.json(tasks);
 }
 
 export async function POST(request) {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { response, userId } = await validateSession();
+    if (response) return response;
 
     const { title, description, taskDate } = await request.json();
 
@@ -59,12 +51,8 @@ export async function POST(request) {
 }
 
 export async function DELETE(request) {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { response, userId } = await validateSession();
+    if (response) return response;
 
     const { ids } = await request.json();
     await deleteTasks(userId, ids);

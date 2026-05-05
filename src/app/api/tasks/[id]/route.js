@@ -1,14 +1,10 @@
 import { NextResponse } from 'next/server';
 import { updateTask, deleteTasks } from '@/lib/db';
-import { cookies } from 'next/headers';
+import { validateSession } from '@/lib/auth-server';
 
 export async function PATCH(request, { params }) {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { response, userId } = await validateSession();
+    if (response) return response;
 
     const { id } = await params;
     const updates = await request.json();
@@ -33,12 +29,8 @@ export async function PATCH(request, { params }) {
 }
 
 export async function DELETE(request, { params }) {
-    const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
-
-    if (!userId) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { response, userId } = await validateSession();
+    if (response) return response;
 
     const { id } = await params;
 
