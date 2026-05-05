@@ -47,9 +47,7 @@ export async function findUser(username, password) {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT id, username, password, firstname as "firstName", lastname as "lastName",
-                       profilepic as "profilePic", role
-                FROM users 
+                SELECT * FROM users 
                 WHERE LOWER(username) = ${normalizedUsername}
             `;
             const user = rows[0];
@@ -60,15 +58,15 @@ export async function findUser(username, password) {
 
             return sanitizeUser({
                 ...user,
-                firstName: user.firstName || user.firstname,
-                lastName: user.lastName || user.lastname,
-                profilePic: user.profilePic || user.profilepic,
+                firstName: user.firstName || user.firstname || '',
+                lastName: user.lastName || user.lastname || '',
+                profilePic: user.profilePic || user.profilepic || null,
                 role: user.role || 'user',
                 userId: user.id,
             });
         } catch (error) {
             console.error("Postgres findUser error:", error.message);
-            throw new Error(`Database Error: ${error.message}`);
+            throw new Error(`Database Error: ${error.message}. Hint: Try visiting /api/setup-db to sync your schema.`);
         }
     } else {
         const db = await readJsonDb();
@@ -96,24 +94,22 @@ export async function findUserById(id) {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT id, username, firstname as "firstName", lastname as "lastName",
-                       profilepic as "profilePic", role
-                FROM users 
+                SELECT * FROM users 
                 WHERE id = ${id}
             `;
             if (!rows[0]) return null;
             const r = rows[0];
             return {
                 ...r,
-                firstName: r.firstName || r.firstname,
-                lastName: r.lastName || r.lastname,
-                profilePic: r.profilePic || r.profilepic,
+                firstName: r.firstName || r.firstname || '',
+                lastName: r.lastName || r.lastname || '',
+                profilePic: r.profilePic || r.profilepic || null,
                 role: r.role || 'user',
                 userId: r.id,
             };
         } catch (error) {
             console.error("Postgres findUserById error:", error.message);
-            throw new Error(`Database Error: ${error.message}`);
+            throw new Error(`Database Error: ${error.message}. Hint: Try visiting /api/setup-db to sync your schema.`);
         }
     } else {
         const db = await readJsonDb();

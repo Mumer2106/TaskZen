@@ -28,6 +28,15 @@
       "emailVerifiedAt": null,
       "verificationToken": "fe2206e4f23f4ffe990533fd2467ac79c8c0952d121a036d53c972cd0d930d4a",
       "tokenExpiresAt": "2026-05-05T08:17:41.289Z"
+    },
+    "1777975866783": {
+      "id": "1777975866783",
+      "username": "sameer123@gmail.com",
+      "password": "$2b$12$VCrVaDcalbOn5ki5bNvK8O5fLHlJpwV5slTaUxgSWc7s902KHpvIC",
+      "firstName": "Sameer",
+      "lastName": "Akhtar",
+      "profilePic": null,
+      "role": "user"
     }
   },
   "tasks": {
@@ -92,7 +101,8 @@
         "taskDate": "2026-04-13"
       }
     ],
-    "1777965460621": []
+    "1777965460621": [],
+    "1777975866783": []
   },
   "lists": {
     "1777962592896": {
