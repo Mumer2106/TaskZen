@@ -1,20 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 
-export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCancel, actionLoading, error }) {
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [desc, setDesc] = useState(initialData?.description || "");
-  const [date, setDate] = useState(initialData?.taskDate || initialData?.taskdate || new Date().toISOString().split('T')[0]);
-
-  useEffect(() => {
-    if (initialData) {
-      setTitle(initialData.title || "");
-      setDesc(initialData.description || "");
-      setDate(initialData.taskDate || initialData.taskdate || new Date().toISOString().split('T')[0]);
-    }
-  }, [initialData]);
+function AddTaskInner({ onTaskAdded, onTaskUpdated, initialData, onCancel, actionLoading, error }) {
+  const [title, setTitle] = useState(() => initialData?.title || "");
+  const [desc, setDesc] = useState(() => initialData?.description || "");
+  const [date, setDate] = useState(() => initialData?.taskDate || initialData?.taskdate || new Date().toISOString().split('T')[0]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +17,7 @@ export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCan
       alert("System Error: Past dates cannot be selected for neural allocation.");
       return;
     }
-    
+
     let success;
     if (initialData) {
       success = await onTaskUpdated(initialData.id, { title, description: desc, taskDate: date });
@@ -41,7 +33,7 @@ export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCan
   };
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="w-full max-w-2xl bg-[#050510]/95 backdrop-blur-xl border-2 border-indigo-500/30 rounded-[3rem] p-8 sm:p-12 shadow-[0_0_20px_rgba(79,70,229,0.1)] flex flex-col hover:border-indigo-500/50 transition-all duration-500"
@@ -50,7 +42,7 @@ export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCan
         <span className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
         {initialData ? "ModifyProtocol" : "Allocate New Node"}
       </h2>
-      
+
       <form onSubmit={handleSubmit} className="space-y-8">
         <div className="space-y-3 group">
           <label className="text-[13px] font-black tracking-[0.2em] text-slate-400 flex items-center gap-2 group-focus-within:text-pink-500 transition-colors">
@@ -111,14 +103,14 @@ export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCan
             {actionLoading ? (
               <>
                 <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                  <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                  <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                 </svg>
                 {initialData ? "Saving..." : "Initializing..."}
               </>
             ) : (initialData ? "Save Changes" : "Initialize Node")}
           </button>
-          
+
           {initialData && (
             <button
               onClick={onCancel}
@@ -132,4 +124,9 @@ export default function AddTask({ onTaskAdded, onTaskUpdated, initialData, onCan
       </form>
     </motion.div>
   );
+}
+
+export default function AddTask(props) {
+  const key = props.initialData?.id || "new";
+  return <AddTaskInner key={key} {...props} />;
 }

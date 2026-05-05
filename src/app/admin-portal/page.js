@@ -18,15 +18,13 @@ export default function AdminPortal() {
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
     const [error, setError] = useState("");
-    const [pendingDelete, setPendingDelete] = useState(null); // { id, type, label }
-    const [activeTab, setActiveTab] = useState("users"); // 'users' or 'tasks' for mobile view
+    const [pendingDelete, setPendingDelete] = useState(null);
+    const [activeTab, setActiveTab] = useState("users");
     const [selectedUserId, setSelectedUserId] = useState(null);
 
     const handleLogin = async (e) => {
         e.preventDefault();
         fetchData(secret);
-        // Automatic 5s refresh removed to prevent unexpected background loading.
-        // Use the manual 'Refresh' button in the header for updates.
     };
 
     const handleLock = () => {
@@ -113,7 +111,7 @@ export default function AdminPortal() {
                     <h1 className="text-4xl sm:text-5xl font-black mb-2 tracking-tighter text-white uppercase italic drop-shadow-2xl">
                         Vault <span className="text-rose-500">Access</span>
                     </h1>
-                    <p className="text-slate-300 mb-10 font-black uppercase tracking-[0.4em] text-[10px]">Secure Gateway Protocol — v4.0</p>
+                    <p className="text-slate-300 mb-10 font-black uppercase tracking-[0.4em] text-[10px]">Secure Gateway Protocol &mdash; v4.0</p>
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="relative group">
@@ -135,10 +133,10 @@ export default function AdminPortal() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-5 bg-white text-black font-black rounded-2xl tracking-widest transition-all disabled:opacity-50 hover:bg-rose-500 hover:text-white transform hover:scale-[1.02] active:scale-95 shadow-2xl uppercase group relative overflow-hidden"
+                            className="w-full py-5 bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-black rounded-2xl tracking-widest transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-95 shadow-[0_20px_50px_rgba(225,29,72,0.3)] uppercase relative overflow-hidden group"
                         >
+                            <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                             <span className="relative z-10">{loading ? "DECRYPTING..." : "AUTHORIZE ACCESS"}</span>
-                            <div className="absolute inset-0 bg-gradient-to-r from-rose-600 to-indigo-600 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
                         </button>
                     </form>
                     <Link href="/" className="inline-block mt-12 text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors border-b border-transparent hover:border-white/20 pb-1">
@@ -231,19 +229,19 @@ export default function AdminPortal() {
                                     Registry
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  {selectedUserId && (
-                                    <button onClick={() => setSelectedUserId(null)} className="text-[8px] text-rose-400 hover:text-rose-300 font-bold uppercase tracking-widest border border-rose-500/20 px-2 py-1 rounded-md bg-rose-500/5 transition-all">Clear Filter</button>
-                                  )}
-                                  <span className="text-[9px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 tracking-widest">{data.users.length}</span>
+                                    {selectedUserId && (
+                                        <button onClick={() => setSelectedUserId(null)} className="text-[8px] text-rose-400 hover:text-rose-300 font-bold uppercase tracking-widest border border-rose-500/20 px-2 py-1 rounded-md bg-rose-500/5 transition-all">Clear Filter</button>
+                                    )}
+                                    <span className="text-[9px] bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full border border-blue-500/30 tracking-widest">{data.users.length}</span>
                                 </div>
                             </h2>
 
                             <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-2 custom-scrollbar-blue flex-1 min-h-[300px]">
                                 {data.users.map((user) => (
-                                    <div 
-                                      key={user.id} 
-                                      onClick={() => setSelectedUserId(user.id)}
-                                      className={`flex items-center justify-between p-4 border rounded-2xl transition-all group/item cursor-pointer ${selectedUserId === user.id ? 'bg-blue-600/10 border-blue-500/40 shadow-inner' : 'bg-white/[0.02] border-white/5 hover:bg-blue-500/5 hover:border-blue-500/20'}`}
+                                    <div
+                                        key={user.id}
+                                        onClick={() => setSelectedUserId(user.id)}
+                                        className={`flex items-center justify-between p-4 border rounded-2xl transition-all group/item cursor-pointer ${selectedUserId === user.id ? 'bg-blue-600/10 border-blue-500/40 shadow-inner' : 'bg-white/[0.02] border-white/5 hover:bg-blue-500/5 hover:border-blue-500/20'}`}
                                     >
                                         <div className="min-w-0 flex-1 mr-3">
                                             <div className="flex items-center gap-2 mb-1">
@@ -282,12 +280,12 @@ export default function AdminPortal() {
                             <div className="space-y-10 overflow-y-auto pr-2 sm:pr-4 custom-scrollbar-purple flex-1 min-h-[400px]">
                                 {(() => {
                                     const filteredTasks = data.tasks.filter(t => !selectedUserId || t.userId === selectedUserId || t.createdBy === selectedUserId);
-                                    
+
                                     if (filteredTasks.length === 0) {
                                         return (
                                             <div className="h-full flex flex-col items-center justify-center text-center p-12">
                                                 <div className="w-20 h-20 bg-purple-500/10 rounded-[2rem] flex items-center justify-center mb-6 border border-purple-500/20 text-purple-500 opacity-40">
-                                                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                                                 </div>
                                                 <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-200">No Stream Data</h3>
                                                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Zero packets detected for this node</p>
@@ -303,84 +301,82 @@ export default function AdminPortal() {
                                             return groups;
                                         }, {})
                                     )
-                                    .sort(([dateA], [dateB]) => {
-                                        if (dateA === "Unscheduled") return 1;
-                                        if (dateB === "Unscheduled") return -1;
-                                        return new Date(dateB) - new Date(dateA);
-                                    })
-                                    .map(([date, dateTasks]) => (
-                                        <div key={date} className="space-y-4">
-                                            <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-sm py-3 border-b border-white/5 flex items-center justify-between translate-y-[-1px]">
-                                                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-purple-500/80">
-                                                    {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
-                                                        date === "Unscheduled" ? "Buffer" : date}
-                                                </span>
-                                                <span className="text-[8px] font-mono text-slate-400">{dateTasks.length} NODES</span>
-                                            </div>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                {dateTasks.map((task) => (
-                                                    <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-4 sm:p-5 rounded-2xl hover:bg-white/[0.04] transition-all group/task">
-                                                        <div className="flex justify-between items-start mb-3">
-                                                            <div className="min-w-0 flex-1">
-                                                                <h3 className="text-base sm:text-lg font-black text-white tracking-tighter mb-1 uppercase italic leading-none truncate">{task.title}</h3>
-                                                                <div className="flex items-center gap-2">
-                                                                    <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
-                                                                        {task.status}
-                                                                    </span>
-                                                                    <span className="text-[7px] font-bold text-slate-400 uppercase">{task.owner || 'Unknown'}</span>
+                                        .sort(([dateA], [dateB]) => {
+                                            if (dateA === "Unscheduled") return 1;
+                                            if (dateB === "Unscheduled") return -1;
+                                            return new Date(dateB) - new Date(dateA);
+                                        })
+                                        .map(([date, dateTasks]) => (
+                                            <div key={date} className="space-y-4">
+                                                <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-sm py-3 border-b border-white/5 flex items-center justify-between translate-y-[-1px]">
+                                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-purple-500/80">
+                                                        {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
+                                                            date === "Unscheduled" ? "Buffer" : date}
+                                                    </span>
+                                                    <span className="text-[8px] font-mono text-slate-400">{dateTasks.length} NODES</span>
+                                                </div>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                    {dateTasks.map((task) => (
+                                                        <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-4 sm:p-5 rounded-2xl hover:bg-white/[0.04] transition-all group/task">
+                                                            <div className="flex justify-between items-start mb-3">
+                                                                <div className="min-w-0 flex-1">
+                                                                    <h3 className="text-base sm:text-lg font-black text-white tracking-tighter mb-1 uppercase italic leading-none truncate">{task.title}</h3>
+                                                                    <div className="flex items-center gap-2">
+                                                                        <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                                                                            {task.status}
+                                                                        </span>
+                                                                        <span className="text-[7px] font-bold text-slate-400 uppercase">{task.owner || 'Unknown'}</span>
+                                                                    </div>
                                                                 </div>
-                                                            </div>
 
-                                                            {/* Mobile Done Toggle - Absolute */}
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
-                                                                disabled={actionLoading === task.id}
-                                                                className={`lg:hidden absolute top-2 right-2 p-1.5 flex items-center gap-1 rounded-lg transition-all z-20 ${
-                                                                    task.status === 'Completed' 
-                                                                    ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20' 
-                                                                    : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
-                                                                }`}
-                                                            >
-                                                                {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
-                                                                <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
-                                                            </button>
-
-                                                            <div className="hidden lg:flex items-center gap-2">
+                                                                {/* Mobile Done Toggle - Absolute */}
                                                                 <button
-                                                                    onClick={() => toggleTaskStatus(task.id, task.status)}
+                                                                    onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
                                                                     disabled={actionLoading === task.id}
-                                                                    title={task.status === 'Completed' ? "Undo" : "Done"}
-                                                                    className={`p-1.5 flex items-center gap-1 rounded-lg transition-all opacity-0 group-hover/task:opacity-100 ${
-                                                                        task.status === 'Completed' 
-                                                                        ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white' 
-                                                                        : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
-                                                                    }`}
+                                                                    className={`lg:hidden absolute top-2 right-2 p-1.5 flex items-center gap-1 rounded-lg transition-all z-20 ${task.status === 'Completed'
+                                                                            ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20'
+                                                                            : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
+                                                                        }`}
                                                                 >
                                                                     {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
                                                                     <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
                                                                 </button>
+
+                                                                <div className="hidden lg:flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={() => toggleTaskStatus(task.id, task.status)}
+                                                                        disabled={actionLoading === task.id}
+                                                                        title={task.status === 'Completed' ? "Undo" : "Done"}
+                                                                        className={`p-1.5 flex items-center gap-1 rounded-lg transition-all opacity-0 group-hover/task:opacity-100 ${task.status === 'Completed'
+                                                                                ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white'
+                                                                                : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
+                                                                            }`}
+                                                                    >
+                                                                        {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
+                                                                        <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
+                                                                        className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5 opacity-0 group-hover/task:opacity-100"
+                                                                    >
+                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                                    </button>
+                                                                </div>
+
+                                                                {/* Mobile Delete Button */}
                                                                 <button
                                                                     onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                                    className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5 opacity-0 group-hover/task:opacity-100"
+                                                                    className="lg:hidden p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5"
                                                                 >
                                                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
                                                                 </button>
                                                             </div>
-
-                                                            {/* Mobile Delete Button */}
-                                                            <button
-                                                                onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                                className="lg:hidden p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5"
-                                                            >
-                                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                                            </button>
+                                                            <p className="text-[11px] text-slate-300 font-medium line-clamp-2 italic">&quot;{task.description || "No metadata recorded."}&quot;</p>
                                                         </div>
-                                                        <p className="text-[11px] text-slate-300 font-medium line-clamp-2 italic">"{task.description || "No metadata recorded."}"</p>
-                                                    </div>
-                                                ))}
+                                                    ))}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ));
+                                        ));
                                 })()}
                             </div>
                         </div>
@@ -398,7 +394,7 @@ export default function AdminPortal() {
                         </div>
                         <h3 className="text-3xl font-black text-white mb-3 tracking-tighter uppercase italic">Confirm Purge</h3>
                         <p className="text-slate-300 mb-8 text-sm leading-relaxed font-bold italic">
-                            Deleting <span className="text-rose-500">"{pendingDelete.label}"</span> will permanently remove it from the secure ledger.
+                            Deleting <span className="text-rose-500">&quot;{pendingDelete.label}&quot;</span> will permanently remove it from the secure ledger.
                         </p>
                         <div className="grid grid-cols-2 gap-4">
                             <button onClick={confirmDelete} className="py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl tracking-widest transition-all shadow-lg active:scale-95 uppercase text-xs">Execute</button>

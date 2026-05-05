@@ -26,7 +26,7 @@ export async function POST(request) {
     }
 
     const { title, description, taskDate } = await request.json();
-    
+
     if (!title || title.trim().length === 0) {
         return NextResponse.json({ error: 'Task title is required' }, { status: 400 });
     }

@@ -3,8 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
-import AestheticBackground from "@/components/AestheticBackground";
-import GalaxyBackground from "@/components/GalaxyBackground";
+import NexusBackground from "@/components/NexusBackground";
 
 export default function LandingPage() {
   const [showFeatures, setShowFeatures] = useState(false);
@@ -19,11 +18,11 @@ export default function LandingPage() {
   };
 
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    if (typeof document !== 'undefined') {
-      const isAuth = document.cookie.includes('user_info=');
-      setIsLoggedIn(isAuth);
-    }
+    setMounted(true);
+    setIsLoggedIn(document.cookie.includes("user_info="));
   }, []);
 
   // Animation variants
@@ -44,13 +43,13 @@ export default function LandingPage() {
   return (
     <main className="min-h-screen bg-[#02000d] text-white selection:bg-pink-500/30 relative overflow-hidden flex flex-col items-center">
 
-      {/* Background Layers */}
-      <AestheticBackground />
-      <GalaxyBackground />
-
+      {/* Background Layer */}
+      <NexusBackground />
+      
       {/* Grid overlay for depth */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none z-10 opacity-20">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px] [mask-image:radial-gradient(ellipse_at_center,black,transparent_80%)]"></div>
+      <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_90%)] opacity-30"></div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,45,149,0.03),transparent_50%)]"></div>
       </div>
 
       <motion.div
@@ -60,9 +59,6 @@ export default function LandingPage() {
         className="relative z-20 w-full max-w-6xl px-6 py-12 flex-1 text-center flex flex-col justify-center items-center"
       >
         {/* Content */}
-        <div
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-pink-500/10 via-purple-500/5 to-transparent rounded-full blur-3xl pointer-events-none z-0"
-        ></div>
 
         <motion.h1
           variants={fadeInUp}
@@ -138,12 +134,12 @@ export default function LandingPage() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.2, duration: 0.8 }}
-                className={`group relative bg-white/[0.02] backdrop-blur-2xl border border-white/5 shadow-2xl rounded-3xl sm:rounded-[3rem] p-8 sm:p-12 transition-all duration-1000 transform hover:bg-white/[0.05] hover:border-white/10 hover:-translate-y-3`}
+                className={`group relative bg-white/[0.03] backdrop-blur-3xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)] rounded-3xl sm:rounded-[3.5rem] p-8 sm:p-12 transition-all duration-700 transform hover:bg-white/[0.07] hover:border-white/20 hover:-translate-y-4 hover:shadow-[0_20px_50px_rgba(255,45,149,0.15)]`}
               >
-                <div className={`absolute inset-0 bg-gradient-to-br ${feat.color} to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700 rounded-3xl sm:rounded-[3rem]`}></div>
+                <div className={`absolute inset-0 bg-gradient-to-br ${feat.color} to-transparent opacity-0 group-hover:opacity-30 transition-opacity duration-700 rounded-3xl sm:rounded-[3.5rem]`}></div>
 
                 <div className="relative z-10">
-                  <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-2xl sm:rounded-3xl bg-white/[0.03] flex items-center justify-center mb-6 sm:mb-8 border border-white/5 group-hover:border-white/20 group-hover:scale-110 transition-all duration-500 shadow-xl">
+                  <div className="h-16 w-16 sm:h-24 sm:w-24 rounded-2xl sm:rounded-[2rem] bg-white/[0.05] flex items-center justify-center mb-6 sm:mb-10 border border-white/10 group-hover:border-white/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-500 shadow-2xl">
                     {feat.icon}
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
@@ -161,7 +157,7 @@ export default function LandingPage() {
 
       <footer className="w-full text-center py-8 sm:py-12 text-slate-500 relative z-10 border-t border-white/[0.03] mt-auto">
         <p className="text-[10px] sm:text-xs font-black tracking-widest uppercase opacity-60">
-          Designed for the ambitious. © {new Date().getFullYear()}
+          Designed for the ambitious. © {mounted ? new Date().getFullYear() : ""}
         </p>
       </footer>
     </main>

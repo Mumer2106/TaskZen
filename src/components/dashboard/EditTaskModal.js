@@ -1,30 +1,18 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoading, error }) {
-  const [title, setTitle] = useState("");
-  const [desc, setDesc] = useState("");
-  const [date, setDate] = useState("");
+function EditTaskModalInner({ task, onClose, onTaskUpdated, actionLoading, error }) {
+  const initialTitle = task?.title || "";
+  const initialDesc = task?.description || "";
+  const initialDate = task?.taskDate || task?.taskdate || new Date().toISOString().split("T")[0];
 
-  // Track original values to detect changes
-  const [origTitle, setOrigTitle] = useState("");
-  const [origDesc, setOrigDesc] = useState("");
-  const [origDate, setOrigDate] = useState("");
+  const [title, setTitle] = useState(() => initialTitle);
+  const [desc, setDesc] = useState(() => initialDesc);
+  const [date, setDate] = useState(() => initialDate);
 
-  const isDirty = title !== origTitle || desc !== origDesc || date !== origDate;
-
-  useEffect(() => {
-    if (task) {
-      const t = task.title || "";
-      const d = task.description || "";
-      const dt = task.taskDate || task.taskdate || new Date().toISOString().split("T")[0];
-      setTitle(t); setOrigTitle(t);
-      setDesc(d);  setOrigDesc(d);
-      setDate(dt); setOrigDate(dt);
-    }
-  }, [task]);
+  const isDirty = title !== initialTitle || desc !== initialDesc || date !== initialDate;
 
   // Lock scroll when open
   useEffect(() => {
@@ -51,9 +39,7 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
   };
 
   return (
-    <AnimatePresence>
-      {task && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -81,7 +67,7 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
               onClick={onClose}
               className="absolute top-6 right-6 h-10 w-10 flex items-center justify-center rounded-full bg-white/[0.05] border border-white/10 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-slate-400 transition-colors z-10"
             >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
             </motion.button>
 
             {/* Header */}
@@ -95,7 +81,7 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
               {/* Title */}
               <div className="space-y-2 group">
                 <label className="text-[12px] font-black tracking-[0.2em] text-slate-400 flex items-center gap-2 group-focus-within:text-indigo-400 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                   Task Objective
                 </label>
                 <input
@@ -112,7 +98,7 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
               {/* Description */}
               <div className="space-y-2 group">
                 <label className="text-[12px] font-black tracking-[0.2em] text-slate-400 flex items-center gap-2 group-focus-within:text-indigo-400 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="6" x2="3" y2="6"/><line x1="15" y1="12" x2="3" y2="12"/><line x1="17" y1="18" x2="3" y2="18"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="21" y1="6" x2="3" y2="6" /><line x1="15" y1="12" x2="3" y2="12" /><line x1="17" y1="18" x2="3" y2="18" /></svg>
                   Metadata Description
                 </label>
                 <textarea
@@ -127,7 +113,7 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
               {/* Date */}
               <div className="space-y-2 group">
                 <label className="text-[12px] font-black tracking-[0.2em] text-slate-400 flex items-center gap-2 group-focus-within:text-indigo-400 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>
                   Execution Date
                 </label>
                 <input
@@ -162,8 +148,8 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
                   {actionLoading ? (
                     <>
                       <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/>
+                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
                       </svg>
                       Saving...
                     </>
@@ -173,7 +159,13 @@ export default function EditTaskModal({ task, onClose, onTaskUpdated, actionLoad
             </form>
           </motion.div>
         </div>
-      )}
+  );
+}
+
+export default function EditTaskModal(props) {
+  return (
+    <AnimatePresence>
+      {props.task && <EditTaskModalInner key={props.task.id} {...props} />}
     </AnimatePresence>
   );
 }

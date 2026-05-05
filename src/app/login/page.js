@@ -68,9 +68,9 @@ export default function Login() {
             const res = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ 
-                    username, 
-                    password: trimmedPassword, 
+                body: JSON.stringify({
+                    username,
+                    password: trimmedPassword,
                     isRegistering,
                     firstName: isRegistering ? firstName.trim() : undefined,
                     lastName: isRegistering ? lastName.trim() : undefined
@@ -81,17 +81,21 @@ export default function Login() {
 
             if (res.ok) {
                 if (isRegistering) {
-                    const methodText = "confirmation email";
                     setSuccessMessage({
-                        text: `Success! Your ${methodText} has been sent. You can now sign in.`,
+                        text: `Account created! Redirecting to Sign In...`,
                         url: data.previewUrl
                     });
 
-                    // Don't auto-open window anymore, it's blocked by browsers and causes auth errors
-
                     setTimeout(() => {
-                        if (!error) toggleRegistering();
-                    }, 4000);
+                        setIsRegistering(false);
+                        setEmail(email); // pre-fill email so user just needs to enter password
+                        setPassword("");
+                        setConfirmPassword("");
+                        setFirstName("");
+                        setLastName("");
+                        setSuccessMessage(null);
+                        setError("");
+                    }, 2000);
                 } else {
                     router.push("/dashboard");
                 }
@@ -120,9 +124,9 @@ export default function Login() {
                             TaskZen
                         </h1>
                     </Link>
-                        <h2 className="text-4xl font-black mb-2 text-white italic tracking-tighter drop-shadow-[0_0_20px_rgba(255,45,149,0.3)]">
-                            {isRegistering ? "Create Account" : "Sign In"}
-                        </h2>
+                    <h2 className="text-4xl font-black mb-2 text-white italic tracking-tighter drop-shadow-[0_0_20px_rgba(255,45,149,0.3)]">
+                        {isRegistering ? "Create Account" : "Sign In"}
+                    </h2>
                     <p className="text-slate-500 font-light">
                         {isRegistering ? "Create an account to save your tasks." : "Sign in to access your dashboard."}
                     </p>

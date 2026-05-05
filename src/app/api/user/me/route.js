@@ -12,18 +12,20 @@ export async function GET(request) {
 
     try {
         const user = await findUserById(userId);
-        
+
         if (!user) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
+        // Never return the password — findUserById already strips it via sanitizeUser
         return NextResponse.json({
             user: {
+                id: user.id || user.userId,
                 firstName: user.firstName,
                 lastName: user.lastName,
                 email: user.username,
-                password: user.password,
-                profilePic: user.profilePic
+                profilePic: user.profilePic,
+                role: user.role || 'user',
             }
         });
     } catch (error) {

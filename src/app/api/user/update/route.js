@@ -16,7 +16,8 @@ export async function PATCH(request) {
 
         const updates = {};
         if (username !== undefined) updates.username = username.trim().toLowerCase();
-        if (password !== undefined) updates.password = password.trim();
+        // Pass raw new password — db.updateUser will bcrypt-hash it
+        if (password !== undefined && password.trim().length > 0) updates.password = password.trim();
         if (firstName !== undefined) updates.firstName = firstName.trim();
         if (lastName !== undefined) updates.lastName = lastName.trim();
         if (profilePic !== undefined) updates.profilePic = profilePic;
@@ -27,32 +28,35 @@ export async function PATCH(request) {
             return NextResponse.json({ error: 'User not found' }, { status: 404 });
         }
 
+        const cookieOptions = {
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'lax',
+            maxAge: 60 * 60 * 24 * 7,
+            path: '/',
+        };
+
         const response = NextResponse.json({
             message: 'Profile updated successfully',
             user: {
                 firstName: updatedUser.firstName,
                 lastName: updatedUser.lastName,
                 profilePic: updatedUser.profilePic,
-                email: updatedUser.username
+                email: updatedUser.username,
+                role: updatedUser.role || 'user',
             }
         });
 
-        // Update user_info cookie
+        // Refresh user_info cookie — no password field
         response.cookies.set('user_info', JSON.stringify({
-            firstName: updatedUser.firstName,
-            lastName: updatedUser.lastName,
-            email: updatedUser.username,
-            password: updatedUser.password || ''
-        }), {
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 60 * 60 * 24 * 7,
-            path: '/',
-        });
+            firstName: updatedUser.firstName || '',
+            lastName: updatedUser.lastName || '',
+            email: updatedUser.username || '',
+            role: updatedUser.role || 'user',
+        }), cookieOptions);
 
         return response;
     } catch (error) {
         console.error("Profile update error:", error);
-        return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+        return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
     }
 }

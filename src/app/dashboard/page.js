@@ -20,7 +20,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
-  
+
   // Search & Refresh States
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
@@ -37,20 +37,28 @@ export default function Dashboard() {
   // Multi-select States
   const [selectedIds, setSelectedIds] = useState(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
-  
+
   const router = useRouter();
+
+  // Load activities when userInfo is available
+  useEffect(() => {
+    if (userInfo?.email) {
+      const savedActivities = localStorage.getItem(`taskzen_activities_${userInfo.email}`);
+      if (savedActivities) {
+        try {
+          setActivities(JSON.parse(savedActivities));
+        } catch (e) {
+          console.error("Failed to parse activities");
+        }
+      } else {
+        setActivities([]); // Clear activities if none found for this user
+      }
+    }
+  }, [userInfo]);
 
   useEffect(() => {
     checkAuth();
     fetchTasks();
-    const savedActivities = localStorage.getItem("taskzen_activities");
-    if (savedActivities) {
-      try {
-        setActivities(JSON.parse(savedActivities));
-      } catch (e) {
-        console.error("Failed to parse activities");
-      }
-    }
   }, []);
 
   // Debouncing Search Effect
@@ -81,27 +89,32 @@ export default function Dashboard() {
     };
     setActivities(prev => {
       const updated = [newActivity, ...prev].slice(0, 10);
-      localStorage.setItem("taskzen_activities", JSON.stringify(updated));
+      if (userInfo?.email) {
+        localStorage.setItem(`taskzen_activities_${userInfo.email}`, JSON.stringify(updated));
+      }
       return updated;
     });
   };
 
 
-  const checkAuth = () => {
-    if (typeof document !== "undefined") {
-      const cookies = document.cookie.split("; ");
-      const userInfoCookie = cookies.find(row => row.startsWith("user_info="));
-      if (!userInfoCookie) {
-        router.push("/login");
+  const checkAuth = async () => {
+    try {
+      const res = await fetch('/api/user/me');
+      if (!res.ok) {
+        router.push('/login');
         return;
       }
-      try {
-        const data = JSON.parse(decodeURIComponent(userInfoCookie.split("=")[1]));
-        setUserInfo(data);
-      } catch (e) {
-        console.error("Session corrupt:", e);
-        router.push("/login");
-      }
+      const data = await res.json();
+      setUserInfo({
+        firstName: data.user.firstName || '',
+        lastName: data.user.lastName || '',
+        email: data.user.email || '',
+        role: data.user.role || 'user',
+        profilePic: data.user.profilePic || null,
+      });
+    } catch (e) {
+      console.error("Auth check failed:", e);
+      router.push('/login');
     }
   };
 
@@ -127,9 +140,9 @@ export default function Dashboard() {
 
   const handleRefresh = () => {
     const now = Date.now();
-    if (now - lastRefreshTime.current < 3000) return; 
+    if (now - lastRefreshTime.current < 3000) return;
     lastRefreshTime.current = now;
-    
+
     setIsRefreshing(true);
     setSearch("");
     setDebouncedSearch("");
@@ -308,8 +321,8 @@ export default function Dashboard() {
   };
 
   return (
-    <DashboardLayout 
-      activeTab={activeTab} 
+    <DashboardLayout
+      activeTab={activeTab}
       setActiveTab={setActiveTab}
       userInfo={userInfo}
       onLogout={handleLogout}
@@ -318,7 +331,7 @@ export default function Dashboard() {
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 50, x: '-50%' }}
             animate={{ opacity: 1, y: 0, x: '-50%' }}
             exit={{ opacity: 0, scale: 0.8, x: '-50%' }}
@@ -332,7 +345,7 @@ export default function Dashboard() {
 
       {/* Contextual Search & Tools */}
       {activeTab === "list" && !loading && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-4xl mb-12 flex flex-col gap-4"
         >
@@ -341,15 +354,15 @@ export default function Dashboard() {
               <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
               </div>
-              <input 
-                type="text" 
+              <input
+                type="text"
                 placeholder="Search neural registry sequences..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-[2.5rem] pl-16 pr-8 py-6 text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-lg shadow-inner"
               />
             </div>
-            <button 
+            <button
               onClick={handleRefresh}
               disabled={isRefreshing}
               className={`px-8 rounded-[2.5rem] bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
@@ -381,9 +394,9 @@ export default function Dashboard() {
       ) : (
         <div className="w-full flex-1 flex flex-col items-center">
           <AnimatePresence mode="wait">
-            {activeTab === "overview" && <motion.div className="w-full" key="ov" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><Overview tasks={tasks} activities={activities} /></motion.div>}
-            {activeTab === "add" && <motion.div className="w-full flex justify-center" key="ad" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><AddTask onTaskAdded={handleAddTask} onTaskUpdated={handleUpdateTask} initialData={editingTask} onCancel={stopEditing} actionLoading={actionLoading} error={error} /></motion.div>}
-            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask} selectedIds={selectedIds} onToggleSelect={toggleSelectId}/></motion.div>}
+            {activeTab === "overview" && <motion.div className="w-full" key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Overview tasks={tasks} activities={activities} /></motion.div>}
+            {activeTab === "add" && <motion.div className="w-full flex justify-center" key="ad" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AddTask onTaskAdded={handleAddTask} onTaskUpdated={handleUpdateTask} initialData={editingTask} onCancel={stopEditing} actionLoading={actionLoading} error={error} /></motion.div>}
+            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask} selectedIds={selectedIds} onToggleSelect={toggleSelectId} /></motion.div>}
           </AnimatePresence>
         </div>
       )}
@@ -397,15 +410,15 @@ export default function Dashboard() {
         actionLoading={actionLoading}
         error={error}
       />
-      <DeleteConfirmModal 
-        isOpen={!!taskToDelete} 
-        onConfirm={confirmDelete} 
-        onCancel={() => setTaskToDelete(null)} 
+      <DeleteConfirmModal
+        isOpen={!!taskToDelete}
+        onConfirm={confirmDelete}
+        onCancel={() => setTaskToDelete(null)}
         count={taskToDelete === "BULK" ? selectedIds.size : 1}
       />
-      <ProfileModal 
-        isOpen={isProfileModalOpen} 
-        onClose={() => setIsProfileModalOpen(false)} 
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
         userInfo={userInfo}
         onUpdate={handleProfileUpdate}
       />

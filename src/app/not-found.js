@@ -30,8 +30,8 @@ export default function NotFound() {
         </h1>
 
         <p className="text-lg sm:text-xl text-slate-400 font-light mx-auto leading-relaxed mb-10 sm:mb-12">
-          The task you're looking for seems to have escaped the flow.
-          <span className="text-slate-200 block sm:inline"> Let's get you back to productivity.</span>
+          The task you&apos;re looking for seems to have escaped the flow.
+          <span className="text-slate-200 block sm:inline"> Let&apos;s get you back to productivity.</span>
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto">

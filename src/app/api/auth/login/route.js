@@ -52,7 +52,7 @@ async function sendWelcomeNotification(contact, firstName) {
         console.log(`[Email Sent] Message ID: ${info.messageId}`);
         const previewUrl = nodemailer.getTestMessageUrl(info);
         console.log(`[Email Preview] URL: ${previewUrl}`);
-        
+
         return {
             type: 'Email',
             previewUrl: previewUrl
@@ -66,7 +66,7 @@ async function sendWelcomeNotification(contact, firstName) {
 export async function POST(request) {
     try {
         const { username: rawUsername, password: rawPassword, isRegistering, firstName, lastName } = await request.json();
-        const username = (rawUsername || '').trim();
+        const username = (rawUsername || '').trim().toLowerCase();
         const password = (rawPassword || '').trim();
         const cleanFirstName = (firstName || '').trim();
         const cleanLastName = (lastName || '').trim();
@@ -100,12 +100,13 @@ export async function POST(request) {
 
         const response = NextResponse.json({
             message: 'Success',
-            user: { 
-                id: user.id || '', 
-                username: user.username || '', 
-                firstName: user.firstName || '', 
+            user: {
+                id: user.id || '',
+                username: user.username || '',
+                firstName: user.firstName || '',
                 lastName: user.lastName || '',
-                profilePic: user.profilePic || null
+                profilePic: user.profilePic || null,
+                role: user.role || 'user'
             },
             notificationSent: !!isRegistering,
             previewUrl: notificationResult?.previewUrl || null
@@ -125,23 +126,23 @@ export async function POST(request) {
                 httpOnly: true,
             });
 
-            // Set display info (Not HttpOnly) - No profilePic here to avoid size limits
+            // Set display info (Not HttpOnly) — never expose password
             response.cookies.set('user_info', JSON.stringify({
                 firstName: user.firstName || '',
                 lastName: user.lastName || '',
                 email: user.username || '',
-                password: user.password || ''
+                role: user.role || 'user'
             }), cookieOptions);
         }
 
         return response;
     } catch (error) {
         console.error("Global Auth Handler Exception:", error);
-        
+
         // Provide more detailed error message in 500 response to help debugging on live platform
         // In a strict production environment, you might want to log this instead of returning it
         const errorMessage = error.message || 'Unknown internal error';
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: `System: ${errorMessage}`,
             stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         }, { status: 500 });

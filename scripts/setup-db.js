@@ -12,7 +12,8 @@ async function setup() {
                 password TEXT,
                 firstname TEXT,
                 lastname TEXT,
-                profilepic TEXT
+                profilepic TEXT,
+                role TEXT DEFAULT 'user'
             );
         `;
 
@@ -20,6 +21,7 @@ async function setup() {
             await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS firstname TEXT;`;
             await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS lastname TEXT;`;
             await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS profilepic TEXT;`;
+            await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'user';`;
         } catch (err) {
             console.log('ALTER user table might have failed or columns already exist.');
         }

@@ -1,6 +1,7 @@
 import { sql } from '@vercel/postgres';
 import fs from 'fs/promises';
 import path from 'path';
+import bcrypt from 'bcryptjs';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
 
@@ -9,10 +10,9 @@ async function readJsonDb() {
         const data = await fs.readFile(DB_PATH, 'utf8');
         return JSON.parse(data);
     } catch (error) {
-        // Ensure data directory exists if it doesn't
         try {
             await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-        } catch (e) {}
+        } catch (e) { }
         return { users: {}, tasks: {} };
     }
 }
@@ -27,37 +27,68 @@ async function writeJsonDb(data) {
     }
 }
 
-// Explicitly choose adapter via environment variable, or fallback to auto-detection
+// Strips password from a user object before returning to callers
+function sanitizeUser(user) {
+    if (!user) return null;
+    const { password, ...safe } = user;
+    return safe;
+}
+
 const DB_ADAPTER = process.env.DB_ADAPTER || (process.env.POSTGRES_URL ? 'postgres' : 'json');
 const isPostgresConfigured = DB_ADAPTER === 'postgres';
 
 console.log(`[Database] Using adapter: ${DB_ADAPTER}`);
 
+// ─── Auth Helpers ─────────────────────────────────────────────────────────────
+
 export async function findUser(username, password) {
-    const normalizedUsername = username.toLowerCase();
+    const normalizedUsername = username.toLowerCase().trim();
+
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT id, username, password, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
+                SELECT id, username, password, firstname as "firstName", lastname as "lastName",
+                       profilepic as "profilePic", role
                 FROM users 
-                WHERE LOWER(username) = ${normalizedUsername} AND password = ${password}
+                WHERE LOWER(username) = ${normalizedUsername}
             `;
-            if (!rows[0]) return null;
-            return {
-                ...rows[0],
-                firstName: rows[0].firstName || rows[0].firstname,
-                lastName: rows[0].lastName || rows[0].lastname,
-                profilePic: rows[0].profilePic || rows[0].profilepic,
-                userId: rows[0].id // Fallback for userId if id is used
-            };
+            const user = rows[0];
+            if (!user) return null;
+
+            const isMatch = await verifyPassword(password, user.password);
+            if (!isMatch) return null;
+
+            return sanitizeUser({
+                ...user,
+                firstName: user.firstName || user.firstname,
+                lastName: user.lastName || user.lastname,
+                profilePic: user.profilePic || user.profilepic,
+                role: user.role || 'user',
+                userId: user.id,
+            });
         } catch (error) {
             console.error("Postgres findUser error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
-
     } else {
         const db = await readJsonDb();
-        return Object.values(db.users).find(u => u.username.toLowerCase() === normalizedUsername && u.password === password) || null;
+        const user = Object.values(db.users).find(
+            u => u.username.toLowerCase() === normalizedUsername
+        );
+        if (!user) return null;
+
+        const isMatch = await verifyPassword(password, user.password);
+        if (!isMatch) return null;
+
+        // On successful match with plaintext password, migrate to bcrypt
+        if (!user.password.startsWith('$2')) {
+            const hashed = await bcrypt.hash(password, 12);
+            db.users[user.id].password = hashed;
+            await writeJsonDb(db);
+            console.log(`[Security] Migrated user ${user.username} password to bcrypt.`);
+        }
+
+        return sanitizeUser({ ...user, role: user.role || 'user' });
     }
 }
 
@@ -65,52 +96,58 @@ export async function findUserById(id) {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT id, username, password, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" 
+                SELECT id, username, firstname as "firstName", lastname as "lastName",
+                       profilepic as "profilePic", role
                 FROM users 
                 WHERE id = ${id}
             `;
             if (!rows[0]) return null;
+            const r = rows[0];
             return {
-                ...rows[0],
-                firstName: rows[0].firstName || rows[0].firstname,
-                lastName: rows[0].lastName || rows[0].lastname,
-                profilePic: rows[0].profilePic || rows[0].profilepic,
-                userId: rows[0].id // Fallback for userId if id is used
+                ...r,
+                firstName: r.firstName || r.firstname,
+                lastName: r.lastName || r.lastname,
+                profilePic: r.profilePic || r.profilepic,
+                role: r.role || 'user',
+                userId: r.id,
             };
         } catch (error) {
             console.error("Postgres findUserById error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
-
     } else {
         const db = await readJsonDb();
-        return db.users[id] || null;
+        const user = db.users[id];
+        if (!user) return null;
+        return sanitizeUser({ ...user, role: user.role || 'user' });
     }
 }
 
 export async function createUser(id, username, password, extraData = {}) {
+    const hashedPassword = await bcrypt.hash(password, 12);
+
     if (isPostgresConfigured) {
         try {
-            const normalizedUsername = username.toLowerCase();
+            const normalizedUsername = username.toLowerCase().trim();
             const firstName = extraData?.firstName || '';
             const lastName = extraData?.lastName || '';
             const profilePic = extraData?.profilePic || null;
-            
-            // Use strictly lowercase column names to match standard Postgres folding
+            const role = extraData?.role || 'user';
+
             await sql`
-                INSERT INTO users (id, username, password, firstname, lastname, profilepic) 
-                VALUES (${id}, ${normalizedUsername}, ${password}, ${firstName}, ${lastName}, ${profilePic})
+                INSERT INTO users (id, username, password, firstname, lastname, profilepic, role) 
+                VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic}, ${role})
             `;
-            return { 
-                id, 
-                username: normalizedUsername, 
-                firstName, 
-                lastName, 
+            return {
+                id,
+                username: normalizedUsername,
+                firstName,
+                lastName,
                 profilePic,
-                userId: id // Fallback
+                role,
+                userId: id,
             };
         } catch (error) {
-
             const msg = error.message.toLowerCase();
             if (msg.includes('unique constraint') || msg.includes('duplicate key') || msg.includes('already exists')) {
                 throw new Error('An account with this email already exists');
@@ -120,25 +157,38 @@ export async function createUser(id, username, password, extraData = {}) {
         }
     } else {
         const db = await readJsonDb();
-        const normalizedUsername = username.toLowerCase();
+        const normalizedUsername = username.toLowerCase().trim();
         if (Object.values(db.users).some(u => u.username.toLowerCase() === normalizedUsername)) {
             throw new Error('An account with this email already exists');
         }
-        if (!password) throw new Error('System: Critical password mismatch in creation');
-        const newUser = { 
-            id: id, 
-            username: normalizedUsername, 
-            password: password,
+        const newUser = {
+            id,
+            username: normalizedUsername,
+            password: hashedPassword,
             firstName: extraData?.firstName || '',
             lastName: extraData?.lastName || '',
-            profilePic: extraData?.profilePic || null
+            profilePic: extraData?.profilePic || null,
+            role: extraData?.role || 'user',
         };
         db.users[id] = newUser;
         if (!db.tasks[id]) db.tasks[id] = [];
         await writeJsonDb(db);
-        return newUser;
+        return sanitizeUser(newUser);
     }
 }
+
+// ─── Password Verification (handles both bcrypt and legacy plaintext) ─────────
+
+async function verifyPassword(plain, stored) {
+    if (!stored) return false;
+    if (stored.startsWith('$2')) {
+        return bcrypt.compare(plain, stored);
+    }
+    // Legacy plaintext — accept but caller should migrate
+    return plain === stored;
+}
+
+// ─── Task Functions ───────────────────────────────────────────────────────────
 
 export async function getTasksForUser(userId, search = '') {
     if (isPostgresConfigured) {
@@ -164,20 +214,19 @@ export async function getTasksForUser(userId, search = '') {
                 ...r,
                 taskDate: r.taskDate || r.taskdate || 'Unscheduled',
                 createdAt: r.createdAt || r.createdat,
-                userId: r.userId || r.userid
+                userId: r.userId || r.userid,
             }));
         } catch (error) {
             console.error("Postgres getTasksForUser error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
-
     } else {
         const db = await readJsonDb();
         let tasks = db.tasks[userId] || [];
         if (search) {
             const query = search.toLowerCase();
-            tasks = tasks.filter(t => 
-                (t.title && t.title.toLowerCase().includes(query)) || 
+            tasks = tasks.filter(t =>
+                (t.title && t.title.toLowerCase().includes(query)) ||
                 (t.description && t.description.toLowerCase().includes(query))
             );
         }
@@ -266,25 +315,37 @@ export async function deleteTasks(userId, taskIds) {
     }
 }
 
-// Admin Helpers
+// ─── Admin Helpers ────────────────────────────────────────────────────────────
+
 export async function getAllUsers() {
     if (isPostgresConfigured) {
         try {
-            const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users ORDER BY id DESC`;
+            const { rows } = await sql`
+                SELECT id, username, firstname as "firstName", lastname as "lastName",
+                       profilepic as "profilePic", role
+                FROM users ORDER BY id DESC
+            `;
             return rows.map(r => ({
                 ...r,
                 firstName: r.firstName || r.firstname,
                 lastName: r.lastName || r.lastname,
-                profilePic: r.profilePic || r.profilepic
+                profilePic: r.profilePic || r.profilepic,
+                role: r.role || 'user',
             }));
         } catch (error) {
             console.error("Postgres getAllUsers error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
-
     } else {
         const db = await readJsonDb();
-        return Object.values(db.users).map(u => ({ id: u.id, username: u.username, firstName: u.firstName, lastName: u.lastName, profilePic: u.profilePic }));
+        return Object.values(db.users).map(u => ({
+            id: u.id,
+            username: u.username,
+            firstName: u.firstName,
+            lastName: u.lastName,
+            profilePic: u.profilePic,
+            role: u.role || 'user',
+        }));
     }
 }
 
@@ -292,7 +353,9 @@ export async function getAllTasks() {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT tasks.id, tasks.userid as "userId", tasks.title, tasks.description, tasks.status, tasks.createdat as "createdAt", tasks.taskdate as "taskDate", users.username as owner 
+                SELECT tasks.id, tasks.userid as "userId", tasks.title, tasks.description,
+                       tasks.status, tasks.createdat as "createdAt", tasks.taskdate as "taskDate",
+                       users.username as owner 
                 FROM tasks 
                 JOIN users ON tasks.userid = users.id 
                 ORDER BY tasks.id DESC
@@ -301,14 +364,13 @@ export async function getAllTasks() {
                 ...r,
                 taskDate: r.taskDate || r.taskdate || 'Unscheduled',
                 createdAt: r.createdAt || r.createdat,
-                userId: r.userId || r.userid
+                userId: r.userId || r.userid,
             }));
         } catch (error) {
             console.error("Postgres getAllTasks error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
     } else {
-
         const db = await readJsonDb();
         const allTasks = [];
         for (const [userId, userTasks] of Object.entries(db.tasks)) {
@@ -338,43 +400,70 @@ export async function deleteUser(userId) {
 
 export async function updateUser(userId, updates) {
     if (isPostgresConfigured) {
-        const { username, password, firstName, lastName, profilePic } = updates;
+        const { username, password, firstName, lastName, profilePic, role } = updates;
         try {
             if (username !== undefined) await sql`UPDATE users SET username = ${username.toLowerCase()} WHERE id = ${userId}`;
-            if (password !== undefined) await sql`UPDATE users SET password = ${password} WHERE id = ${userId}`;
+            if (password !== undefined) {
+                const hashed = await bcrypt.hash(password, 12);
+                await sql`UPDATE users SET password = ${hashed} WHERE id = ${userId}`;
+            }
             if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
             if (lastName !== undefined) await sql`UPDATE users SET lastname = ${lastName} WHERE id = ${userId}`;
             if (profilePic !== undefined) await sql`UPDATE users SET profilepic = ${profilePic} WHERE id = ${userId}`;
-            
-            const { rows } = await sql`SELECT id, username, firstname as "firstName", lastname as "lastName", profilepic as "profilePic" FROM users WHERE id = ${userId}`;
-            return rows[0];
+            if (role !== undefined) await sql`UPDATE users SET role = ${role} WHERE id = ${userId}`;
+
+            const { rows } = await sql`
+                SELECT id, username, firstname as "firstName", lastname as "lastName",
+                       profilepic as "profilePic", role
+                FROM users WHERE id = ${userId}
+            `;
+            return rows[0] ? {
+                ...rows[0],
+                firstName: rows[0].firstName || rows[0].firstname,
+                lastName: rows[0].lastName || rows[0].lastname,
+                profilePic: rows[0].profilePic || rows[0].profilepic,
+                role: rows[0].role || 'user',
+            } : null;
         } catch (error) {
             console.error("Critical Postgres Update Error:", error.message);
             throw new Error(`Database Error: ${error.message}`);
         }
     } else {
         const db = await readJsonDb();
-        if (db.users[userId]) {
-            const filteredUpdates = {};
-            Object.keys(updates).forEach(key => {
-                if (updates[key] !== undefined) {
-                    filteredUpdates[key] = updates[key];
-                }
-            });
+        if (!db.users[userId]) return null;
 
-            if (filteredUpdates.username) {
-                const newUsername = filteredUpdates.username.toLowerCase();
-                if (Object.values(db.users).some(u => u.id !== userId && u.username.toLowerCase() === newUsername)) {
-                    throw new Error('This email is already in use by another account');
-                }
-                filteredUpdates.username = newUsername;
-            }
-
-            db.users[userId] = { ...db.users[userId], ...filteredUpdates };
-            await writeJsonDb(db);
-            return db.users[userId];
+        const filteredUpdates = {};
+        for (const [key, val] of Object.entries(updates)) {
+            if (val !== undefined) filteredUpdates[key] = val;
         }
-        return null;
+
+        if (filteredUpdates.username) {
+            const newUsername = filteredUpdates.username.toLowerCase();
+            if (Object.values(db.users).some(u => u.id !== userId && u.username.toLowerCase() === newUsername)) {
+                throw new Error('This email is already in use by another account');
+            }
+            filteredUpdates.username = newUsername;
+        }
+
+        // Hash new password if provided
+        if (filteredUpdates.password) {
+            filteredUpdates.password = await bcrypt.hash(filteredUpdates.password, 12);
+        }
+
+        db.users[userId] = { ...db.users[userId], ...filteredUpdates };
+        await writeJsonDb(db);
+        return sanitizeUser({ ...db.users[userId], role: db.users[userId].role || 'user' });
+    }
+}
+
+export async function promoteUserToAdmin(userId) {
+    if (isPostgresConfigured) {
+        await sql`UPDATE users SET role = 'admin' WHERE id = ${userId}`;
+    } else {
+        const db = await readJsonDb();
+        if (!db.users[userId]) throw new Error(`User ${userId} not found`);
+        db.users[userId].role = 'admin';
+        await writeJsonDb(db);
     }
 }
 
@@ -416,4 +505,3 @@ export async function updateTaskAdmin(taskId, updates) {
         }
     }
 }
-

@@ -10,15 +10,15 @@ export default function TaskViewModal({ task, onClose }) {
   return (
     <AnimatePresence>
       <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-        <motion.div 
-          initial={{ opacity: 0 }} 
-          animate={{ opacity: 1 }} 
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          className="absolute inset-0 bg-[#02000d]/80 backdrop-blur-xl" 
+          className="absolute inset-0 bg-[#02000d]/80 backdrop-blur-xl"
         />
-        
-        <motion.div 
+
+        <motion.div
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -26,13 +26,13 @@ export default function TaskViewModal({ task, onClose }) {
         >
           {/* Accent decoration */}
           <div className={`absolute top-0 right-0 w-64 h-64 ${isCompleted ? "bg-emerald-500/10" : "bg-pink-500/10"} rounded-full blur-[100px] -mr-32 -mt-32`} />
-          
+
           <div className="relative z-10">
             <div className="flex items-center justify-between mb-8">
               <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest border ${isCompleted ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-pink-500/10 text-pink-500 border-pink-500/30"}`}>
                 {isCompleted ? "Status Completed" : "Status Pending"}
               </div>
-              <motion.button 
+              <motion.button
                 whileHover={{ rotate: 90, scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose}
@@ -47,31 +47,31 @@ export default function TaskViewModal({ task, onClose }) {
             </h2>
 
             <div className="flex items-center gap-6 mb-10 pb-10 border-b border-white/5">
-               <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black tracking-widest text-slate-600">Established Date</span>
-                  <span className="text-sm font-bold text-slate-300">{new Date(task.taskDate || task.taskdate).toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
-               </div>
-               <div className="w-[1px] h-8 bg-white/5" />
-               <div className="flex flex-col gap-1">
-                  <span className="text-[10px] font-black tracking-widest text-slate-600">Node Identifier</span>
-                  <span className="text-sm font-mono text-slate-300">#ZEN-{task.id.slice(-6).toUpperCase()}</span>
-               </div>
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black tracking-widest text-slate-600">Established Date</span>
+                <span className="text-sm font-bold text-slate-300">{new Date(task.taskDate || task.taskdate).toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' })}</span>
+              </div>
+              <div className="w-[1px] h-8 bg-white/5" />
+              <div className="flex flex-col gap-1">
+                <span className="text-[10px] font-black tracking-widest text-slate-600">Node Identifier</span>
+                <span className="text-sm font-mono text-slate-300">#ZEN-{task.id.slice(-6).toUpperCase()}</span>
+              </div>
             </div>
 
             <div className="space-y-6">
-               <span className={`text-[10px] font-black tracking-widest ${isCompleted ? "text-emerald-500" : "text-pink-500"}`}>Supplemental Metadata</span>
-               <p className="text-lg text-slate-400 leading-relaxed font-light italic bg-white/[0.02] p-8 rounded-3xl border border-white/5">
-                 {task.description || "No further data records have been archived for this neural node."}
-               </p>
+              <span className={`text-[10px] font-black tracking-widest ${isCompleted ? "text-emerald-500" : "text-pink-500"}`}>Supplemental Metadata</span>
+              <p className="text-lg text-slate-400 leading-relaxed font-light italic bg-white/[0.02] p-8 rounded-3xl border border-white/5">
+                {task.description || "No further data records have been archived for this neural node."}
+              </p>
             </div>
 
             <div className="mt-12 flex justify-end">
-               <button 
+              <button
                 onClick={onClose}
                 className="px-12 py-4 btn-premium-pink border border-white/10 rounded-[2rem] text-[11px] font-black tracking-widest transition-all shadow-[0_10px_20px_rgba(255,45,149,0.1)]"
-               >
-                 Close Observation
-               </button>
+              >
+                Close Observation
+              </button>
             </div>
           </div>
         </motion.div>

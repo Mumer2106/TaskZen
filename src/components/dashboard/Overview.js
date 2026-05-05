@@ -2,19 +2,8 @@
 
 import { motion } from "framer-motion";
 
-export default function Overview({ tasks, activities = [] }) {
-  const total = tasks.length;
-  const completed = tasks.filter(t => t.status === "Completed").length;
-  const pending = total - completed;
-  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-  // Use activities from props, fallback to tasks if empty (for initial load)
-  const displayActivities = activities.length > 0
-    ? activities.slice(0, 5)
-    : tasks.slice(0, 5).map(t => ({ id: t.id, type: "Added", title: t.title, time: "System Boot" }));
-
-  // SVG Gauge Chart
-  const GaugeChart = () => (
+function GaugeChart({ completionRate }) {
+  return (
     <div className="relative h-60 w-60 flex-shrink-0 flex items-center justify-center overflow-visible">
       <svg className="w-full h-full transform -rotate-90 overflow-visible" viewBox="0 0 224 224">
         <circle cx="112" cy="112" r="85" stroke="rgba(255, 255, 255, 0.03)" strokeWidth="12" fill="transparent" />
@@ -50,6 +39,18 @@ export default function Overview({ tasks, activities = [] }) {
       </div>
     </div>
   );
+}
+
+export default function Overview({ tasks, activities = [] }) {
+  const total = tasks.length;
+  const completed = tasks.filter(t => t.status === "Completed").length;
+  const pending = total - completed;
+  const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  // Use activities from props, fallback to tasks if empty (for initial load)
+  const displayActivities = activities.length > 0
+    ? activities.slice(0, 5)
+    : tasks.slice(0, 5).map(t => ({ id: t.id, type: "Added", title: t.title, time: "System Boot" }));
 
   return (
     <motion.div
@@ -100,7 +101,7 @@ export default function Overview({ tasks, activities = [] }) {
               <div className="px-5 py-2 bg-white/5 border border-white/10 rounded-xl text-[9px] font-black tracking-widest text-slate-400">Integrity: High</div>
             </div>
           </div>
-          <GaugeChart />
+          <GaugeChart completionRate={completionRate} />
         </div>
       </div>
 
