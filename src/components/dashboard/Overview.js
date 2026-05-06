@@ -41,10 +41,10 @@ function GaugeChart({ completionRate }) {
   );
 }
 
-export default function Overview({ tasks, activities = [] }) {
-  const total = tasks.length;
-  const completed = tasks.filter(t => t.status === "Completed").length;
-  const pending = total - completed;
+export default function Overview({ tasks, stats, activities = [] }) {
+  const total = stats ? stats.total : tasks.length;
+  const completed = stats ? stats.completed : tasks.filter(t => t.status === "Completed").length;
+  const pending = stats ? stats.pending : total - completed;
   const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   // Use activities from props, fallback to tasks if empty (for initial load)

@@ -1,8 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 
+// ─── Constants ────────────────────────────────────────────────────────────────
+const PAGE_SIZE = 5;
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
 const CheckIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>
 );
@@ -19,15 +23,76 @@ const ViewIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
 );
 
-export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTask, onViewTask, selectedIds = new Set(), onToggleSelect }) {
-  const [loadingIds, setLoadingIds] = useState(new Set());
-  const [visibleCount, setVisibleCount] = useState(5);
+const ChevronDownIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+);
 
-  const setLoading = (id, val) => setLoadingIds(prev => {
+const ChevronUpIcon = () => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+);
+
+// ─── Skeleton loader for "Show More" transition ───────────────────────────────
+function TaskSkeleton() {
+  return (
+    <div className="group relative backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-9 flex flex-col lg:flex-row items-stretch justify-between gap-8 border-2 bg-white/[0.02] border-white/5 overflow-hidden mb-8 animate-pulse">
+      <div className="flex items-start sm:items-center gap-6 sm:gap-8 flex-1 min-w-0">
+        <div className="flex-shrink-0 h-14 w-14 rounded-[1.25rem] bg-white/[0.04] border-2 border-white/10" />
+        <div className="flex-1 min-w-0 space-y-3">
+          <div className="h-3 w-24 bg-white/[0.05] rounded-full" />
+          <div className="h-7 w-3/4 bg-white/[0.07] rounded-xl" />
+          <div className="h-4 w-full bg-white/[0.04] rounded-lg" />
+          <div className="h-4 w-2/3 bg-white/[0.04] rounded-lg" />
+        </div>
+      </div>
+      <div className="flex flex-col items-end justify-between border-t lg:border-t-0 border-white/[0.05] pt-6 lg:pt-0 gap-6 flex-shrink-0 min-h-[110px]">
+        <div className="h-6 w-6 rounded-xl bg-white/[0.04] border-2 border-white/10" />
+        <div className="flex gap-3">
+          <div className="h-14 w-14 rounded-2xl bg-white/[0.04] border border-white/5" />
+          <div className="h-14 w-14 rounded-2xl bg-white/[0.04] border border-white/5" />
+          <div className="h-14 w-14 rounded-2xl bg-white/[0.04] border border-white/5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
+export default function TaskList({
+  tasks,
+  onToggleStatus,
+  onDeleteTask,
+  onEditTask,
+  onViewTask,
+  selectedIds = new Set(),
+  onToggleSelect,
+  hasMore,
+  onShowMore,
+  onHide,
+  isLoadingMore,
+}) {
+  const [loadingIds,  setLoadingIds]  = useState(new Set());
+  const [internalLoading, setInternalLoading] = useState(false);
+
+  // Ref used to scroll container back to top on "Hide"
+  const listRef = useRef(null);
+
+  // Track the previous tasks reference so we can detect list identity changes
+  const prevTasksRef = useRef(tasks);
+
+  // Reset pagination whenever the tasks array changes identity (search / refresh / add / delete)
+  // Reset scroll on tasks change if needed (usually handled by onHide)
+  useEffect(() => {
+    if (prevTasksRef.current !== tasks) {
+      prevTasksRef.current = tasks;
+    }
+  }, [tasks]);
+
+  // ── Loading helpers ──────────────────────────────────────────────────────
+  const setLoading = useCallback((id, val) => setLoadingIds(prev => {
     const next = new Set(prev);
     val ? next.add(id) : next.delete(id);
     return next;
-  });
+  }), []);
 
   const handleToggle = async (id) => {
     if (loadingIds.has(id)) return;
@@ -41,6 +106,30 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
     try { await onDeleteTask(id); } finally { setLoading(id, false); }
   };
 
+  // ── Show More: API driven ───────────────────────────────────────────────
+  const handleShowMore = async () => {
+    if (isLoadingMore || internalLoading) return;
+    setInternalLoading(true);
+    try {
+      if (onShowMore) {
+        await onShowMore();
+      }
+    } finally {
+      setInternalLoading(false);
+    }
+  };
+
+  // ── Hide: collapse back to first page via API ────────────────────────────
+  const handleHide = async () => {
+    if (onHide) {
+      await onHide();
+    }
+    if (listRef.current) {
+      listRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
+  // ─── Empty state ──────────────────────────────────────────────────────────
   if (tasks.length === 0) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-8">
@@ -55,8 +144,18 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
     );
   }
 
+  const visibleTasks = tasks;
+  // logic: show hide if we have nodes and we've reached the end (hasMore is false) 
+  // and we have more than one page worth of nodes
+  const canHide = tasks.length > 5 && !hasMore;
+  const showLoading = isLoadingMore || internalLoading;
+
+  console.log('[TaskList] Render state:', { tasksCount: tasks.length, hasMore, canHide, showLoading, isLoadingMore, internalLoading });
+
   return (
-    <div className="w-full flex flex-col max-w-6xl mx-auto relative mt-2 sm:mt-6">
+    <div ref={listRef} className="w-full flex flex-col max-w-6xl mx-auto relative mt-2 sm:mt-6">
+
+      {/* ── Bulk Delete Purge Button ───────────────────────────────────────── */}
       <AnimatePresence>
         {selectedIds.size > 0 && (
           <motion.div
@@ -70,16 +169,18 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
               className="flex items-center gap-2 py-2 px-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] tracking-[0.2em] uppercase shadow-lg shadow-rose-500/20 active:scale-95 transition-all cursor-pointer"
             >
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-              Purge {selectedIds.size} Node{selectedIds.size > 1 ? 's' : ''}
+              Purge {selectedIds.size} Node{selectedIds.size > 1 ? "s" : ""}
             </button>
           </motion.div>
         )}
       </AnimatePresence>
 
+      {/* ── Task Cards ────────────────────────────────────────────────────── */}
       <AnimatePresence>
-        {tasks.slice(0, visibleCount).map((task, i) => {
-          const formattedDate = new Date(task.taskDate || task.taskdate).toLocaleDateString('en-US', { day: '2-digit', month: 'short', year: 'numeric' });
-
+        {visibleTasks.map((task) => {
+          const formattedDate = new Date(task.taskDate || task.taskdate).toLocaleDateString("en-US", {
+            day: "2-digit", month: "short", year: "numeric",
+          });
           const isSelected = selectedIds.has(task.id);
 
           return (
@@ -124,7 +225,7 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
                   </button>
 
                   <div className="flex-1 min-w-0">
-                    {/* DATE ABOVE TITLE */}
+                    {/* Date Above Title */}
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-[10px] font-black tracking-widest text-slate-600">RegistryLog</span>
                       <span className="text-[11px] font-bold text-slate-400 tracking-tight">{formattedDate}</span>
@@ -154,7 +255,7 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
 
                 {/* Right Side: Select & Actions */}
                 <div className="flex flex-col items-end justify-between border-t lg:border-t-0 border-white/[0.05] pt-6 lg:pt-0 gap-6 flex-shrink-0 min-h-[110px]">
-                  {/* Selection checkbox - Top Right */}
+                  {/* Selection checkbox */}
                   <button
                     onClick={() => onToggleSelect(task.id)}
                     className={`h-6 w-6 sm:h-8 sm:w-8 rounded-xl border-2 flex items-center justify-center transition-all duration-300 z-10 cursor-pointer ${isSelected
@@ -168,7 +269,7 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
                     )}
                   </button>
 
-                  {/* Actions Bar - Bottom Right */}
+                  {/* Actions */}
                   <div className="flex flex-row items-center gap-3 w-full sm:w-auto justify-end">
                     <button
                       onClick={() => onViewTask(task)}
@@ -210,22 +311,54 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
         })}
       </AnimatePresence>
 
-      <motion.div layout transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex justify-center mt-8 mb-8 z-10 relative min-h-[48px]">
-        {visibleCount < tasks.length ? (
-          <button
-            onClick={() => setVisibleCount(prev => prev + 5)}
-            className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-pink-500/60 transition-all hover:border-pink-500 text-pink-400 font-bold text-[15px] tracking-wide shadow-[0_0_20px_rgba(255,45,149,0.3)] active:scale-95 flex items-center gap-2 group"
+      {/* ── Show More Skeletons ────────────────────────────────────────────── */}
+      <AnimatePresence>
+        {showLoading && (
+          <motion.div
+            key="skeletons"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
           >
-            Show More Nodes
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-y-1 transition-transform"><polyline points="6 9 12 15 18 9"></polyline></svg>
-          </button>
-        ) : tasks.length > 5 ? (
+            {[...Array(3)].map((_, i) => (
+              <TaskSkeleton key={i} />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Pagination Controls ────────────────────────────────────────────── */}
+      <motion.div layout transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex justify-center mt-8 mb-8 z-10 relative min-h-[48px]">
+        {hasMore ? (
           <button
-            onClick={() => setVisibleCount(5)}
-            className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-cyan-500/60 transition-all hover:border-cyan-500 text-cyan-400 font-bold text-[15px] tracking-wide shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-95 flex items-center gap-2 group"
+            onClick={handleShowMore}
+            disabled={showLoading}
+            className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-pink-500/60 transition-all hover:border-pink-500 text-pink-400 font-bold text-[15px] tracking-wide shadow-[0_0_20px_rgba(255,45,149,0.3)] active:scale-95 flex items-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {showLoading ? (
+              <>
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
+                </svg>
+                Processing...
+              </>
+            ) : (
+              <>
+                Show More Nodes
+                <span className="group-hover:translate-y-1 transition-transform"><ChevronDownIcon /></span>
+              </>
+            )}
+          </button>
+        ) : canHide ? (
+          <button
+            onClick={handleHide}
+            disabled={showLoading}
+            className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-cyan-500/60 transition-all hover:border-cyan-500 text-cyan-400 font-bold text-[15px] tracking-wide shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-95 flex items-center gap-2 group disabled:opacity-60"
           >
             Hide Nodes
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-y-1 transition-transform"><polyline points="18 15 12 9 6 15"></polyline></svg>
+            <span className="group-hover:-translate-y-1 transition-transform"><ChevronUpIcon /></span>
           </button>
         ) : null}
       </motion.div>

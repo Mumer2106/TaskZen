@@ -20,12 +20,21 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState("");
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [totalNodes, setTotalNodes] = useState(0);
+  const [stats, setStats] = useState({ total: 0, completed: 0, pending: 0 });
+  const PAGE_SIZE = 5;
+
+  // Refs for state tracking and avoiding race conditions
+  const isInitialMount = useRef(true);
+  const fetchedSearch = useRef("");
+  const lastRefreshTime = useRef(0);
 
   // Search & Refresh States
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const lastRefreshTime = useRef(0);
 
   // Focus/UI States
   const [editingTask, setEditingTask] = useState(null);
@@ -56,29 +65,22 @@ export default function Dashboard() {
     }
   }, [userInfo]);
 
-  // 1. Cross-Tab Synchronization Protocol (Zero Network Overhead)
   useEffect(() => {
     checkAuth();
-    fetchTasks();
+    fetchTasks(); // Initial load
 
-    // Sync when other tabs broadcast a change
     const handleStorageChange = (e) => {
-      if (e.key === 'taskzen_registry_sync') fetchTasks(search);
-    };
-
-    // Sync once when user returns to this tab (Passive Sync)
-    const handleFocus = () => {
-      if (!actionLoading && !bulkDeleting && !editingTask) fetchTasks(debouncedSearch);
+      if (e.key === 'taskzen_registry_sync') {
+        // Only re-fetch if we are on the first page to avoid confusing the user
+        // OR reset to page 1 if something changed elsewhere.
+        // For now, let's just re-fetch page 1.
+        fetchTasks(debouncedSearch, 0, false);
+      }
     };
 
     window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [debouncedSearch, actionLoading, bulkDeleting, editingTask]);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []); // Only run once on mount
 
   // Debouncing Search Effect
   useEffect(() => {
@@ -88,10 +90,17 @@ export default function Dashboard() {
     return () => clearTimeout(handler);
   }, [search]);
 
-  // Trigger fetch when debounced search changes
+  // Reset to page 1 when search changes (skipping initial mount)
   useEffect(() => {
-    if (loading && tasks.length === 0) return;
-    fetchTasks(debouncedSearch);
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (loading || fetchedSearch.current === debouncedSearch) return; 
+    
+    fetchedSearch.current = debouncedSearch;
+    setOffset(0);
+    fetchTasks(debouncedSearch, 0, false);
   }, [debouncedSearch]);
 
   // Reset selection when tab changes
@@ -143,24 +152,50 @@ export default function Dashboard() {
     }
   };
 
-  const fetchTasks = async (query = "") => {
+  const fetchTasks = async (query = "", currentOffset = 0, append = false) => {
     try {
-      if (!isRefreshing && query === "" && tasks.length === 0) setLoading(true);
-      const res = await fetch(`/api/tasks${query ? `?search=${encodeURIComponent(query)}` : ""}`);
+      if (!isRefreshing && query === "" && tasks.length === 0 && !append) setLoading(true);
+      if (append) setActionLoading(true);
+
+      const params = new URLSearchParams({
+        limit: PAGE_SIZE,
+        offset: currentOffset,
+      });
+      if (query) params.set('search', query);
+
+      const res = await fetch(`/api/user/tasks?${params.toString()}`);
       if (res.status === 401) {
         handleLogout();
         return;
       }
       if (res.ok) {
         const data = await res.json();
-        setTasks(data || []);
+        setTasks(prev => append ? [...prev, ...data.tasks] : data.tasks);
+        setHasMore(data.hasMore);
+        setTotalNodes(data.total);
+        setStats(data.stats || { total: 0, completed: 0, pending: 0 });
+        setOffset(currentOffset);
+        // Sync ref with current search if successful
+        fetchedSearch.current = query;
       }
     } catch (err) {
       console.error("Failed to load registry:", err);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
+      setActionLoading(false);
     }
+  };
+
+  const handleShowMore = async () => {
+    const nextOffset = offset + PAGE_SIZE;
+    await fetchTasks(debouncedSearch, nextOffset, true);
+  };
+
+  const handleHide = () => {
+    setTasks(prev => prev.slice(0, PAGE_SIZE));
+    setOffset(0);
+    setHasMore(true); // If we could show more before, we can show more now
   };
 
   const handleRefresh = () => {
@@ -250,27 +285,24 @@ export default function Dashboard() {
   };
 
   const handleToggleStatus = async (id) => {
-    const task = tasks.find((t) => t.id === id);
-    if (!task) return;
-    const newStatus = task.status === "Completed" ? "Pending" : "Completed";
-
     try {
-      const res = await fetch(`/api/tasks/${id}`, {
+      const task = tasks.find((t) => t.id === id);
+      if (!task) return;
+      const newStatus = task.status === "Completed" ? "Pending" : "Completed";
+
+      const res = await fetch(`/api/user/tasks?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
+
       if (res.ok) {
-        setTasks((prev) =>
-          prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t))
-        );
-        logActivity("Synchronized", task.title);
-        showToast(`Node marked as ${newStatus}`, "success");
-        // Broadcast change to other tabs
+        setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)));
+        logActivity(newStatus === "Completed" ? "Completed" : "Reactivated", task.title);
         localStorage.setItem('taskzen_registry_sync', Date.now());
       }
     } catch (err) {
-      console.error("Status update sync failed:", err);
+      console.error("Toggle status failed:", err);
     }
   };
 
@@ -279,31 +311,48 @@ export default function Dashboard() {
   };
 
   const confirmDelete = async () => {
-    if (!taskToDelete) return;
+    const id = taskToDelete;
+    if (!id) return;
+    
+    if (id === "BULK") {
+      if (selectedIds.size === 0) return;
+      try {
+        setBulkDeleting(true);
+        const res = await fetch("/api/user/tasks?id=BULK", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: Array.from(selectedIds) }),
+        });
 
-    if (taskToDelete === "BULK") {
-      await handleBulkDelete();
-      setTaskToDelete(null);
+        if (res.ok) {
+          setTasks((prev) => prev.filter((t) => !selectedIds.has(t.id)));
+          setSelectedIds(new Set());
+          logActivity("Decommissioned", "Bulk Operation");
+          showToast("Nodes Purged Successfully");
+          localStorage.setItem('taskzen_registry_sync', Date.now());
+        }
+      } catch (err) {
+        console.error("Bulk delete failed:", err);
+      } finally {
+        setBulkDeleting(false);
+      }
       return;
     }
 
-    const taskTitle = tasks.find(t => t.id === taskToDelete)?.title || "Unknown Node";
     try {
-      const res = await fetch(`/api/tasks/${taskToDelete}`, { method: "DELETE" });
+      const task = tasks.find((t) => t.id === id);
+      const res = await fetch(`/api/user/tasks?id=${id}`, {
+        method: "DELETE",
+      });
+
       if (res.ok) {
-        setTasks((prev) => prev.filter((t) => t.id !== taskToDelete));
-        setSelectedIds((prev) => {
-          const next = new Set(prev);
-          next.delete(taskToDelete);
-          return next;
-        });
-        logActivity("Purged", taskTitle);
-        showToast("Node Decommissioned", "error");
-        // Broadcast change to other tabs
+        setTasks((prev) => prev.filter((t) => t.id !== id));
+        if (task) logActivity("Decommissioned", task.title);
+        showToast("Node Purged Successfully");
         localStorage.setItem('taskzen_registry_sync', Date.now());
       }
     } catch (err) {
-      console.error("Node purge failed:", err);
+      console.error("Delete failed:", err);
     } finally {
       setTaskToDelete(null);
     }
@@ -435,9 +484,9 @@ export default function Dashboard() {
       ) : (
         <div className="w-full flex-1 flex flex-col items-center">
           <AnimatePresence mode="wait">
-            {activeTab === "overview" && <motion.div className="w-full" key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Overview tasks={tasks} activities={activities} /></motion.div>}
+            {activeTab === "overview" && <motion.div className="w-full" key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Overview tasks={tasks} stats={stats} activities={activities} /></motion.div>}
             {activeTab === "add" && <motion.div className="w-full flex justify-center" key="ad" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AddTask onTaskAdded={handleAddTask} onTaskUpdated={handleUpdateTask} initialData={editingTask} onCancel={stopEditing} actionLoading={actionLoading} error={error} /></motion.div>}
-            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask} selectedIds={selectedIds} onToggleSelect={toggleSelectId} /></motion.div>}
+            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask} selectedIds={selectedIds} onToggleSelect={toggleSelectId} hasMore={hasMore} onShowMore={handleShowMore} onHide={handleHide} isLoadingMore={actionLoading} /></motion.div>}
           </AnimatePresence>
         </div>
       )}

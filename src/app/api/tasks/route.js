@@ -8,9 +8,21 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url);
     const search = searchParams.get('search') || '';
+    const limit  = parseInt(searchParams.get('limit')  || '0', 10);  // 0 = no limit (legacy)
+    const offset = parseInt(searchParams.get('offset') || '0', 10);
 
-    const tasks = await getTasksForUser(userId, search);
-    return NextResponse.json(tasks);
+    // Fetch all matching tasks then slice — works for both JSON and Postgres adapters
+    const allTasks = await getTasksForUser(userId, search);
+    const total    = allTasks.length;
+
+    if (limit > 0) {
+        const tasks   = allTasks.slice(offset, offset + limit);
+        const hasMore = offset + limit < total;
+        return NextResponse.json({ tasks, total, hasMore });
+    }
+
+    // Legacy: return flat array so existing callers aren't broken
+    return NextResponse.json(allTasks);
 }
 
 export async function POST(request) {
