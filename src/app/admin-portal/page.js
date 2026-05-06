@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 import Link from "next/link";
 
 const CheckIcon = () => (
@@ -21,6 +22,11 @@ export default function AdminPortal() {
     const [pendingDelete, setPendingDelete] = useState(null);
     const [activeTab, setActiveTab] = useState("users");
     const [selectedUserId, setSelectedUserId] = useState(null);
+    const [visibleUsersCount, setVisibleUsersCount] = useState(5);
+    const [visibleTasksCount, setVisibleTasksCount] = useState(5);
+    
+    const usersListRef = useRef(null);
+    const tasksListRef = useRef(null);
 
     const handleLogin = async (e) => {
         e.preventDefault();
@@ -288,8 +294,8 @@ export default function AdminPortal() {
                     {/* Glowing Column: Users */}
                     <section className={`lg:col-span-4 relative group ${activeTab !== 'users' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-blue-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse"></div>
-                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.35)] flex flex-col lg:h-[800px]">
-                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic">
+                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.35)] flex flex-col h-[600px]">
+                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic flex-shrink-0">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]"></span>
                                     User Registry
@@ -302,8 +308,8 @@ export default function AdminPortal() {
                                 </div>
                             </h2>
 
-                            <div className="space-y-3 sm:space-y-4 overflow-y-auto pr-2 custom-scrollbar-blue flex-1 min-h-[300px]">
-                                {data.users.map((user) => (
+                            <div ref={usersListRef} className="space-y-3 sm:space-y-4 overflow-y-auto pr-2 custom-scrollbar-blue flex-1 min-h-0">
+                                {data.users.slice(0, visibleUsersCount).map((user) => (
                                     <div
                                         key={user.id}
                                         onClick={() => setSelectedUserId(user.id)}
@@ -327,6 +333,23 @@ export default function AdminPortal() {
                                         </button>
                                     </div>
                                 ))}
+
+                                <motion.div layout transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex justify-center mt-8 mb-8 z-10 relative min-h-[48px]">
+                                    {visibleUsersCount < data.users.length ? (
+                                        <button onClick={() => setVisibleUsersCount(prev => prev + 5)} className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-blue-500/60 transition-all hover:border-blue-500 text-blue-400 font-bold text-[14px] tracking-wide shadow-[0_0_20px_rgba(59,130,246,0.3)] active:scale-95 flex items-center gap-2 group">
+                                            Show More Users
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-y-1 transition-transform"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                        </button>
+                                    ) : data.users.length > 5 ? (
+                                        <button onClick={() => {
+                                            setVisibleUsersCount(5);
+                                            if (usersListRef.current) usersListRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }} className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-cyan-500/60 transition-all hover:border-cyan-500 text-cyan-400 font-bold text-[14px] tracking-wide shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-95 flex items-center gap-2 group">
+                                            Hide Users
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-y-1 transition-transform"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                        </button>
+                                    ) : null}
+                                </motion.div>
                             </div>
                         </div>
                     </section>
@@ -334,8 +357,8 @@ export default function AdminPortal() {
                     {/* Glowing Column: Global Tasks */}
                     <section className={`lg:col-span-8 relative group ${activeTab !== 'tasks' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-purple-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col lg:h-[800px]">
-                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic">
+                        <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col h-[600px]">
+                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic flex-shrink-0">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.8)]"></span>
                                     Data Stream
@@ -343,7 +366,7 @@ export default function AdminPortal() {
                                 <span className="text-[9px] bg-purple-500/20 text-purple-400 px-3 py-1 rounded-full border border-purple-500/30 tracking-widest">{data.tasks.length}</span>
                             </h2>
 
-                            <div className="space-y-10 overflow-y-auto pr-2 sm:pr-4 custom-scrollbar-purple flex-1 min-h-[400px]">
+                            <div ref={tasksListRef} className="space-y-10 overflow-y-auto pr-2 sm:pr-4 custom-scrollbar-purple flex-1 min-h-0 relative">
                                 {(() => {
                                     const filteredTasks = data.tasks.filter(t => !selectedUserId || t.userId === selectedUserId || t.createdBy === selectedUserId);
 
@@ -359,90 +382,112 @@ export default function AdminPortal() {
                                         );
                                     }
 
-                                    return Object.entries(
-                                        filteredTasks.reduce((groups, task) => {
-                                            const date = task.taskDate || task.taskdate || "Unscheduled";
-                                            if (!groups[date]) groups[date] = [];
-                                            groups[date].push(task);
-                                            return groups;
-                                        }, {})
-                                    )
-                                        .sort(([dateA], [dateB]) => {
-                                            if (dateA === "Unscheduled") return 1;
-                                            if (dateB === "Unscheduled") return -1;
-                                            return new Date(dateB) - new Date(dateA);
-                                        })
-                                        .map(([date, dateTasks]) => (
-                                            <div key={date} className="space-y-4">
-                                                <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-sm py-3 border-b border-white/5 flex items-center justify-between translate-y-[-1px]">
-                                                    <span className="text-[9px] font-black uppercase tracking-[0.4em] text-purple-500/80">
-                                                        {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
-                                                            date === "Unscheduled" ? "Buffer" : date}
-                                                    </span>
-                                                    <span className="text-[8px] font-mono text-slate-400">{dateTasks.length} NODES</span>
-                                                </div>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                    {dateTasks.map((task) => (
-                                                        <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-4 sm:p-5 rounded-2xl hover:bg-white/[0.04] transition-all group/task">
-                                                            <div className="flex justify-between items-start mb-3">
-                                                                <div className="min-w-0 flex-1">
-                                                                    <h3 className="text-base sm:text-lg font-black text-white tracking-tighter mb-1 uppercase italic leading-none truncate">{task.title}</h3>
-                                                                    <div className="flex items-center gap-2">
-                                                                        <span className={`text-[7px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
-                                                                            {task.status}
-                                                                        </span>
-                                                                        <span className="text-[7px] font-bold text-slate-400 uppercase">{task.owner || 'Unknown'}</span>
-                                                                    </div>
-                                                                </div>
+                                    const renderedTasks = filteredTasks.slice(0, visibleTasksCount);
 
-                                                                {/* Mobile Done Toggle - Absolute */}
-                                                                <button
-                                                                    onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
-                                                                    disabled={actionLoading === task.id}
-                                                                    className={`lg:hidden absolute top-2 right-2 p-1.5 flex items-center gap-1 rounded-lg transition-all z-20 ${task.status === 'Completed'
-                                                                        ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20'
-                                                                        : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
-                                                                        }`}
-                                                                >
-                                                                    {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
-                                                                    <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
-                                                                </button>
-
-                                                                <div className="hidden lg:flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={() => toggleTaskStatus(task.id, task.status)}
-                                                                        disabled={actionLoading === task.id}
-                                                                        title={task.status === 'Completed' ? "Undo" : "Done"}
-                                                                        className={`p-1.5 flex items-center gap-1 rounded-lg transition-all opacity-0 group-hover/task:opacity-100 ${task.status === 'Completed'
-                                                                            ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white'
-                                                                            : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
-                                                                            }`}
-                                                                    >
-                                                                        {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
-                                                                        <span className="text-[8px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                                        className="p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5 opacity-0 group-hover/task:opacity-100"
-                                                                    >
-                                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                                                    </button>
-                                                                </div>
-
-                                                                {/* Mobile Delete Button */}
-                                                                <button
-                                                                    onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
-                                                                    className="lg:hidden p-1.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-lg border border-white/5"
-                                                                >
-                                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
-                                                                </button>
-                                                            </div>
-                                                            <p className="text-[11px] text-slate-300 font-medium line-clamp-2 italic">&quot;{task.description || "No metadata recorded."}&quot;</p>
+                                    return (
+                                        <>
+                                            {Object.entries(
+                                                renderedTasks.reduce((groups, task) => {
+                                                    const date = task.taskDate || task.taskdate || "Unscheduled";
+                                                    if (!groups[date]) groups[date] = [];
+                                                    groups[date].push(task);
+                                                    return groups;
+                                                }, {})
+                                            )
+                                                .sort(([dateA], [dateB]) => {
+                                                    if (dateA === "Unscheduled") return 1;
+                                                    if (dateB === "Unscheduled") return -1;
+                                                    return new Date(dateB) - new Date(dateA);
+                                                })
+                                                .map(([date, dateTasks]) => (
+                                                    <div key={date} className="space-y-4">
+                                                        <div className="sticky top-0 z-20 bg-[#0a0a1a]/95 backdrop-blur-sm py-3 border-b border-white/5 flex items-center justify-between translate-y-[-1px]">
+                                                            <span className="text-[9px] font-black uppercase tracking-[0.4em] text-purple-500/80">
+                                                                {date === new Date().toISOString().split('T')[0] ? "Current Cycle" :
+                                                                    date === "Unscheduled" ? "Buffer" : date}
+                                                            </span>
+                                                            <span className="text-[8px] font-mono text-slate-400">{dateTasks.length} NODES</span>
                                                         </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        ));
+                                                        <div className="flex flex-col space-y-4">
+                                                            {dateTasks.map((task) => (
+                                                                <div key={task.id} className="relative bg-white/[0.02] border border-white/5 p-6 md:p-8 rounded-[2rem] hover:bg-white/[0.04] transition-all group/task">
+                                                                    <div className="flex justify-between items-start mb-4">
+                                                                        <div className="min-w-0 flex-1">
+                                                                            <h3 className="text-xl sm:text-2xl font-black text-white tracking-tighter mb-2 uppercase italic leading-none truncate">{task.title}</h3>
+                                                                            <div className="flex items-center gap-3">
+                                                                                <span className={`text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
+                                                                                    {task.status}
+                                                                                </span>
+                                                                                <span className="text-[9px] font-bold text-slate-400 uppercase">{task.owner || 'Unknown'}</span>
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Mobile Done Toggle - Absolute */}
+                                                                        <button
+                                                                            onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
+                                                                            disabled={actionLoading === task.id}
+                                                                            className={`lg:hidden absolute top-2 right-2 p-2 flex items-center gap-1 rounded-lg transition-all z-20 ${task.status === 'Completed'
+                                                                                ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20'
+                                                                                : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
+                                                                                }`}
+                                                                        >
+                                                                            {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
+                                                                            <span className="text-[9px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
+                                                                        </button>
+
+                                                                        <div className="hidden lg:flex items-center gap-3">
+                                                                            <button
+                                                                                onClick={() => toggleTaskStatus(task.id, task.status)}
+                                                                                disabled={actionLoading === task.id}
+                                                                                title={task.status === 'Completed' ? "Undo" : "Done"}
+                                                                                className={`p-2.5 flex items-center gap-2 rounded-xl transition-all opacity-0 group-hover/task:opacity-100 ${task.status === 'Completed'
+                                                                                    ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white'
+                                                                                    : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
+                                                                                    }`}
+                                                                            >
+                                                                                {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
+                                                                                <span className="text-[10px] font-black tracking-widest">{task.status === 'Completed' ? "Undo" : "Done"}</span>
+                                                                            </button>
+                                                                            <button
+                                                                                onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
+                                                                                className="p-2.5 text-slate-500 hover:text-rose-500 transition-colors bg-white/5 rounded-xl border border-white/5 opacity-0 group-hover/task:opacity-100"
+                                                                            >
+                                                                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                                            </button>
+                                                                        </div>
+
+                                                                        {/* Mobile Delete Button */}
+                                                                        <button
+                                                                            onClick={() => setPendingDelete({ id: task.id, type: 'task', label: task.title })}
+                                                                            className="lg:hidden p-2 text-slate-500 hover:text-rose-500 transition-colors bg-white/5 rounded-xl border border-white/5"
+                                                                        >
+                                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /></svg>
+                                                                        </button>
+                                                                    </div>
+                                                                    <p className="text-sm text-slate-300 font-medium line-clamp-3 italic">&quot;{task.description || "No metadata recorded."}&quot;</p>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            <motion.div layout transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex justify-center mt-8 mb-8 z-10 relative min-h-[48px]">
+                                                {visibleTasksCount < filteredTasks.length ? (
+                                                    <button onClick={() => setVisibleTasksCount(prev => prev + 5)} className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-purple-500/60 transition-all hover:border-purple-500 text-purple-400 font-bold text-[14px] tracking-wide shadow-[0_0_20px_rgba(168,85,247,0.3)] active:scale-95 flex items-center gap-2 group">
+                                                        Show More Nodes
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:translate-y-1 transition-transform"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                                                    </button>
+                                                ) : filteredTasks.length > 5 ? (
+                                                    <button onClick={() => {
+                                                        setVisibleTasksCount(5);
+                                                        if (tasksListRef.current) tasksListRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+                                                    }} className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-cyan-500/60 transition-all hover:border-cyan-500 text-cyan-400 font-bold text-[14px] tracking-wide shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-95 flex items-center gap-2 group">
+                                                        Hide Nodes
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" className="group-hover:-translate-y-1 transition-transform"><polyline points="18 15 12 9 6 15"></polyline></svg>
+                                                    </button>
+                                                ) : null}
+                                            </motion.div>
+                                        </>
+                                    );
                                 })()}
                             </div>
                         </div>
