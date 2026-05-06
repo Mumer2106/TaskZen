@@ -15,7 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 export default function Dashboard() {
   const [tasks, setTasks] = useState([]);
   const [activities, setActivities] = useState([]);
-  const [userInfo, setUserInfo] = useState({ firstName: "", lastName: "", email: "" });
+  const [userInfo, setUserInfo] = useState({ id: "", firstName: "", lastName: "", email: "" });
   const [activeTab, setActiveTab] = useState("overview");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -42,8 +42,8 @@ export default function Dashboard() {
 
   // Load activities when userInfo is available
   useEffect(() => {
-    if (userInfo?.email) {
-      const savedActivities = localStorage.getItem(`taskzen_activities_${userInfo.email}`);
+    if (userInfo?.id) {
+      const savedActivities = localStorage.getItem(`taskzen_activities_${userInfo.id}`);
       if (savedActivities) {
         try {
           setActivities(JSON.parse(savedActivities));
@@ -113,8 +113,8 @@ export default function Dashboard() {
     };
     setActivities(prev => {
       const updated = [newActivity, ...prev].slice(0, 10);
-      if (userInfo?.email) {
-        localStorage.setItem(`taskzen_activities_${userInfo.email}`, JSON.stringify(updated));
+      if (userInfo?.id) {
+        localStorage.setItem(`taskzen_activities_${userInfo.id}`, JSON.stringify(updated));
       }
       return updated;
     });
@@ -130,6 +130,7 @@ export default function Dashboard() {
       }
       const data = await res.json();
       setUserInfo({
+        id: data.user.id || '',
         firstName: data.user.firstName || '',
         lastName: data.user.lastName || '',
         email: data.user.email || '',

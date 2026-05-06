@@ -126,8 +126,11 @@ export default function AdminPortal() {
                 method: 'DELETE'
             });
             if (res.ok) {
+                if (type === 'user' && selectedUserId === id) {
+                    setSelectedUserId(null);
+                }
                 setData(prev => {
-                    const updatedTasks = type === 'task' ? prev.tasks.filter(t => t.id !== id) : prev.tasks;
+                    const updatedTasks = type === 'task' ? prev.tasks.filter(t => t.id !== id) : type === 'user' ? prev.tasks.filter(t => t.userId !== id && t.createdBy !== id) : prev.tasks;
                     const updatedUsers = type === 'user' ? prev.users.filter(u => u.id !== id) : prev.users;
                     return {
                         ...prev,
