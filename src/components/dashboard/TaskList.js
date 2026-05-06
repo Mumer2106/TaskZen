@@ -47,7 +47,7 @@ export default function TaskList({ tasks, onToggleStatus, onDeleteTask, onEditTa
           <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
         </div>
         <div>
-          <h3 className="text-3xl font-black text-slate-300 tracking-tighter mb-2">RegistryOffline</h3>
+          <h3 className="text-3xl font-black text-slate-300 tracking-tighter mb-2">Registry Offline</h3>
           <p className="text-slate-500 font-medium text-lg italic">No active nodes detected in this sector.</p>
         </div>
       </div>

@@ -33,40 +33,83 @@ export default function AdminPortal() {
         setData(null);
     };
 
-    const fetchData = async (adminSecret) => {
-        setLoading(true);
+    const fetchData = async (adminSecret, silent = false) => {
+        if (!silent) setLoading(true);
         setError("");
         try {
-            const res = await fetch(`/api/admin/data?secret=${adminSecret}`);
+            const res = await fetch(`/api/admin/data?secret=${encodeURIComponent(adminSecret)}`);
             const result = await res.json();
 
             if (res.ok) {
                 setData(result);
                 setIsAuthenticated(true);
-            } else {
+            } else if (!silent) {
                 setError(result.error || "Access Denied");
             }
         } catch (err) {
-            setError("Connection failed");
+            if (!silent) setError("Connection failed");
         } finally {
-            setLoading(false);
+            if (!silent) setLoading(false);
         }
     };
 
+    // Cross-Tab Synchronization Protocol (Zero Network Overhead sync)
+    useEffect(() => {
+        if (!isAuthenticated || !secret) return;
+
+        // 1. Sync when other tabs broadcast a change (Instant parity)
+        const handleStorageChange = (e) => {
+            if (e.key === 'taskzen_registry_sync') fetchData(secret, true);
+        };
+
+        // 2. Passive Sync: Refresh once when admin switches back to this tab
+        const handleFocus = () => {
+            if (!actionLoading && !pendingDelete) fetchData(secret, true);
+        };
+
+        window.addEventListener('storage', handleStorageChange);
+        window.addEventListener('focus', handleFocus);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            window.removeEventListener('focus', handleFocus);
+        };
+    }, [isAuthenticated, secret, actionLoading, pendingDelete]);
+
     const toggleTaskStatus = async (id, currentStatus) => {
         const newStatus = currentStatus === "Completed" ? "Pending" : "Completed";
+
+        // Optimistic UI update for tasks and stats
+        setData(prev => {
+            const updatedTasks = prev.tasks.map(t => t.id === id ? { ...t, status: newStatus } : t);
+            return {
+                ...prev,
+                tasks: updatedTasks,
+                stats: {
+                    ...prev.stats,
+                    pendingTasks: updatedTasks.filter(t => t.status === 'Pending').length,
+                    completedTasks: updatedTasks.filter(t => t.status === 'Completed').length
+                }
+            };
+        });
+
         setActionLoading(id);
         try {
-            const res = await fetch(`/api/admin/data?secret=${secret}&id=${id}&type=task`, {
+            const res = await fetch(`/api/admin/data?secret=${encodeURIComponent(secret)}&id=${id}&type=task`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ status: newStatus })
             });
-            if (res.ok) {
+            if (!res.ok) {
+                // Rollback on error
                 fetchData(secret);
+            } else {
+                // Broadcast change to other tabs
+                localStorage.setItem('taskzen_registry_sync', Date.now());
             }
         } catch (err) {
             console.error(err);
+            fetchData(secret);
         } finally {
             setActionLoading(null);
         }
@@ -79,11 +122,28 @@ export default function AdminPortal() {
         setActionLoading(id);
         setPendingDelete(null);
         try {
-            const res = await fetch(`/api/admin/data?secret=${secret}&id=${id}&type=${type}`, {
+            const res = await fetch(`/api/admin/data?secret=${encodeURIComponent(secret)}&id=${id}&type=${type}`, {
                 method: 'DELETE'
             });
             if (res.ok) {
-                fetchData(secret);
+                setData(prev => {
+                    const updatedTasks = type === 'task' ? prev.tasks.filter(t => t.id !== id) : prev.tasks;
+                    const updatedUsers = type === 'user' ? prev.users.filter(u => u.id !== id) : prev.users;
+                    return {
+                        ...prev,
+                        tasks: updatedTasks,
+                        users: updatedUsers,
+                        stats: {
+                            ...prev.stats,
+                            totalUsers: updatedUsers.length,
+                            totalTasks: updatedTasks.length,
+                            pendingTasks: updatedTasks.filter(t => t.status === 'Pending').length,
+                            completedTasks: updatedTasks.filter(t => t.status === 'Completed').length
+                        }
+                    };
+                });
+                // Broadcast change to other tabs
+                localStorage.setItem('taskzen_registry_sync', Date.now());
             }
         } catch (err) {
             console.error(err);
@@ -108,10 +168,10 @@ export default function AdminPortal() {
                         <div className="absolute -inset-1 bg-rose-500 rounded-full opacity-20 group-hover:opacity-40 animate-ping duration-1000"></div>
                         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-500 relative z-10"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
                     </div>
-                    <h1 className="text-4xl sm:text-5xl font-black mb-2 tracking-tighter text-white uppercase italic drop-shadow-2xl">
-                        Vault <span className="text-rose-500">Access</span>
+                    <h1 className="text-4xl sm:text-5xl font-black mb-2 tracking-tighter text-white italic drop-shadow-2xl">
+                        VAULT <span className="text-rose-500"> ACCESS</span>
                     </h1>
-                    <p className="text-slate-300 mb-10 font-black uppercase tracking-[0.4em] text-[10px]">Secure Gateway Protocol &mdash; v4.0</p>
+                    <p className="text-slate-300 mb-10 font-black tracking-[0.4em] text-[10px]">Secure Gateway Protocol — v4.0</p>
 
                     <form onSubmit={handleLogin} className="space-y-6">
                         <div className="relative group">
@@ -133,14 +193,14 @@ export default function AdminPortal() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-5 bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-black rounded-2xl tracking-widest transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-95 shadow-[0_20px_50px_rgba(225,29,72,0.3)] uppercase relative overflow-hidden group"
+                            className="w-full py-5 bg-gradient-to-r from-rose-600 to-indigo-600 text-white font-black rounded-2xl tracking-widest transition-all disabled:opacity-50 hover:scale-[1.02] active:scale-95 shadow-[0_20px_50px_rgba(225,29,72,0.3)] relative overflow-hidden group"
                         >
                             <div className="absolute inset-0 bg-white/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                            <span className="relative z-10">{loading ? "DECRYPTING..." : "AUTHORIZE ACCESS"}</span>
+                            <span className="relative z-10">{loading ? "Decrypting..." : "AuthorizeAccess"}</span>
                         </button>
                     </form>
-                    <Link href="/" className="inline-block mt-12 text-slate-500 hover:text-white text-[10px] font-black uppercase tracking-widest transition-colors border-b border-transparent hover:border-white/20 pb-1">
-                        Return to Signal
+                    <Link href="/" className="inline-block mt-12 text-slate-500 hover:text-white text-[10px] font-black tracking-widest transition-colors border-b border-transparent hover:border-white/20 pb-1">
+                        ReturnToSignal
                     </Link>
                 </div>
             </main>
@@ -160,15 +220,15 @@ export default function AdminPortal() {
                 <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 lg:mb-16 gap-6">
                     <div className="relative group">
                         <div className="absolute -inset-4 bg-gradient-to-r from-blue-600/20 to-purple-600/20 rounded-[2rem] blur-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000"></div>
-                        <h1 className="text-4xl lg:text-7xl font-black tracking-tighter text-white italic mb-2 uppercase leading-none">
-                            Platform <span className="text-gradient">Control</span>
+                        <h1 className="text-4xl lg:text-7xl font-black tracking-tighter text-white italic mb-2 leading-none">
+                            Platform<span className="text-gradient"> Control</span>
                         </h1>
                         <div className="flex items-center gap-3">
                             <span className="flex h-2 w-2 relative">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                {/* <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75"></span> */}
+                                {/* <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span> */}
                             </span>
-                            <p className="text-slate-300 text-[10px] font-black uppercase tracking-[0.3em]">Live Feed — v2.4.0</p>
+                            {/* <p className="text-slate-300 text-[10px] font-black tracking-[0.3em]">LiveFeed — v2.4.0</p> */}
                         </div>
                     </div>
                     <div className="flex gap-3 w-full sm:w-auto">
@@ -187,34 +247,37 @@ export default function AdminPortal() {
                 </header>
 
                 {/* Cyberpunk Stats Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-16">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-8 lg:mb-16">
                     {[
-                        { label: "Active Users", value: data.stats.totalUsers, color: "text-blue-500", glow: "shadow-blue-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="m23 21-2-2 2-2" /><path d="m19 21 2-2-2-2" /></svg> },
-                        { label: "Data Tasks", value: data.stats.totalTasks, color: "text-purple-500", glow: "shadow-purple-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /></svg> },
-                        { label: "Processing", value: data.stats.pendingTasks, color: "text-amber-500", glow: "shadow-amber-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v4" /><path d="M12 18v4" /><path d="M4.93 4.93l2.83 2.83" /><path d="M16.24 16.24l2.83 2.83" /><path d="M2 12h4" /><path d="M18 12h4" /><path d="M4.93 19.07l2.83-2.83" /><path d="M16.24 7.76l2.83-2.83" /></svg> },
-                        { label: "Finalized", value: data.stats.completedTasks, color: "text-emerald-500", glow: "shadow-emerald-500/20", icon: <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 11 3 3L22 4" /><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" /></svg> },
+                        { label: "Total Users", value: data.stats.totalUsers, color: "text-blue-500", glow: "shadow-blue-500/20", icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="m23 21-2-2 2-2" /><path d="m19 21 2-2-2-2" /></svg> },
+                        { label: "Data Pipeline", value: data.stats.totalTasks, color: "text-purple-500", glow: "shadow-purple-500/20", icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2" /><rect x="8" y="2" width="8" height="4" rx="1" ry="1" /></svg> },
+                        { label: "Pending Tasks", value: data.stats.pendingTasks, color: "text-rose-500", glow: "shadow-rose-500/20", icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg> },
+                        { label: "Completed Tasks", value: data.stats.completedTasks, color: "text-emerald-500", glow: "shadow-emerald-500/20", icon: <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg> },
                     ].map((stat, i) => (
-                        <div key={i} className={`relative group bg-white/[0.03] border border-white/10 rounded-2xl lg:rounded-[2rem] p-5 lg:p-8 transition-all hover:bg-white/[0.05] hover:-translate-y-1 shadow-2xl ${stat.glow}`}>
-                            <div className={`mb-3 ${stat.color} opacity-50`}>{stat.icon}</div>
-                            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-300 mb-1">{stat.label}</p>
-                            <p className={`text-3xl lg:text-5xl font-black tracking-tighter ${stat.color}`}>{stat.value}</p>
+                        <div key={stat.label} className={`relative group bg-white/[0.03] border border-white/10 rounded-[2.5rem] p-8 lg:p-10 transition-all hover:bg-white/[0.05] hover:-translate-y-1 shadow-2xl ${stat.glow}`}>
+                            <div className="flex justify-between items-start mb-10">
+                                <p className="text-[13px] font-black tracking-[0.2em] text-slate-400 italic">{stat.label}</p>
+                                <div className={`${stat.color} opacity-60 group-hover:opacity-100 transition-opacity`}>{stat.icon}</div>
+                            </div>
+                            <div className="mb-2">
+                                <p className={`text-5xl lg:text-7xl font-black tracking-tighter ${stat.color} drop-shadow-2xl italic`}>{stat.value}</p>
+                            </div>
                         </div>
                     ))}
                 </div>
-
                 {/* Mobile Tab Toggle */}
                 <div className="flex lg:hidden mb-6 p-1 bg-black/40 border border-white/5 rounded-xl">
                     <button
                         onClick={() => setActiveTab("users")}
-                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'users' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-500'}`}
+                        className={`flex-1 py-3 text-[10px] font-black tracking-widest rounded-lg transition-all ${activeTab === 'users' ? 'bg-blue-600/20 text-blue-400 border border-blue-600/30' : 'text-slate-50'}`}
                     >
-                        User Registry
+                        UserRegistry
                     </button>
                     <button
                         onClick={() => setActiveTab("tasks")}
-                        className={`flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${activeTab === 'tasks' ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-slate-500'}`}
+                        className={`flex-1 py-3 text-[10px] font-black tracking-widest rounded-lg transition-all ${activeTab === 'tasks' ? 'bg-purple-600/20 text-purple-400 border border-purple-600/30' : 'text-slate-50'}`}
                     >
-                        Global Stream
+                        GlobalStream
                     </button>
                 </div>
 
@@ -223,10 +286,10 @@ export default function AdminPortal() {
                     <section className={`lg:col-span-4 relative group ${activeTab !== 'users' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-blue-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse"></div>
                         <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-blue-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(59,130,246,0.35)] flex flex-col lg:h-[800px]">
-                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic uppercase">
+                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-blue-500 rounded-full shadow-[0_0_15px_rgba(59,130,246,0.8)]"></span>
-                                    Registry
+                                    User Registry
                                 </span>
                                 <div className="flex items-center gap-2">
                                     {selectedUserId && (
@@ -255,9 +318,9 @@ export default function AdminPortal() {
                                         <button
                                             onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: user.id, type: 'user', label: user.username }); }}
                                             disabled={actionLoading === user.id}
-                                            className="px-3 py-1.5 bg-rose-600/10 text-rose-500 text-[9px] font-black uppercase tracking-widest rounded-lg border border-transparent hover:bg-rose-600 hover:text-white transition-all opacity-100 lg:opacity-0 group-hover/item:opacity-100"
+                                            className="px-3 py-1.5 bg-rose-600/10 text-rose-500 text-[9px] font-black tracking-widest rounded-lg border border-transparent hover:bg-rose-600 hover:text-white transition-all opacity-100 lg:opacity-0 group-hover/item:opacity-100"
                                         >
-                                            {actionLoading === user.id ? "WAIT" : "BAN"}
+                                            {actionLoading === user.id ? "Wait" : "Remove User"}
                                         </button>
                                     </div>
                                 ))}
@@ -269,7 +332,7 @@ export default function AdminPortal() {
                     <section className={`lg:col-span-8 relative group ${activeTab !== 'tasks' ? 'hidden lg:block' : 'block'}`}>
                         <div className="absolute -inset-1 bg-purple-500/40 rounded-[2.5rem] sm:rounded-[3.2rem] blur-2xl opacity-20 group-hover:opacity-40 transition duration-700 animate-pulse" style={{ animationDelay: '1s' }}></div>
                         <div className="relative bg-[#0a0a1a]/90 backdrop-blur-3xl border border-purple-500/40 rounded-3xl sm:rounded-[3rem] p-6 sm:p-8 shadow-[0_0_50px_rgba(168,85,247,0.35)] flex flex-col lg:h-[800px]">
-                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic uppercase">
+                            <h2 className="text-xl sm:text-2xl font-black mb-6 sm:mb-8 flex items-center justify-between italic">
                                 <span className="flex items-center gap-3">
                                     <span className="w-1.5 h-6 bg-purple-500 rounded-full shadow-[0_0_15px_rgba(168,85,247,0.8)]"></span>
                                     Data Stream
@@ -287,8 +350,8 @@ export default function AdminPortal() {
                                                 <div className="w-20 h-20 bg-purple-500/10 rounded-[2rem] flex items-center justify-center mb-6 border border-purple-500/20 text-purple-500 opacity-40">
                                                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>
                                                 </div>
-                                                <h3 className="text-xl font-black uppercase italic tracking-tighter text-slate-200">No Stream Data</h3>
-                                                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mt-2">Zero packets detected for this node</p>
+                                                <h3 className="text-xl font-black italic tracking-tighter text-slate-200">No Stream Data</h3>
+                                                <p className="text-slate-400 text-xs font-bold tracking-widest mt-2 italic">Zero Packets Detected For This Node</p>
                                             </div>
                                         );
                                     }
@@ -334,8 +397,8 @@ export default function AdminPortal() {
                                                                     onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
                                                                     disabled={actionLoading === task.id}
                                                                     className={`lg:hidden absolute top-2 right-2 p-1.5 flex items-center gap-1 rounded-lg transition-all z-20 ${task.status === 'Completed'
-                                                                            ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20'
-                                                                            : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
+                                                                        ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20'
+                                                                        : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20'
                                                                         }`}
                                                                 >
                                                                     {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
@@ -348,8 +411,8 @@ export default function AdminPortal() {
                                                                         disabled={actionLoading === task.id}
                                                                         title={task.status === 'Completed' ? "Undo" : "Done"}
                                                                         className={`p-1.5 flex items-center gap-1 rounded-lg transition-all opacity-0 group-hover/task:opacity-100 ${task.status === 'Completed'
-                                                                                ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white'
-                                                                                : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
+                                                                            ? 'bg-amber-600/10 text-amber-500 border border-amber-500/20 hover:bg-amber-600 hover:text-white'
+                                                                            : 'bg-emerald-600/10 text-emerald-500 border border-emerald-500/20 hover:bg-emerald-600 hover:text-white'
                                                                             }`}
                                                                     >
                                                                         {task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />}
@@ -392,13 +455,14 @@ export default function AdminPortal() {
                         <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-rose-500/20">
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-rose-500"><path d="M12 9v4" /><path d="M12 17h.01" /><path d="m4.93 4.93 14.14 14.14" /></svg>
                         </div>
-                        <h3 className="text-3xl font-black text-white mb-3 tracking-tighter uppercase italic">Confirm Purge</h3>
+                        <h3 className="text-3xl font-black text-white mb-3 tracking-tighter italic">Confirm Deletion?</h3>
                         <p className="text-slate-300 mb-8 text-sm leading-relaxed font-bold italic">
                             Deleting <span className="text-rose-500">&quot;{pendingDelete.label}&quot;</span> will permanently remove it from the secure ledger.
                         </p>
                         <div className="grid grid-cols-2 gap-4">
-                            <button onClick={confirmDelete} className="py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl tracking-widest transition-all shadow-lg active:scale-95 uppercase text-xs">Execute</button>
-                            <button onClick={() => setPendingDelete(null)} className="py-4 bg-white/5 hover:bg-white/10 text-slate-400 font-black rounded-xl tracking-widest transition-all border border-white/10 uppercase text-xs">Abort</button>
+                            {/* <button onClick={confirmDelete} className="py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl tracking-widest transition-all shadow-lg active:scale-95 text-xs">Execute Purge</button> */}
+                            <button onClick={() => setPendingDelete(null)} className="py-4 bg-white/5 hover:bg-white/10 text-slate-400 font-black rounded-xl tracking-widest transition-all border border-white/10 text-xs">Abort</button>
+                            <button onClick={confirmDelete} className="py-4 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl tracking-widest transition-all shadow-lg active:scale-95 text-xs">Execute User</button>
                         </div>
                     </div>
                 </div>

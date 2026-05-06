@@ -56,10 +56,29 @@ export default function Dashboard() {
     }
   }, [userInfo]);
 
+  // 1. Cross-Tab Synchronization Protocol (Zero Network Overhead)
   useEffect(() => {
     checkAuth();
     fetchTasks();
-  }, []);
+
+    // Sync when other tabs broadcast a change
+    const handleStorageChange = (e) => {
+      if (e.key === 'taskzen_registry_sync') fetchTasks(search);
+    };
+
+    // Sync once when user returns to this tab (Passive Sync)
+    const handleFocus = () => {
+      if (!actionLoading && !bulkDeleting && !editingTask) fetchTasks(debouncedSearch);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [debouncedSearch, actionLoading, bulkDeleting, editingTask]);
 
   // Debouncing Search Effect
   useEffect(() => {
@@ -175,12 +194,14 @@ export default function Dashboard() {
         body: JSON.stringify(taskData),
       });
 
-      if (res.ok) {
+    if (res.ok) {
         const newTask = await res.json();
         setTasks((prev) => [newTask, ...prev]);
         logActivity("Added", newTask.title);
         setActiveTab("list");
         showToast("Node Allocated Successfully", "success");
+        // Broadcast change to other tabs
+        localStorage.setItem('taskzen_registry_sync', Date.now());
         return true;
       } else {
         const err = await res.json();
@@ -211,6 +232,8 @@ export default function Dashboard() {
         setEditingTask(null);
         setActiveTab("list");
         showToast("Protocol Refined", "success");
+        // Broadcast change to other tabs
+        localStorage.setItem('taskzen_registry_sync', Date.now());
         return true;
       } else {
         const err = await res.json();
@@ -242,6 +265,8 @@ export default function Dashboard() {
         );
         logActivity("Synchronized", task.title);
         showToast(`Node marked as ${newStatus}`, "success");
+        // Broadcast change to other tabs
+        localStorage.setItem('taskzen_registry_sync', Date.now());
       }
     } catch (err) {
       console.error("Status update sync failed:", err);
@@ -273,6 +298,8 @@ export default function Dashboard() {
         });
         logActivity("Purged", taskTitle);
         showToast("Node Decommissioned", "error");
+        // Broadcast change to other tabs
+        localStorage.setItem('taskzen_registry_sync', Date.now());
       }
     } catch (err) {
       console.error("Node purge failed:", err);
@@ -318,6 +345,8 @@ export default function Dashboard() {
         });
         showToast(`${ids.length} Node${ids.length > 1 ? 's' : ''} Decommissioned`, 'error');
         setSelectedIds(new Set());
+        // Broadcast change to other tabs
+        localStorage.setItem('taskzen_registry_sync', Date.now());
       }
     } catch (err) {
       console.error('Bulk delete failed:', err);
