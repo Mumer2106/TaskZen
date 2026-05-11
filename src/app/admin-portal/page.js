@@ -507,7 +507,7 @@ export default function AdminPortal() {
         try {
             const params = new URLSearchParams({
                 secret: adminSecret,
-                limit: TASKS_PAGE,
+                limit: userId ? 1000 : TASKS_PAGE,
                 offset,
             });
             if (userId) params.set('userId', userId);
@@ -1071,7 +1071,7 @@ export default function AdminPortal() {
                                             <span className="text-[10px] font-black text-white tracking-widest italic uppercase">{usersTotal} Nodes</span>
                                         </div>
                                         {selectedUserId && (
-                                            <button onClick={handleClearFilter} className="px-6 py-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black rounded-xl tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all">Reset Selection</button>
+                                            <button onClick={handleClearFilter} className="px-6 py-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[12px] font-black rounded-xl tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all">Reset Selection</button>
                                         )}
                                     </div>
 
@@ -1097,8 +1097,8 @@ export default function AdminPortal() {
                                                         <motion.button
                                                             whileHover={{ scale: 1.05, backgroundColor: 'rgba(99, 102, 241, 0.1)' }}
                                                             whileTap={{ scale: 0.95 }}
-                                                            onClick={(e) => { e.stopPropagation(); handleSelectUser(user.id); }}
-                                                            className={`px-8 py-3.5 border border-white/10 text-white text-[11px] font-bold rounded-[1.2rem] tracking-wider transition-all shadow-xl backdrop-blur-md ${selectedUserId === user.id ? 'bg-indigo-500/20 border-indigo-500/30 text-indigo-300' : 'bg-white/[0.03] hover:border-indigo-500/40'}`}
+                                                            onClick={(e) => { e.stopPropagation(); setEditingUser(user); setShowUserModal(true); }}
+                                                            className="px-8 py-3.5 border border-white/10 text-white text-[11px] font-bold rounded-[1.2rem] tracking-wider transition-all shadow-xl backdrop-blur-md bg-white/[0.03] hover:border-indigo-500/40"
                                                         >
                                                             View
                                                         </motion.button>
@@ -1143,7 +1143,7 @@ export default function AdminPortal() {
                                                                                     setEditingUser(user);
                                                                                     setShowUserModal(true);
                                                                                 }}
-                                                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-300 text-[10px] font-black uppercase tracking-widest transition-all"
+                                                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-white/5 text-slate-300 text-[12px] font-black tracking-widest transition-all"
                                                                             >
                                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 113 3L12 15l-4 1 1-4 9.5-9.5z" /></svg>
                                                                                 View
@@ -1155,7 +1155,7 @@ export default function AdminPortal() {
                                                                                     setOpenDropdown(null);
                                                                                     setPendingDelete({ id: user.id, type: 'user', label: user.username });
                                                                                 }}
-                                                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest transition-all"
+                                                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-rose-500/10 text-rose-500 text-[12px] font-black tracking-widest transition-all"
                                                                             >
                                                                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" /></svg>
                                                                                 Purge
@@ -1308,8 +1308,8 @@ export default function AdminPortal() {
                                     Are you certain you wish to permanently erase <span className="text-rose-500 font-black">&quot;{pendingDelete.label}&quot;</span> from the secure ledger?
                                 </p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                                    <button onClick={() => setPendingDelete(null)} className="py-4 sm:py-5 bg-white/5 hover:bg-white/10 text-slate-300 font-black rounded-2xl sm:rounded-3xl tracking-widest transition-all text-[10px] border-2 border-white/5">Cancel</button>
-                                    <button onClick={confirmDelete} className="py-4 sm:py-5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl sm:rounded-3xl tracking-widest transition-all shadow-xl active:scale-95 text-[10px]">Confirm Deletion</button>
+                                    <button onClick={() => setPendingDelete(null)} className="py-4 sm:py-5 bg-white/5 hover:bg-white/10 text-slate-300 font-black rounded-2xl sm:rounded-3xl tracking-widest transition-all text-[12px] border-2 border-white/5">Cancel</button>
+                                    <button onClick={confirmDelete} className="py-4 sm:py-5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl sm:rounded-3xl tracking-widest transition-all shadow-xl active:scale-95 text-[12px]">Confirm Deletion</button>
                                 </div>
                             </motion.div>
                         </motion.div>
@@ -1319,11 +1319,17 @@ export default function AdminPortal() {
 
             <style jsx global>{`
                 .custom-scrollbar-blue::-webkit-scrollbar,
-                .custom-scrollbar-purple::-webkit-scrollbar { width: 6px; }
-                .custom-scrollbar-blue::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.1); border-radius: 20px; }
-                .custom-scrollbar-purple::-webkit-scrollbar-thumb { background: rgba(168,85,247,0.1); border-radius: 20px; }
-                .custom-scrollbar-blue::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.25); }
-                .custom-scrollbar-purple::-webkit-scrollbar-thumb:hover { background: rgba(168,85,247,0.25); }
+                .custom-scrollbar-purple::-webkit-scrollbar { 
+                    width: 0;
+                    height: 0;
+                    background: transparent;
+                    display: none;
+                }
+                .custom-scrollbar-blue,
+                .custom-scrollbar-purple {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
             `}</style>
         </main>
     );
@@ -1354,7 +1360,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
             <motion.div
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                className="bg-[#111019] border border-white/10 p-10 py-12 rounded-[3.5rem] max-w-xl w-full shadow-[0_40px_80px_rgba(0,0,0,0.9)] relative overflow-hidden"
+                className="bg-[#111019] border border-white/10 p-8 sm:p-10 rounded-[3rem] max-w-xl w-full shadow-[0_40px_80px_rgba(0,0,0,0.9)] relative overflow-y-auto max-h-[92vh] custom-scrollbar-purple"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Horizontal Pink Accent Tag */}
@@ -1381,7 +1387,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                                 type="text"
                                 value={formData.firstName}
                                 onChange={e => setFormData({ ...formData, firstName: e.target.value })}
-                                className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.5rem] p-6 text-white font-bold transition-all outline-none text-lg shadow-inner"
+                                className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.2rem] p-5 text-white font-bold transition-all outline-none text-base shadow-inner"
                             />
                         </div>
                         <div className="space-y-3">
@@ -1390,7 +1396,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                                 type="text"
                                 value={formData.lastName}
                                 onChange={e => setFormData({ ...formData, lastName: e.target.value })}
-                                className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.5rem] p-6 text-white font-bold transition-all outline-none text-lg shadow-inner"
+                                className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.2rem] p-5 text-white font-bold transition-all outline-none text-base shadow-inner"
                             />
                         </div>
                     </div>
@@ -1401,7 +1407,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                             type="email"
                             value={formData.username}
                             onChange={e => setFormData({ ...formData, username: e.target.value })}
-                            className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.5rem] p-7 text-white font-bold transition-all outline-none text-lg shadow-inner"
+                            className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.2rem] p-5 text-white font-bold transition-all outline-none text-base shadow-inner"
                         />
                     </div>
 
@@ -1413,7 +1419,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                                 value={formData.password}
                                 placeholder="Enter new password..."
                                 onChange={e => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.5rem] p-7 text-white font-bold transition-all outline-none text-lg shadow-inner placeholder:text-slate-700"
+                                className="w-full bg-[#1b1a23] border border-white/[0.08] focus:border-pink-500/40 rounded-[1.2rem] p-5 text-white font-bold transition-all outline-none text-base shadow-inner placeholder:text-slate-700"
                             />
                             <div
                                 onClick={() => setShowPassword(!showPassword)}
@@ -1428,7 +1434,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                 <div className="flex gap-6 items-center mb-8">
                     <button
                         onClick={onClose}
-                        className="flex-1 py-7 bg-white/[0.03] hover:bg-white/[0.08] text-slate-500 font-black rounded-[1.8rem] tracking-widest transition-all text-xs border border-white/5 uppercase"
+                        className="flex-1 py-5 bg-white/[0.03] hover:bg-white/[0.08] text-slate-500 font-black rounded-[1.2rem] tracking-widest transition-all text-xs border border-white/5 uppercase"
                     >
                         Abort
                     </button>
@@ -1442,7 +1448,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                             if (formData.password) updates.password = formData.password;
                             onSave(user.id || user.userId, updates);
                         }}
-                        className={`flex-[2] py-7 font-black rounded-[1.8rem] tracking-widest transition-all shadow-2xl active:scale-95 text-xs flex items-center justify-center gap-3 uppercase ${isModified ? 'bg-gradient-to-r from-[#ed2da8] to-[#d946ef] text-white' : 'bg-white/5 text-slate-700 cursor-not-allowed'}`}
+                        className={`flex-[2] py-5 font-black rounded-[1.2rem] tracking-widest transition-all shadow-2xl active:scale-95 text-xs flex items-center justify-center gap-3 uppercase ${isModified ? 'bg-gradient-to-r from-[#ed2da8] to-[#d946ef] text-white' : 'bg-white/5 text-slate-700 cursor-not-allowed'}`}
                     >
                         {loading ? 'Processing...' : (
                             <>
@@ -1453,13 +1459,7 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                     </button>
                 </div>
 
-                <div className="pt-8 border-t border-white/[0.05] flex items-center justify-between opacity-30">
-                    <div className="flex items-center gap-2">
-                        <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                        <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">Neural Protocol: Active</span>
-                    </div>
-                    <span className="text-[9px] font-black uppercase tracking-[0.2em] text-white">SysRef: {(user.id || user.userId || '00000000').slice(-8).toUpperCase()}</span>
-                </div>
+
             </motion.div>
         </motion.div>
     );
@@ -1561,26 +1561,7 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
                                             </div>
                                         </div>
                                     ))}
-                                    {(hasMore || canHide) && (
-                                        <div className="flex justify-center py-10">
-                                            {hasMore ? (
-                                                <button
-                                                    onClick={onShowMore}
-                                                    disabled={isLoadingMore}
-                                                    className="px-10 py-5 bg-indigo-500/10 border-2 border-indigo-500/20 text-indigo-400 font-black rounded-3xl tracking-widest transition-all shadow-xl active:scale-95 disabled:opacity-50 text-[10px]"
-                                                >
-                                                    {isLoadingMore ? 'Loading Neural Nodes...' : 'Show More Operations'}
-                                                </button>
-                                            ) : (
-                                                <button
-                                                    onClick={onHide}
-                                                    className="px-10 py-5 bg-white/5 border-2 border-white/10 text-slate-400 font-black rounded-3xl tracking-widest transition-all shadow-xl text-[10px]"
-                                                >
-                                                    Hide Operations
-                                                </button>
-                                            )}
-                                        </div>
-                                    )}
+
                                 </div>
                             </div>
                         ))
