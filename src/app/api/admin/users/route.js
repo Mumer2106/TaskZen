@@ -11,7 +11,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getAllUsers, deleteUser, findUserById } from '@/lib/db';
+import { getAllUsers, deleteUser, findUserById, updateUser } from '@/lib/db';
 import { cookies } from 'next/headers';
 
 // ── Shared admin auth guard ───────────────────────────────────────────────────
@@ -73,5 +73,31 @@ export async function DELETE(request) {
     } catch (error) {
         console.error('[/api/admin/users DELETE]', error);
         return NextResponse.json({ error: 'Failed to delete user' }, { status: 500 });
+    }
+}
+
+// ── PATCH — update user details or password ───────────────────────────────────
+export async function PATCH(request) {
+    const auth = await requireAdmin(request);
+    if (!auth.ok) return NextResponse.json({ error: auth.error }, { status: auth.status });
+
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    try {
+        const updates = await request.json();
+        
+        if (!id) {
+            return NextResponse.json({ error: 'Missing target User ID in request parameters.' }, { status: 400 });
+        }
+        if (!updates || Object.keys(updates).length === 0) {
+            return NextResponse.json({ error: 'No modification parameters received in request body.' }, { status: 400 });
+        }
+
+        const updatedUser = await updateUser(id, updates);
+        return NextResponse.json({ message: 'User updated successfully', user: updatedUser });
+    } catch (error) {
+        console.error('[/api/admin/users PATCH]', error);
+        return NextResponse.json({ error: error.message || 'Failed to update user' }, { status: 500 });
     }
 }

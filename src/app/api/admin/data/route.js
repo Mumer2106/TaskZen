@@ -46,12 +46,26 @@ export async function GET(request) {
     try {
         const [allUsers, allTasks] = await Promise.all([getAllUsers(), getAllTasks()]);
 
+        // Extract top active users for the dashboard (regardless of pagination)
+        const recentActiveUsers = [...allUsers]
+            .filter(u => u.lastActive)
+            .sort((a, b) => new Date(b.lastActive) - new Date(a.lastActive))
+            .slice(0, 5)
+            .map(u => ({
+                id: u.id,
+                username: u.username,
+                firstName: u.firstName || u.firstname || '',
+                lastName: u.lastName || u.lastname || '',
+                lastActive: u.lastActive,
+            }));
+
         return NextResponse.json({
             stats: {
                 totalUsers:     allUsers.length,
                 totalTasks:     allTasks.length,
                 pendingTasks:   allTasks.filter(t => t.status === 'Pending').length,
                 completedTasks: allTasks.filter(t => t.status === 'Completed').length,
+                recentActiveUsers,
             },
         });
     } catch (error) {

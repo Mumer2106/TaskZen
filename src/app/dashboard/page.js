@@ -96,8 +96,8 @@ export default function Dashboard() {
       isInitialMount.current = false;
       return;
     }
-    if (loading || fetchedSearch.current === debouncedSearch) return; 
-    
+    if (loading || fetchedSearch.current === debouncedSearch) return;
+
     fetchedSearch.current = debouncedSearch;
     setOffset(0);
     fetchTasks(debouncedSearch, 0, false);
@@ -230,7 +230,7 @@ export default function Dashboard() {
         body: JSON.stringify(taskData),
       });
 
-    if (res.ok) {
+      if (res.ok) {
         const newTask = await res.json();
         setTasks((prev) => [newTask, ...prev]);
         logActivity("Added", newTask.title);
@@ -313,7 +313,7 @@ export default function Dashboard() {
   const confirmDelete = async () => {
     const id = taskToDelete;
     if (!id) return;
-    
+
     if (id === "BULK") {
       if (selectedIds.size === 0) return;
       try {
@@ -433,36 +433,7 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      {/* Contextual Search & Tools */}
-      {activeTab === "list" && !loading && (
-        <motion.div
-          initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}
-          className="w-full max-w-4xl mb-12 flex flex-col gap-4"
-        >
-          <div className="flex gap-4">
-            <div className="relative flex-1 group">
-              <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              </div>
-              <input
-                type="text"
-                placeholder="Search neural registry sequences..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-[2.5rem] pl-16 pr-8 py-6 text-white placeholder:text-slate-400 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-lg shadow-inner"
-              />
-            </div>
-            <button
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className={`px-8 rounded-[2.5rem] bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
-              title="Refresh Sequence"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : "transition-transform group-hover:rotate-180"}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.2 2 7.4 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.2-2-7.4-4.9"></path></svg>
-            </button>
-          </div>
-        </motion.div>
-      )}
+
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center space-y-6">
@@ -486,7 +457,27 @@ export default function Dashboard() {
           <AnimatePresence mode="wait">
             {activeTab === "overview" && <motion.div className="w-full" key="ov" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><Overview tasks={tasks} stats={stats} activities={activities} /></motion.div>}
             {activeTab === "add" && <motion.div className="w-full flex justify-center" key="ad" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><AddTask onTaskAdded={handleAddTask} onTaskUpdated={handleUpdateTask} initialData={editingTask} onCancel={stopEditing} actionLoading={actionLoading} error={error} /></motion.div>}
-            {activeTab === "list" && <motion.div className="w-full" key="li" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><TaskList tasks={tasks} onToggleStatus={handleToggleStatus} onDeleteTask={requestDelete} onEditTask={startEditing} onViewTask={setViewingTask} selectedIds={selectedIds} onToggleSelect={toggleSelectId} hasMore={hasMore} onShowMore={handleShowMore} onHide={handleHide} isLoadingMore={actionLoading} /></motion.div>}
+            {activeTab === "list" && (
+              <motion.div className="w-full" key="li" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+                <TaskList
+                  tasks={tasks}
+                  onToggleStatus={handleToggleStatus}
+                  onDeleteTask={requestDelete}
+                  onEditTask={startEditing}
+                  onViewTask={setViewingTask}
+                  selectedIds={selectedIds}
+                  onToggleSelect={toggleSelectId}
+                  hasMore={hasMore}
+                  onShowMore={handleShowMore}
+                  onHide={handleHide}
+                  isLoadingMore={actionLoading}
+                  search={search}
+                  onSearchChange={setSearch}
+                  onRefresh={handleRefresh}
+                  isRefreshing={isRefreshing}
+                />
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       )}

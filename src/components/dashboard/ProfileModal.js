@@ -43,6 +43,12 @@ export default function ProfileModal({ isOpen, onClose, userInfo, onUpdate }) {
     setError("");
   };
 
+  const isModified = 
+    formData.firstName !== (userInfo?.firstName || "") ||
+    formData.lastName !== (userInfo?.lastName || "") ||
+    formData.email !== (userInfo?.email || "") ||
+    formData.newPassword !== "";
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -80,7 +86,7 @@ export default function ProfileModal({ isOpen, onClose, userInfo, onUpdate }) {
         setTimeout(() => {
           onClose();
           setSuccess("");
-          setFormData(prev => ({ ...prev, currentPassword: data.user.password || formData.newPassword || prev.currentPassword, newPassword: "" }));
+          setFormData(prev => ({ ...prev, newPassword: "" }));
         }, 1500);
       } else {
         setError(data.error || "Update sequence failed");
@@ -179,7 +185,7 @@ export default function ProfileModal({ isOpen, onClose, userInfo, onUpdate }) {
               </div>
 
               <div className="space-y-3">
-                <label className="text-[12px] font-black text-slate-300 tracking-[0.3em] ml-4 block drop-shadow-sm">EmailAddress</label>
+                <label className="text-[12px] font-black text-slate-300 tracking-[0.3em] ml-4 block drop-shadow-sm">Email Address</label>
                 <input
                   type="email"
                   name="email"
@@ -228,8 +234,8 @@ export default function ProfileModal({ isOpen, onClose, userInfo, onUpdate }) {
                 </button>
                 <button
                   type="submit"
-                  disabled={loading}
-                  className="flex-[2] py-5 rounded-2xl bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-black hover:scale-[1.02] active:scale-95 shadow-[0_15px_40px_rgba(255,45,149,0.3)] transition-all tracking-[0.1em] text-[13px] flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed group"
+                  disabled={loading || !isModified}
+                  className="flex-[2] py-5 rounded-2xl bg-gradient-to-r from-pink-500 to-fuchsia-600 text-white font-black hover:scale-[1.02] active:scale-95 shadow-[0_15px_40px_rgba(255,45,149,0.3)] transition-all tracking-[0.1em] text-[13px] flex items-center justify-center gap-4 disabled:opacity-30 disabled:grayscale disabled:cursor-not-allowed group"
                 >
                   {loading ? (
                     <>

@@ -79,15 +79,19 @@ export async function findUser(username, password) {
         const isMatch = await verifyPassword(password, user.password);
         if (!isMatch) return null;
 
-        // On successful match with plaintext password, migrate to bcrypt
-        if (!user.password.startsWith('$2')) {
-            const hashed = await bcrypt.hash(password, 12);
-            db.users[user.id].password = hashed;
+        // Ensure sessionToken exists
+        if (!user.sessionToken) {
+            user.sessionToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+            db.users[user.id].sessionToken = user.sessionToken;
             await writeJsonDb(db);
-            console.log(`[Security] Migrated user ${user.username} password to bcrypt.`);
         }
 
-        return sanitizeUser({ ...user, role: user.role || 'user', isBanned: !!user.banned });
+        return sanitizeUser({
+            ...user,
+            role: user.role || 'user',
+            isBanned: !!user.banned,
+            sessionToken: user.sessionToken
+        });
     }
 }
 
@@ -170,6 +174,7 @@ export async function createUser(id, username, password, extraData = {}) {
             lastName: extraData?.lastName || '',
             profilePic: extraData?.profilePic || null,
             role: extraData?.role || 'user',
+            sessionToken: Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2),
         };
         db.users[id] = newUser;
         if (!db.tasks[id]) db.tasks[id] = [];
@@ -329,6 +334,7 @@ export async function getAllUsers() {
                 profilePic: r.profilePic || r.profilepic || null,
                 role: r.role || 'user',
                 isBanned: !!r.isbanned || !!r.banned,
+                lastActive: r.lastActive || r.lastactive || null,
             }));
         } catch (error) {
             console.error("Postgres getAllUsers error:", error.message);
@@ -344,9 +350,41 @@ export async function getAllUsers() {
             profilePic: u.profilePic,
             role: u.role || 'user',
             isBanned: !!u.banned,
+            lastActive: u.lastActive || null,
         }));
     }
 }
+
+export async function touchUserActivity(userId) {
+    const now = new Date().toISOString();
+    if (isPostgresConfigured) {
+        try {
+            await sql`UPDATE users SET lastactive = ${now} WHERE id = ${userId}`;
+        } catch (e) { /* ignore table not setup yet */ }
+    } else {
+        const db = await readJsonDb();
+        if (db.users[userId]) {
+            db.users[userId].lastActive = now;
+            await writeJsonDb(db);
+        }
+    }
+}
+
+export async function clearUserActivity(userId) {
+    const wayBack = new Date(0).toISOString(); // Epoch 1970
+    if (isPostgresConfigured) {
+        try {
+            await sql`UPDATE users SET lastactive = ${wayBack} WHERE id = ${userId}`;
+        } catch (e) { }
+    } else {
+        const db = await readJsonDb();
+        if (db.users[userId]) {
+            db.users[userId].lastActive = wayBack;
+            await writeJsonDb(db);
+        }
+    }
+}
+
 
 export async function getAllTasks() {
     if (isPostgresConfigured) {
@@ -405,11 +443,19 @@ export async function updateUser(userId, updates) {
             if (password !== undefined) {
                 const hashed = await bcrypt.hash(password, 12);
                 await sql`UPDATE users SET password = ${hashed} WHERE id = ${userId}`;
+
+                // Regenerate session token on password change to force logout all sessions
+                const newToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
+                try {
+                    await sql`UPDATE users SET sessiontoken = ${newToken} WHERE id = ${userId}`;
+                } catch (e) {
+                    console.warn("Session token column missing, skipping update.");
+                }
             }
             if (firstName !== undefined) await sql`UPDATE users SET firstname = ${firstName} WHERE id = ${userId}`;
             if (lastName !== undefined) await sql`UPDATE users SET lastname = ${lastName} WHERE id = ${userId}`;
             if (profilePic !== undefined) await sql`UPDATE users SET profilepic = ${profilePic} WHERE id = ${userId}`;
-            
+
             if (role !== undefined) {
                 try {
                     await sql`UPDATE users SET role = ${role} WHERE id = ${userId}`;
@@ -420,7 +466,7 @@ export async function updateUser(userId, updates) {
 
             const { rows } = await sql`SELECT * FROM users WHERE id = ${userId}`;
             const updated = rows[0];
-            
+
             return updated ? {
                 ...updated,
                 firstName: updated.firstName || updated.firstname || '',
@@ -453,6 +499,7 @@ export async function updateUser(userId, updates) {
         // Hash new password if provided
         if (filteredUpdates.password) {
             filteredUpdates.password = await bcrypt.hash(filteredUpdates.password, 12);
+            filteredUpdates.sessionToken = Math.random().toString(36).substring(2) + Math.random().toString(36).substring(2);
         }
 
         db.users[userId] = { ...db.users[userId], ...filteredUpdates };

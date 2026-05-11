@@ -69,8 +69,12 @@ export default function TaskList({
   onShowMore,
   onHide,
   isLoadingMore,
+  search,
+  onSearchChange,
+  onRefresh,
+  isRefreshing,
 }) {
-  const [loadingIds,  setLoadingIds]  = useState(new Set());
+  const [loadingIds, setLoadingIds] = useState(new Set());
   const [internalLoading, setInternalLoading] = useState(false);
 
   // Ref used to scroll container back to top on "Hide"
@@ -110,9 +114,24 @@ export default function TaskList({
   const handleShowMore = async () => {
     if (isLoadingMore || internalLoading) return;
     setInternalLoading(true);
+    
+    // Store current scroll height before loading more
+    const scrollContainer = listRef.current?.querySelector('.overflow-y-auto');
+    const previousScrollHeight = scrollContainer ? scrollContainer.scrollHeight : 0;
+
     try {
       if (onShowMore) {
         await onShowMore();
+        
+        // Auto-scroll to the newly loaded content
+        setTimeout(() => {
+          if (scrollContainer) {
+            scrollContainer.scrollTo({
+              top: previousScrollHeight - 50, // Scroll to roughly where new tasks start
+              behavior: 'smooth'
+            });
+          }
+        }, 100);
       }
     } finally {
       setInternalLoading(false);
@@ -130,19 +149,7 @@ export default function TaskList({
   };
 
   // ─── Empty state ──────────────────────────────────────────────────────────
-  if (tasks.length === 0) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center p-20 text-center space-y-8">
-        <div className="h-32 w-32 rounded-[2.5rem] bg-white/[0.02] flex items-center justify-center border border-white/5 opacity-20">
-          <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
-        </div>
-        <div>
-          <h3 className="text-3xl font-black text-slate-300 tracking-tighter mb-2">Registry Offline</h3>
-          <p className="text-slate-500 font-medium text-lg italic">No active nodes detected in this sector.</p>
-        </div>
-      </div>
-    );
-  }
+
 
   const visibleTasks = tasks;
   // logic: show hide if we have nodes and we've reached the end (hasMore is false) 
@@ -153,215 +160,177 @@ export default function TaskList({
   console.log('[TaskList] Render state:', { tasksCount: tasks.length, hasMore, canHide, showLoading, isLoadingMore, internalLoading });
 
   return (
-    <div ref={listRef} className="w-full flex flex-col max-w-6xl mx-auto relative mt-2 sm:mt-6">
+    <div ref={listRef} className="w-full max-w-6xl mx-auto relative mt-12 sm:mt-20">
+      {/* Dynamic Background Glows */}
+      <div className="absolute -top-20 -left-20 w-96 h-96 bg-pink-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-      {/* ── Bulk Delete Purge Button ───────────────────────────────────────── */}
-      <AnimatePresence>
-        {selectedIds.size > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 10, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 10, scale: 0.95 }}
-            className="absolute -top-10 sm:-top-11 right-6 sm:right-9 z-20"
+      <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-4 sm:p-12 lg:p-16 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[950px] overflow-hidden group">
+        
+        {/* Subtle Inner Border Glow */}
+        <div className="absolute inset-0 rounded-[3rem] sm:rounded-[5rem] border border-white/5 pointer-events-none" />
+        <div className="absolute inset-0 rounded-[3rem] sm:rounded-[5rem] bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
+
+        {/* Search & Refresh Tools */}
+        <div className="mb-10 flex gap-4">
+          <div className="relative flex-1 group">
+            <div className="absolute inset-y-0 left-6 flex items-center pointer-events-none text-slate-500 group-focus-within:text-pink-500 transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+            <input
+              type="text"
+              placeholder="Search neural registry sequences..."
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-3xl pl-16 pr-8 py-5 text-white placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-base shadow-inner"
+            />
+          </div>
+          <button
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className={`px-8 rounded-3xl bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 flex items-center justify-center ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
+            title="Refresh Sequence"
           >
-            <button
-              onClick={() => onDeleteTask("BULK")}
-              className="flex items-center gap-2 py-2 px-6 rounded-full bg-rose-600 hover:bg-rose-500 text-white font-black text-[11px] tracking-[0.2em] uppercase shadow-lg shadow-rose-500/20 active:scale-95 transition-all cursor-pointer"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 6h18" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
-              Purge {selectedIds.size} Node{selectedIds.size > 1 ? "s" : ""}
-            </button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : "transition-transform hover:rotate-180"}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.2 2 7.4 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.2-2-7.4-4.9"></path></svg>
+          </button>
+        </div>
 
-      {/* ── Task Cards ────────────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {visibleTasks.map((task) => {
-          const formattedDate = new Date(task.taskDate || task.taskdate).toLocaleDateString("en-US", {
-            day: "2-digit", month: "short", year: "numeric",
-          });
-          const isSelected = selectedIds.has(task.id);
-
-          return (
+        {/* Bulk Actions Area */}
+        <AnimatePresence>
+          {selectedIds.size > 0 && (
             <motion.div
-              layout
-              initial={{ opacity: 0, height: 0, marginBottom: 0, overflow: "hidden" }}
-              animate={{ opacity: 1, height: "auto", marginBottom: 32, overflow: "visible" }}
-              exit={{ opacity: 0, height: 0, marginBottom: 0, overflow: "hidden", transition: { duration: 0.5, ease: "easeOut" } }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-              key={task.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="mb-8 flex justify-center sticky top-0 z-[30]"
             >
-              <div
-                className={`group relative backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-9 flex flex-col lg:flex-row items-stretch justify-between gap-8 border-2 transition-all duration-700 overflow-hidden ${isSelected
-                  ? "border-rose-500/50 bg-rose-500/10 shadow-[0_0_40px_rgba(244,63,94,0.15)]"
-                  : "bg-white/[0.04] border-white/10 hover:border-pink-500/40 hover:shadow-[0_40px_100px_rgba(0,0,0,0.6),0_0_40px_rgba(255,45,149,0.1)]"
-                  }`}
+              <button
+                onClick={() => onDeleteTask("BULK")}
+                className="flex items-center gap-3 py-3 px-10 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-black text-[12px] tracking-[0.2em] uppercase shadow-[0_0_30px_rgba(225,29,72,0.4)] active:scale-95 transition-all"
               >
-                {/* Background Glow */}
-                <div className="absolute top-1/2 left-0 -translate-y-1/2 w-[300px] h-[300px] bg-pink-500/5 rounded-full blur-[100px] opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-
-                {/* Holographic scanner effect */}
-                <div className="absolute inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-pink-400/20 to-transparent top-0 animate-scanline pointer-events-none" />
-
-                <div className="flex items-start sm:items-center gap-6 sm:gap-8 flex-1 min-w-0">
-                  {/* Status Checkbox */}
-                  <button
-                    onClick={() => handleToggle(task.id)}
-                    disabled={loadingIds.has(task.id)}
-                    className={`flex-shrink-0 h-14 w-14 rounded-[1.25rem] border-2 flex items-center justify-center transition-all duration-700 relative overflow-hidden group/check disabled:cursor-not-allowed ${task.status === "Completed" ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]" : "bg-white/[0.04] border-white/10 text-slate-600 hover:border-pink-500/50 hover:bg-pink-500/5"}`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent opacity-0 group-hover/check:opacity-100 transition-opacity" />
-                    {loadingIds.has(task.id) ? (
-                      <svg className="animate-spin h-5 w-5 text-slate-400" viewBox="0 0 24 24" fill="none">
-                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                      </svg>
-                    ) : task.status === "Completed" ? (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}><CheckIcon /></motion.div>
-                    ) : (
-                      <div className="opacity-40 group-hover/check:opacity-100 group-hover/check:scale-110 transition-all"><CheckIcon /></div>
-                    )}
-                  </button>
-
-                  <div className="flex-1 min-w-0">
-                    {/* Date Above Title */}
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-black tracking-widest text-slate-600">RegistryLog</span>
-                      <span className="text-[11px] font-bold text-slate-400 tracking-tight">{formattedDate}</span>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-4 mb-3">
-                      <h3 className={`text-2xl sm:text-3xl font-black tracking-tighter italic truncate pr-6 transition-all duration-700 ${task.status === "Completed" ? "text-slate-600 blur-[0.5px] scale-95" : "text-white group-hover:text-pink-50 shadow-sm"}`}>
-                        {task.title}
-                      </h3>
-                      {task.status === "Completed" ? (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full animate-in fade-in zoom-in duration-500">
-                          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          <span className="text-[10px] font-black tracking-[0.2em] text-emerald-400">Completed</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-2 px-3 py-1 bg-pink-500/10 border border-pink-500/30 rounded-full">
-                          <div className="h-1.5 w-1.5 rounded-full bg-pink-400 animate-pulse" />
-                          <span className="text-[10px] font-black tracking-[0.2em] text-pink-500">Pending</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className={`text-base italic leading-relaxed transition-all duration-700 ${task.status === "Completed" ? "text-slate-700" : "text-slate-400 group-hover:text-slate-200"}`}>
-                      {task.description || "No supplemental data available for this node."}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Right Side: Select & Actions */}
-                <div className="flex flex-col items-end justify-between border-t lg:border-t-0 border-white/[0.05] pt-6 lg:pt-0 gap-6 flex-shrink-0 min-h-[110px]">
-                  {/* Selection checkbox */}
-                  <button
-                    onClick={() => onToggleSelect(task.id)}
-                    className={`h-6 w-6 sm:h-8 sm:w-8 rounded-xl border-2 flex items-center justify-center transition-all duration-300 z-10 cursor-pointer ${isSelected
-                      ? "bg-rose-500 border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.5)]"
-                      : "border-white/20 bg-white/[0.02] opacity-40 group-hover:opacity-100 hover:border-rose-400 hover:bg-rose-500/10"
-                      }`}
-                    title={isSelected ? "Deselect" : "Select Node"}
-                  >
-                    {isSelected && (
-                      <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></motion.svg>
-                    )}
-                  </button>
-
-                  {/* Actions */}
-                  <div className="flex flex-row items-center gap-3 w-full sm:w-auto justify-end">
-                    <button
-                      onClick={() => onViewTask(task)}
-                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 hover:bg-cyan-500/20 hover:border-cyan-500/40 hover:shadow-[0_0_15px_rgba(6,182,212,0.3)] transition-all duration-500 active:scale-90 flex items-center justify-center group/btn"
-                      title="View Detail"
-                    >
-                      <motion.div whileHover={{ scale: 1.1 }}><ViewIcon /></motion.div>
-                    </button>
-                    <button
-                      onClick={() => onEditTask(task)}
-                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 hover:border-indigo-500/40 hover:shadow-[0_0_15px_rgba(99,102,241,0.3)] transition-all duration-500 active:scale-90 flex items-center justify-center"
-                      title="Edit Protocol"
-                    >
-                      <motion.div whileHover={{ scale: 1.1 }}><EditIcon /></motion.div>
-                    </button>
-                    <button
-                      onClick={() => handleDelete(task.id)}
-                      disabled={loadingIds.has(task.id)}
-                      className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] transition-all duration-500 active:scale-90 flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Delete Node"
-                    >
-                      {loadingIds.has(task.id) ? (
-                        <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                          <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                        </svg>
-                      ) : (
-                        <motion.div whileHover={{ scale: 1.1 }}><TrashIcon /></motion.div>
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Hover Accent */}
-                <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-gradient-to-b from-pink-500 to-indigo-600 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-              </div>
+                <TrashIcon />
+                Purge {selectedIds.size} Node{selectedIds.size > 1 ? "s" : ""}
+              </button>
             </motion.div>
-          );
-        })}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>
 
-      {/* ── Show More Skeletons ────────────────────────────────────────────── */}
-      <AnimatePresence>
-        {showLoading && (
-          <motion.div
-            key="skeletons"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-          >
-            {[...Array(3)].map((_, i) => (
-              <TaskSkeleton key={i} />
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
+        {/* Grouped Task Stream */}
+        <div className="flex-1 overflow-y-auto pr-4 space-y-16 custom-scrollbar-blue relative z-10 min-h-0">
+          {tasks.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-20 text-center space-y-8">
+              <div className="h-32 w-32 rounded-[2.5rem] bg-white/[0.02] flex items-center justify-center border border-white/5 opacity-20">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2v20" /><path d="M2 12h20" /></svg>
+              </div>
+              <div>
+                <h3 className="text-3xl font-black text-slate-300 tracking-tighter mb-2">Registry Offline</h3>
+                <p className="text-slate-500 font-medium text-lg italic">{search ? "No matching nodes found for this sequence." : "No active nodes detected in this sector."}</p>
+              </div>
+            </div>
+          ) : (
+            Object.entries(visibleTasks.reduce((groups, task) => {
+              const date = new Date(task.taskDate || task.taskdate).toLocaleDateString("en-US", {
+                day: "2-digit", month: "short", year: "numeric",
+              });
+              if (!groups[date]) groups[date] = [];
+              groups[date].push(task);
+              return groups;
+            }, {})).sort(([a], [b]) => new Date(b) - new Date(a)).map(([date, dateTasks]) => (
+              <div key={date} className="space-y-8">
+                <div className="sticky top-0 z-10 py-5 bg-[#08081a]/95 backdrop-blur-md border-b border-white/10 flex items-center justify-between">
+                  <span className="text-[11px] font-black tracking-[0.3em] text-pink-500 italic uppercase">{date}</span>
+                  <div className="h-px flex-1 mx-8 bg-gradient-to-r from-pink-500/20 to-transparent" />
+                </div>
 
-      {/* ── Pagination Controls ────────────────────────────────────────────── */}
-      <motion.div layout transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }} className="flex justify-center mt-8 mb-8 z-10 relative min-h-[48px]">
-        {hasMore ? (
-          <button
-            onClick={handleShowMore}
-            disabled={showLoading}
-            className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-pink-500/60 transition-all hover:border-pink-500 text-pink-400 font-bold text-[15px] tracking-wide shadow-[0_0_20px_rgba(255,45,149,0.3)] active:scale-95 flex items-center gap-2 group disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            {showLoading ? (
-              <>
-                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                  <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z" />
-                </svg>
-                Processing...
-              </>
-            ) : (
-              <>
+                <div className="grid gap-8">
+                  {dateTasks.map(task => {
+                    const isSelected = selectedIds.has(task.id);
+                    return (
+                      <motion.div
+                        layout
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        key={task.id} 
+                        className="relative group/task overflow-visible w-full max-w-5xl mx-auto"
+                      >
+                        <div className="relative bg-[#0d0d21]/60 backdrop-blur-3xl border-2 border-white/10 p-5 sm:p-9 rounded-[3rem] transition-all">
+                          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
+                            <div className="flex-1 min-w-0">
+                              {/* Selection Box - Absolutely positioned to top right */}
+                              <button
+                                onClick={() => onToggleSelect(task.id)}
+                                className={`absolute top-5 right-5 sm:top-9 sm:right-9 h-8 w-8 rounded-lg border-2 flex items-center justify-center transition-all active:scale-95 z-20 ${isSelected ? "bg-pink-500 border-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.3)]" : "border-white/10 bg-white/5 hover:border-pink-500/40 text-transparent hover:text-pink-500"}`}
+                              >
+                                <CheckIcon />
+                              </button>
+
+                              <div className="flex flex-col gap-4">
+                                <div className="flex items-center">
+                                  <span className={`px-4 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border ${task.status === "Completed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-pink-500/10 text-pink-500 border-pink-500/20"}`}>
+                                      {task.status === "Completed" ? "Completed" : "Pending"}
+                                  </span>
+                                </div>
+                                <h3 className={`text-2xl sm:text-4xl font-black italic tracking-tighter leading-tight transition-all duration-500 capitalize ${task.status === "Completed" ? "text-slate-500/60" : "text-white"}`}>
+                                    {(task.title || '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()}
+                                </h3>
+                                <p className={`text-[14px] sm:text-base font-medium italic leading-relaxed line-clamp-2 max-w-3xl border-l-[3px] border-white/5 pl-6 transition-colors ${task.status === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
+                                  {task.description || "No neural data logged."}
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex flex-row items-center justify-center lg:justify-end gap-3 sm:gap-5 pt-6 lg:pt-0 border-t lg:border-t-0 border-white/5 shrink-0 relative z-10">
+                              <button 
+                                  onClick={() => handleToggle(task.id)} 
+                                  disabled={loadingIds.has(task.id)}
+                                  title={task.status === 'Completed' ? 'Reset to Pending' : 'Mark as Completed'}
+                                  className={`h-12 w-12 sm:h-14 sm:w-14 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${task.status === 'Completed' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'}`}
+                              >
+                                  {task.status === 'Completed' ? <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> : <CheckIcon />}
+                              </button>
+                              <button onClick={() => onViewTask(task)} title="View Node" className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-sky-500/10 border-2 border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 hover:border-sky-500/40 text-sky-400 transition-all active:scale-90"><ViewIcon /></button>
+                              <button onClick={() => onEditTask(task)} title="Edit Node" className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/20 flex items-center justify-center hover:bg-indigo-500/20 hover:border-indigo-500/40 text-indigo-400 transition-all active:scale-90"><EditIcon /></button>
+                              <button onClick={() => handleDelete(task.id)} title="Purge Node" className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-rose-500/10 border-2 border-rose-500/20 flex items-center justify-center hover:bg-rose-600 hover:text-white text-rose-400 transition-all active:scale-90"><TrashIcon /></button>
+                            </div>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))
+          )}
+
+          {showLoading && (
+            <div className="space-y-8 mt-8">
+              {[...Array(2)].map((_, i) => <TaskSkeleton key={i} />)}
+            </div>
+          )}
+        </div>
+
+        {/* Pagination Console */}
+        {(hasMore || canHide) && (
+          <div className="mt-12 flex justify-center relative z-20 pb-4">
+            {hasMore ? (
+              <button
+                onClick={handleShowMore}
+                disabled={showLoading}
+                className="px-10 py-4 rounded-2xl bg-pink-500 text-white font-black text-[13px] tracking-widest shadow-[0_15px_35px_rgba(255,45,149,0.4)] hover:bg-pink-400 active:scale-95 transition-all disabled:opacity-50"
+              >
                 Show More Nodes
-                <span className="group-hover:translate-y-1 transition-transform"><ChevronDownIcon /></span>
-              </>
+              </button>
+            ) : (
+              <button
+                onClick={handleHide}
+                className="px-10 py-4 rounded-2xl bg-white/5 border-2 border-white/10 text-slate-400 font-black text-[13px] tracking-widest hover:border-white/20 transition-all shadow-xl"
+              >
+                Hide Nodes
+              </button>
             )}
-          </button>
-        ) : canHide ? (
-          <button
-            onClick={handleHide}
-            disabled={showLoading}
-            className="px-8 py-3 rounded-[2.5rem] bg-[#050510]/80 backdrop-blur-[10px] border-2 border-cyan-500/60 transition-all hover:border-cyan-500 text-cyan-400 font-bold text-[15px] tracking-wide shadow-[0_0_20px_rgba(6,182,212,0.3)] active:scale-95 flex items-center gap-2 group disabled:opacity-60"
-          >
-            Hide Nodes
-            <span className="group-hover:-translate-y-1 transition-transform"><ChevronUpIcon /></span>
-          </button>
-        ) : null}
-      </motion.div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -35,11 +35,9 @@ export default function NotFound() {
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 w-full sm:w-auto">
-          <Link href="/" className="w-full sm:w-auto">
-            <button className="btn-premium-pink group w-full sm:w-auto py-4 sm:py-5 px-12">
-              Return Home
-              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="translate-x-0 group-hover:translate-x-1.5 transition-transform duration-300 ml-2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
-            </button>
+          <Link href="/" className="btn-premium-pink group w-full sm:w-auto py-4 sm:py-5 px-12 no-underline text-white">
+            Return Home
+            <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="translate-x-0 group-hover:translate-x-1.5 transition-transform duration-300 ml-2"><path d="M5 12h14" /><path d="m12 5 7 7-7 7" /></svg>
           </Link>
         </div>
       </div>

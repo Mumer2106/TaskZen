@@ -121,7 +121,8 @@ export async function POST(request) {
 
         // Set secure auth session (HttpOnly)
         if (!isRegistering) {
-            response.cookies.set('auth_session', user.id, {
+            const sessionValue = `${user.id}:${user.sessionToken || ''}`;
+            response.cookies.set('auth_session', sessionValue, {
                 ...cookieOptions,
                 httpOnly: true,
             });

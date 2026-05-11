@@ -19,11 +19,12 @@ export async function GET(request) {
         });
     } catch (error) {
         console.error("Fetch user error:", error);
-        
+
         // Provide a clearer error message for the 500 status
-        return NextResponse.json({ 
+        return NextResponse.json({
             error: 'Internal server error',
             details: error.message || 'Unknown database or server error'
         }, { status: 500 });
     }
 }
+

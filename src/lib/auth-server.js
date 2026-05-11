@@ -9,9 +9,9 @@ import { NextResponse } from 'next/server';
  */
 export async function validateSession() {
     const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
+    const sessionValue = cookieStore.get('auth_session')?.value;
 
-    if (!userId) {
+    if (!sessionValue) {
         return { 
             response: NextResponse.json({ 
                 error: 'Unauthorized',
@@ -19,6 +19,8 @@ export async function validateSession() {
             }, { status: 401 }) 
         };
     }
+
+    const [userId, sessionToken] = sessionValue.split(':');
 
     try {
         const user = await findUserById(userId);
@@ -35,6 +37,18 @@ export async function validateSession() {
             };
         }
 
+        // Validate session token (invalidate on password change)
+        if (user.sessionToken && user.sessionToken !== sessionToken) {
+            cookieStore.delete('auth_session');
+            cookieStore.delete('user_info');
+            return { 
+                response: NextResponse.json({ 
+                    error: 'Session Expired',
+                    details: 'Security parameters updated. Please re-authenticate.' 
+                }, { status: 401 }) 
+            };
+        }
+
         if (user.isBanned) {
             // Automatically log out banned user - Clear both session and info cookies
             cookieStore.delete('auth_session');
@@ -46,6 +60,10 @@ export async function validateSession() {
                 }, { status: 401 }) 
             };
         }
+
+        // Tracking: Mark user as active on every authenticated request
+        const { touchUserActivity } = await import('./db');
+        await touchUserActivity(userId);
 
         return { user, userId };
     } catch (error) {
