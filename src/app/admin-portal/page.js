@@ -409,6 +409,7 @@ export default function AdminPortal() {
     // Visible slices driven by pagination state
     const [users, setUsers] = useState([]);
     const [tasks, setTasks] = useState([]);
+    const [modalTasks, setModalTasks] = useState([]);
 
 
     const [chartTasks, setChartTasks] = useState([]);
@@ -540,23 +541,34 @@ export default function AdminPortal() {
             if (!statsOk && !silent) { setError("Access Denied"); return; }
             setIsAuthenticated(true);
 
-            // Fetch only what's needed for the current view to avoid redundant API calls
+            // Fetch only what's needed for the current view
             if (activeTab === 'overview' || !silent) {
-                // Parallel fetch for Users (first page), Tasks (first page), and All Tasks (Chart)
-                const [uRes, tRes, cRes] = await Promise.all([
+                const promises = [
                     fetchUsers(adminSecret, 0, false),
-                    fetchTasks(adminSecret, 0, selectedUserId, false),
+                    fetchTasks(adminSecret, 0, null, false), // Always global
                     fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&limit=1000`)
-                ]);
+                ];
 
-                if (cRes.ok) {
+                // Refresh modal tasks too if it's open
+                if (selectedUserId) {
+                    promises.push(
+                        fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&userId=${selectedUserId}&limit=1000`)
+                            .then(res => res.json())
+                            .then(data => setModalTasks(data.tasks || []))
+                            .catch(e => console.error(e))
+                    );
+                }
+
+                const [uRes, tRes, cRes] = await Promise.all(promises);
+
+                if (cRes && cRes.ok) {
                     const chartDataResult = await cRes.json();
                     setChartTasks(chartDataResult.tasks || []);
                 }
             } else if (activeTab === 'users') {
                 await fetchUsers(adminSecret, usersOffsetRef.current, false);
             } else if (activeTab === 'tasks') {
-                await fetchTasks(adminSecret, tasksOffsetRef.current, selectedUserId, false);
+                await fetchTasks(adminSecret, tasksOffsetRef.current, null, false);
             }
         } catch (err) {
             if (!silent) setError("Connection failed");
@@ -628,7 +640,7 @@ export default function AdminPortal() {
         if (showMoreTasksLoading) return;
         setShowMoreTasksLoading(true);
         const nextOffset = tasksOffset + TASKS_PAGE;
-        await fetchTasks(secret, nextOffset, selectedUserId, true);  // append
+        await fetchTasks(secret, nextOffset, null, true);  // Always global
         setTasksOffset(nextOffset);
         tasksOffsetRef.current = nextOffset;
         setShowMoreTasksLoading(false);
@@ -656,23 +668,25 @@ export default function AdminPortal() {
     // ── User filter: reset task pagination & re-fetch from /api/admin/tasks ──
     const handleSelectUser = async (userId) => {
         const newId = userId;
+        setModalTasks([]); // Clear stale data immediately
         setSelectedUserId(newId);
         setShowActivityModal(true);
-        setTasksOffset(0);
-        tasksOffsetRef.current = 0;
+        // Fetch specific user tasks for modal WITHOUT affecting global list
         setShowMoreTasksLoading(true);
-        await fetchTasks(secret, 0, newId, false);
+        try {
+            const res = await fetch(`/api/admin/tasks?secret=${encodeURIComponent(secret)}&userId=${newId}&limit=1000`);
+            if (res.ok) {
+                const result = await res.json();
+                setModalTasks(result.tasks || []);
+            }
+        } catch (err) { console.error(err); }
         setShowMoreTasksLoading(false);
     };
 
     const handleClearFilter = async () => {
         setSelectedUserId(null);
         setShowActivityModal(false);
-        setTasksOffset(0);
-        tasksOffsetRef.current = 0;
-        setShowMoreTasksLoading(true);
-        await fetchTasks(secret, 0, null, false);
-        setShowMoreTasksLoading(false);
+        setModalTasks([]);
     };
 
     // ── Block background scroll when modals are open ──────────────────────────
@@ -727,6 +741,7 @@ export default function AdminPortal() {
 
         // Optimistic UI update
         setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
+        setModalTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
         setChartTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t));
         setStats(prev => {
             if (!prev) return prev;
@@ -821,8 +836,9 @@ export default function AdminPortal() {
                         };
                     });
                 } else if (type === 'task') {
-                    const removed = tasks.find(t => t.id === id) || chartTasks.find(t => t.id === id);
+                    const removed = tasks.find(t => t.id === id) || chartTasks.find(t => t.id === id) || modalTasks.find(t => t.id === id);
                     setTasks(prev => prev.filter(t => t.id !== id));
+                    setModalTasks(prev => prev.filter(t => t.id !== id));
                     setChartTasks(prev => prev.filter(t => t.id !== id));
                     setTasksTotal(prev => Math.max(0, prev - 1));
                     setStats(prev => {
@@ -1279,17 +1295,17 @@ export default function AdminPortal() {
                     {showActivityModal && selectedUserId && (
                         <UserActivityModal
                             user={users.find(u => u.id === selectedUserId)}
-                            tasks={tasks}
-                            hasMore={tasksHasMore}
-                            canHide={tasks.length > TASKS_PAGE}
-                            onShowMore={handleShowMoreTasks}
-                            onHide={handleHideTasks}
+                            tasks={modalTasks}
+                            hasMore={false}
+                            canHide={false}
+                            onShowMore={() => {}}
+                            onHide={() => {}}
                             isLoadingMore={showMoreTasksLoading}
                             actionLoading={actionLoading}
-                            onClose={() => { setShowActivityModal(false); setSelectedUserId(null); }}
+                            onClose={handleClearFilter}
                             onToggleStatus={toggleTaskStatus}
                             onDeleteTask={(taskId) => {
-                                const t = tasks.find(item => item.id === taskId);
+                                const t = modalTasks.find(item => item.id === taskId) || tasks.find(item => item.id === taskId);
                                 setPendingDelete({ id: taskId, type: 'task', label: t?.title || 'Unknown Task' });
                             }}
                         />
