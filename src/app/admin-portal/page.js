@@ -577,16 +577,6 @@ export default function AdminPortal() {
         }
     }, [fetchStats, fetchUsers, fetchTasks, selectedUserId, activeTab]);
 
-    // ── Health Check / Auto-Poll ─────────────────────────────────────────────
-    useEffect(() => {
-        if (!isAuthenticated || !secret) return;
-
-        const interval = setInterval(() => {
-            fetchData(secret, true); // silent refresh
-        }, 10000); // 10s heartbeat
-
-        return () => clearInterval(interval);
-    }, [isAuthenticated, secret, fetchData]);
 
 
     // ── Block background scroll when modals are open ──────────────────────────
@@ -697,18 +687,6 @@ export default function AdminPortal() {
         }
     };
 
-    // ── Block background scroll when modals are open ──────────────────────────
-    useEffect(() => {
-        const isModalOpen = showUserModal || showActivityModal || !!pendingDelete;
-        if (isModalOpen) {
-            document.body.style.overflow = 'hidden';
-        } else {
-            document.body.style.overflow = 'unset';
-        }
-        return () => {
-            document.body.style.overflow = 'unset';
-        };
-    }, [showUserModal, showActivityModal, pendingDelete]);
 
     // ── Cross-tab & focus sync ────────────────────────────────────────────────
     useEffect(() => {

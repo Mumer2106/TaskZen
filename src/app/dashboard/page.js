@@ -382,7 +382,7 @@ export default function Dashboard() {
     setBulkDeleting(true);
     try {
       const ids = [...selectedIds];
-      const res = await fetch('/api/tasks', {
+      const res = await fetch('/api/user/tasks?id=BULK', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),

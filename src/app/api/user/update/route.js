@@ -4,11 +4,14 @@ import { cookies } from 'next/headers';
 
 export async function PATCH(request) {
     const cookieStore = await cookies();
-    const userId = cookieStore.get('auth_session')?.value;
+    const sessionValue = cookieStore.get('auth_session')?.value;
 
-    if (!userId) {
+    if (!sessionValue) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    // auth_session is stored as "userId:sessionToken" — extract only the userId
+    const userId = sessionValue.split(':')[0];
 
     try {
         const body = await request.json();

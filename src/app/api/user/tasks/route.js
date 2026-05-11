@@ -17,7 +17,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { getTasksForUser, updateTask, deleteTask, deleteTasks } from '@/lib/db';
+import { getTasksForUser, updateTask, deleteTasks } from '@/lib/db';
 import { validateSession } from '@/lib/auth-server';
 
 const DEFAULT_LIMIT = 5;

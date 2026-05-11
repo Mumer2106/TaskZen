@@ -25,7 +25,9 @@ export async function GET() {
             { name: 'profilepic', type: 'TEXT' },
             { name: 'role', type: 'TEXT DEFAULT \'user\'' },
             { name: 'banned', type: 'BOOLEAN DEFAULT FALSE' },
-            { name: 'lastactive', type: 'TEXT' }
+            { name: 'isbanned', type: 'BOOLEAN DEFAULT FALSE' },
+            { name: 'lastactive', type: 'TEXT' },
+            { name: 'sessiontoken', type: 'TEXT' }
         ];
 
         for (const col of columnsToEnsure) {
