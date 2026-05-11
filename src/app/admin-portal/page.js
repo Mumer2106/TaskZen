@@ -668,11 +668,13 @@ export default function AdminPortal() {
     // ── User filter: reset task pagination & re-fetch from /api/admin/tasks ──
     const handleSelectUser = async (userId) => {
         const newId = userId;
-        setModalTasks([]); // Clear stale data immediately
+        // Instant data retrieval from pre-cached chartTasks for 0% delay
+        const cachedTasks = chartTasks.filter(t => t.userId === newId || t.createdBy === newId);
+        setModalTasks(cachedTasks);
         setSelectedUserId(newId);
         setShowActivityModal(true);
-        // Fetch specific user tasks for modal WITHOUT affecting global list
-        setShowMoreTasksLoading(true);
+
+        // Background sync to ensure data integrity without blocking UI
         try {
             const res = await fetch(`/api/admin/tasks?secret=${encodeURIComponent(secret)}&userId=${newId}&limit=1000`);
             if (res.ok) {
@@ -680,13 +682,19 @@ export default function AdminPortal() {
                 setModalTasks(result.tasks || []);
             }
         } catch (err) { console.error(err); }
-        setShowMoreTasksLoading(false);
     };
 
     const handleClearFilter = async () => {
         setSelectedUserId(null);
         setShowActivityModal(false);
         setModalTasks([]);
+        // Re-fetch users to ensure the full list is visible after clearing individual review
+        if (isAuthenticated && secret) {
+            fetchUsers(secret, 0, false);
+            setUsersOffset(0);
+            usersOffsetRef.current = 0;
+            setUsersHasMore(true);
+        }
     };
 
     // ── Block background scroll when modals are open ──────────────────────────
@@ -1298,8 +1306,8 @@ export default function AdminPortal() {
                             tasks={modalTasks}
                             hasMore={false}
                             canHide={false}
-                            onShowMore={() => {}}
-                            onHide={() => {}}
+                            onShowMore={() => { }}
+                            onHide={() => { }}
                             isLoadingMore={showMoreTasksLoading}
                             actionLoading={actionLoading}
                             onClose={handleClearFilter}
