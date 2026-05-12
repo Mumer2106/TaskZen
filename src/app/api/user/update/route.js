@@ -1,17 +1,10 @@
 import { NextResponse } from 'next/server';
 import { updateUser } from '@/lib/db';
-import { cookies } from 'next/headers';
+import { validateSession } from '@/lib/auth-server';
 
 export async function PATCH(request) {
-    const cookieStore = await cookies();
-    const sessionValue = cookieStore.get('auth_session')?.value;
-
-    if (!sessionValue) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    // auth_session is stored as "userId:sessionToken" — extract only the userId
-    const userId = sessionValue.split(':')[0];
+    const { response, userId } = await validateSession();
+    if (response) return response;
 
     try {
         const body = await request.json();
@@ -38,9 +31,10 @@ export async function PATCH(request) {
             path: '/',
         };
 
-        const response = NextResponse.json({
+        const res = NextResponse.json({
             message: 'Profile updated successfully',
             user: {
+                id: updatedUser.id,
                 firstName: updatedUser.firstName,
                 lastName: updatedUser.lastName,
                 profilePic: updatedUser.profilePic,
@@ -50,14 +44,14 @@ export async function PATCH(request) {
         });
 
         // Refresh user_info cookie — no password field
-        response.cookies.set('user_info', JSON.stringify({
+        res.cookies.set('user_info', JSON.stringify({
             firstName: updatedUser.firstName || '',
             lastName: updatedUser.lastName || '',
             email: updatedUser.username || '',
             role: updatedUser.role || 'user',
         }), cookieOptions);
 
-        return response;
+        return res;
     } catch (error) {
         console.error("Profile update error:", error);
         return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });

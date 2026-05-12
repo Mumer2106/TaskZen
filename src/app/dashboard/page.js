@@ -67,13 +67,14 @@ export default function Dashboard() {
 
   useEffect(() => {
     checkAuth();
-    fetchTasks(); // Initial load
+    // Initial fetch handled by debouncedSearch effect or manually here if needed
+    // But since debouncedSearch starts empty, we can just call it once.
+    if (debouncedSearch === "") {
+        fetchTasks("", 0, false);
+    }
 
     const handleStorageChange = (e) => {
       if (e.key === 'taskzen_registry_sync') {
-        // Only re-fetch if we are on the first page to avoid confusing the user
-        // OR reset to page 1 if something changed elsewhere.
-        // For now, let's just re-fetch page 1.
         fetchTasks(debouncedSearch, 0, false);
       }
     };
@@ -96,7 +97,7 @@ export default function Dashboard() {
       isInitialMount.current = false;
       return;
     }
-    if (loading || fetchedSearch.current === debouncedSearch) return;
+    if (loading || fetchedSearch.current === debouncedSearch || debouncedSearch === "") return;
 
     fetchedSearch.current = debouncedSearch;
     setOffset(0);
@@ -158,12 +159,12 @@ export default function Dashboard() {
       if (append) setActionLoading(true);
 
       const params = new URLSearchParams({
-        limit: PAGE_SIZE,
-        offset: currentOffset,
+        limit: PAGE_SIZE.toString(),
+        offset: String(currentOffset),
       });
       if (query) params.set('search', query);
 
-      const res = await fetch(`/api/user/tasks?${params.toString()}`);
+      const res = await fetch(`/api/tasks?${params.toString()}`);
       if (res.status === 401) {
         handleLogout();
         return;
@@ -256,7 +257,7 @@ export default function Dashboard() {
     try {
       setActionLoading(true);
       setError("");
-      const res = await fetch(`/api/tasks/${id}`, {
+      const res = await fetch(`/api/tasks?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(taskData),
@@ -290,7 +291,7 @@ export default function Dashboard() {
       if (!task) return;
       const newStatus = task.status === "Completed" ? "Pending" : "Completed";
 
-      const res = await fetch(`/api/user/tasks?id=${id}`, {
+      const res = await fetch(`/api/tasks?id=${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
@@ -318,7 +319,7 @@ export default function Dashboard() {
       if (selectedIds.size === 0) return;
       try {
         setBulkDeleting(true);
-        const res = await fetch("/api/user/tasks?id=BULK", {
+        const res = await fetch("/api/tasks?id=BULK", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids: Array.from(selectedIds) }),
@@ -341,7 +342,7 @@ export default function Dashboard() {
 
     try {
       const task = tasks.find((t) => t.id === id);
-      const res = await fetch(`/api/user/tasks?id=${id}`, {
+      const res = await fetch(`/api/tasks?id=${id}`, {
         method: "DELETE",
       });
 
@@ -382,7 +383,7 @@ export default function Dashboard() {
     setBulkDeleting(true);
     try {
       const ids = [...selectedIds];
-      const res = await fetch('/api/user/tasks?id=BULK', {
+      const res = await fetch('/api/tasks?id=BULK', {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ids }),

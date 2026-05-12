@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { findUser, createUser } from '@/lib/db';
+import { findUser, createUser, generateId } from '@/lib/db';
 import { cookies } from 'next/headers';
 
 import nodemailer from 'nodemailer';
@@ -79,7 +79,7 @@ export async function POST(request) {
         let notificationResult = null;
         if (isRegistering) {
             try {
-                const id = Date.now().toString();
+                const id = generateId();
                 user = await createUser(id, username, password, { firstName: cleanFirstName, lastName: cleanLastName });
                 notificationResult = await sendWelcomeNotification(username, firstName || 'there');
             } catch (error) {
@@ -120,21 +120,19 @@ export async function POST(request) {
         };
 
         // Set secure auth session (HttpOnly)
-        if (!isRegistering) {
-            const sessionValue = `${user.id}:${user.sessionToken || ''}`;
-            response.cookies.set('auth_session', sessionValue, {
-                ...cookieOptions,
-                httpOnly: true,
-            });
+        const sessionValue = `${user.id}:${user.sessionToken || ''}`;
+        response.cookies.set('auth_session', sessionValue, {
+            ...cookieOptions,
+            httpOnly: true,
+        });
 
-            // Set display info (Not HttpOnly) — never expose password
-            response.cookies.set('user_info', JSON.stringify({
-                firstName: user.firstName || '',
-                lastName: user.lastName || '',
-                email: user.username || '',
-                role: user.role || 'user'
-            }), cookieOptions);
-        }
+        // Set display info (Not HttpOnly) — never expose password
+        response.cookies.set('user_info', JSON.stringify({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.username || '',
+            role: user.role || 'user'
+        }), cookieOptions);
 
         return response;
     } catch (error) {

@@ -2,8 +2,13 @@ import { sql } from '@vercel/postgres';
 import fs from 'fs/promises';
 import path from 'path';
 import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
 
 const DB_PATH = path.join(process.cwd(), 'data', 'db.json');
+
+export function generateId() {
+    return crypto.randomUUID();
+}
 
 async function readJsonDb() {
     try {
@@ -27,11 +32,27 @@ async function writeJsonDb(data) {
     }
 }
 
-// Strips password from a user object before returning to callers
-function sanitizeUser(user) {
+// Strips password and normalizes field names
+function normalizeUser(user) {
     if (!user) return null;
     const { password, ...safe } = user;
-    return safe;
+    return {
+        ...safe,
+        id: user.id || user.userId || '',
+        userId: user.id || user.userId || '',
+        username: user.username || '',
+        firstName: user.firstName || user.firstname || '',
+        lastName: user.lastName || user.lastname || '',
+        profilePic: user.profilePic || user.profilepic || null,
+        role: user.role || 'user',
+        isBanned: !!user.isbanned || !!user.isBanned || !!user.banned,
+        lastActive: user.lastActive || user.lastactive || null,
+    };
+}
+
+// Legacy alias for sanitizeUser if needed, but we'll use normalizeUser internally
+function sanitizeUser(user) {
+    return normalizeUser(user);
 }
 
 const DB_ADAPTER = process.env.DB_ADAPTER || (process.env.POSTGRES_URL ? 'postgres' : 'json');
@@ -56,13 +77,8 @@ export async function findUser(username, password) {
             const isMatch = await verifyPassword(password, user.password);
             if (!isMatch) return null;
 
-            return sanitizeUser({
+            return normalizeUser({
                 ...user,
-                firstName: user.firstName || user.firstname || '',
-                lastName: user.lastName || user.lastname || '',
-                profilePic: user.profilePic || user.profilepic || null,
-                role: user.role || 'user',
-                isBanned: !!user.isbanned || !!user.banned, // Safe check for Postgres/JSON
                 userId: user.id,
             });
         } catch (error) {
@@ -86,9 +102,8 @@ export async function findUser(username, password) {
             await writeJsonDb(db);
         }
 
-        return sanitizeUser({
+        return normalizeUser({
             ...user,
-            role: user.role || 'user',
             isBanned: !!user.banned,
             sessionToken: user.sessionToken
         });
@@ -104,15 +119,10 @@ export async function findUserById(id) {
             `;
             if (!rows[0]) return null;
             const r = rows[0];
-            return {
+            return normalizeUser({
                 ...r,
-                firstName: r.firstName || r.firstname || '',
-                lastName: r.lastName || r.lastname || '',
-                profilePic: r.profilePic || r.profilepic || null,
-                role: r.role || 'user',
-                isBanned: !!r.isbanned || !!r.banned,
                 userId: r.id,
-            };
+            });
         } catch (error) {
             console.error("Postgres findUserById error:", error.message);
             throw new Error(`Database Error: ${error.message}. Hint: Try visiting /api/setup-db to sync your schema.`);
@@ -121,7 +131,7 @@ export async function findUserById(id) {
         const db = await readJsonDb();
         const user = db.users[id];
         if (!user) return null;
-        return sanitizeUser({ ...user, role: user.role || 'user', isBanned: !!user.banned });
+        return normalizeUser(user);
     }
 }
 
@@ -143,7 +153,7 @@ export async function createUser(id, username, password, extraData = {}) {
                 VALUES (${id}, ${normalizedUsername}, ${hashedPassword}, ${firstName}, ${lastName}, ${profilePic})
             `;
 
-            return {
+            return normalizeUser({
                 id,
                 username: normalizedUsername,
                 firstName,
@@ -151,7 +161,7 @@ export async function createUser(id, username, password, extraData = {}) {
                 profilePic,
                 role: 'user', // Default to user in the response
                 userId: id,
-            };
+            });
         } catch (error) {
             const msg = error.message.toLowerCase();
             if (msg.includes('unique constraint') || msg.includes('duplicate key') || msg.includes('already exists')) {
@@ -179,7 +189,7 @@ export async function createUser(id, username, password, extraData = {}) {
         db.users[id] = newUser;
         if (!db.tasks[id]) db.tasks[id] = [];
         await writeJsonDb(db);
-        return sanitizeUser(newUser);
+        return normalizeUser(newUser);
     }
 }
 
@@ -467,14 +477,10 @@ export async function updateUser(userId, updates) {
             const { rows } = await sql`SELECT * FROM users WHERE id = ${userId}`;
             const updated = rows[0];
 
-            return updated ? {
+            return updated ? normalizeUser({
                 ...updated,
-                firstName: updated.firstName || updated.firstname || '',
-                lastName: updated.lastName || updated.lastname || '',
-                profilePic: updated.profilePic || updated.profilepic || null,
-                role: updated.role || 'user',
                 userId: updated.id,
-            } : null;
+            }) : null;
         } catch (error) {
             console.error("Critical Postgres Update Error:", error.message);
             throw new Error(`Database Error: ${error.message}. Hint: Visit /api/setup-db to fix your schema.`);
@@ -504,7 +510,7 @@ export async function updateUser(userId, updates) {
 
         db.users[userId] = { ...db.users[userId], ...filteredUpdates };
         await writeJsonDb(db);
-        return sanitizeUser({ ...db.users[userId], role: db.users[userId].role || 'user' });
+        return normalizeUser(db.users[userId]);
     }
 }
 
