@@ -53,7 +53,7 @@ export async function GET(request) {
                 const dateB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
                 return dateB - dateA;
             })
-            .slice(0, 5)
+            .slice(0, 20)
             .map(u => ({
                 id: u.id,
                 username: u.username,

@@ -89,7 +89,7 @@ export default function Dashboard() {
       fetch('/api/user/heartbeat', { method: 'POST' }).catch(() => {});
     };
     sendHeartbeat(); // fire immediately on mount
-    const interval = setInterval(sendHeartbeat, 60000); // then every 60s
+    const interval = setInterval(sendHeartbeat, 15000); // then every 15s
     return () => clearInterval(interval);
   }, []);
 

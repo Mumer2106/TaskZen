@@ -30,7 +30,7 @@ export async function GET(request) {
                 const dateB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
                 return dateB - dateA;
             })
-            .slice(0, 10) // Top 10 most recently active
+            .slice(0, 30) // Top 30 most recently active
             .map(u => ({
                 id: u.id,
                 username: u.username,

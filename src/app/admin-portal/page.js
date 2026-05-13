@@ -448,11 +448,12 @@ export default function AdminPortal() {
     const tasksListRef = useRef(null);
 
     const onlineUsers = useMemo(() => {
-        const twoMinsAgo = Date.now() - (2 * 60 * 1000); // 2 min window matches 60s heartbeat
+        const threshold = 45 * 1000; // 45s window for 15s heartbeat
+        const now = Date.now();
         const sourceData = stats?.recentActiveUsers || [];
         return sourceData.map(u => ({
             ...u,
-            isOnline: u.lastActive ? new Date(u.lastActive).getTime() > twoMinsAgo : false
+            isOnline: u.lastActive ? (now - new Date(u.lastActive).getTime()) < threshold : false
         }));
     }, [stats]);
 
@@ -716,7 +717,7 @@ export default function AdminPortal() {
         };
 
         pollOnlineStatus(); // fire immediately when authenticated
-        const interval = setInterval(pollOnlineStatus, 30000); // then every 30s
+        const interval = setInterval(pollOnlineStatus, 5000); // then every 5s
         return () => clearInterval(interval);
     }, [isAuthenticated, secret]);
 
