@@ -36,14 +36,14 @@ function AddTaskInner({ onTaskAdded, onTaskUpdated, initialData, onCancel, actio
     <motion.div
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="w-full max-w-2xl bg-[#050510]/95 backdrop-blur-xl border-2 border-indigo-500/30 rounded-[3rem] p-8 sm:p-12 shadow-[0_0_20px_rgba(79,70,229,0.1)] flex flex-col hover:border-indigo-500/50 transition-all duration-500"
+      className="w-full max-w-2xl bg-[#050510]/95 backdrop-blur-xl border-2 border-indigo-500/30 rounded-[2.5rem] sm:rounded-[3rem] p-6 sm:p-12 shadow-[0_0_20px_rgba(79,70,229,0.1)] flex flex-col hover:border-indigo-500/50 transition-all duration-500"
     >
-      <h2 className="text-3xl font-black mb-10 text-white flex items-center justify-start gap-4 tracking-tight">
+      <h2 className="text-2xl sm:text-3xl font-black mb-6 sm:mb-10 text-white flex items-center justify-start gap-4 tracking-tight">
         <span className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_15px_rgba(255,45,149,0.8)]"></span>
         {initialData ? "ModifyProtocol" : "Allocate New Node"}
       </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
+      <form onSubmit={handleSubmit} className="space-y-6 sm:space-y-8">
         <div className="space-y-3 group">
           <label className="text-[13px] font-black tracking-[0.2em] text-slate-400 flex items-center gap-2 group-focus-within:text-pink-500 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
@@ -52,7 +52,7 @@ function AddTaskInner({ onTaskAdded, onTaskUpdated, initialData, onCancel, actio
           <input
             type="text"
             placeholder="What needs to be achieved?"
-            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-5 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.06] focus:border-pink-500/30 transition-all text-xl font-normal placeholder:text-slate-700"
+            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-4 sm:px-6 py-4 sm:py-5 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.06] focus:border-pink-500/30 transition-all text-lg sm:text-xl font-normal placeholder:text-slate-700"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             disabled={actionLoading}
@@ -67,7 +67,7 @@ function AddTaskInner({ onTaskAdded, onTaskUpdated, initialData, onCancel, actio
           </label>
           <textarea
             placeholder="Provide context for this node..."
-            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white/[0.06] focus:border-indigo-500/30 transition-all min-h-[140px] resize-none text-base font-normal placeholder:text-slate-700 leading-relaxed"
+            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-4 sm:px-6 py-4 sm:py-5 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white/[0.06] focus:border-indigo-500/30 transition-all min-h-[120px] sm:min-h-[140px] resize-none text-sm sm:text-base font-normal placeholder:text-slate-700 leading-relaxed"
             value={desc}
             onChange={(e) => setDesc(e.target.value)}
             disabled={actionLoading}
@@ -81,7 +81,7 @@ function AddTaskInner({ onTaskAdded, onTaskUpdated, initialData, onCancel, actio
           </label>
           <input
             type="date"
-            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-5 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.06] focus:border-pink-500/30 transition-all text-lg font-bold [color-scheme:dark]"
+            className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-4 sm:px-6 py-4 sm:py-5 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/20 focus:bg-white/[0.06] focus:border-pink-500/30 transition-all text-base sm:text-lg font-bold [color-scheme:dark]"
             value={date}
             min={new Date().toISOString().split('T')[0]}
             onChange={(e) => setDate(e.target.value)}
@@ -97,7 +97,7 @@ function AddTaskInner({ onTaskAdded, onTaskUpdated, initialData, onCancel, actio
         <div className="flex gap-4">
           <button
             type="submit"
-            className="flex-1 btn-premium-pink py-5 rounded-[2rem] text-lg font-black tracking-widest transition-all duration-500 shadow-[0_10px_20px_rgba(255,45,149,0.1)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            className="flex-1 btn-premium-pink py-4 sm:py-5 rounded-[2rem] text-base sm:text-lg font-black tracking-widest transition-all duration-500 shadow-[0_10px_20px_rgba(255,45,149,0.1)] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
             disabled={actionLoading || !title.trim()}
           >
             {actionLoading ? (

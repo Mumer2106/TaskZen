@@ -22,7 +22,7 @@ export default function TaskViewModal({ task, onClose }) {
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="relative w-full max-w-2xl bg-[#050510] border border-white/10 rounded-[3rem] p-10 sm:p-14 shadow-[0_50px_100px_rgba(0,0,0,0.8),0_0_50px_rgba(255,45,149,0.1)] overflow-hidden"
+          className="relative w-full max-w-2xl bg-[#050510] border border-white/10 rounded-[2.5rem] p-6 sm:p-14 shadow-[0_50px_100px_rgba(0,0,0,0.8),0_0_50px_rgba(255,45,149,0.1)] overflow-hidden"
         >
           {/* Accent decoration */}
           <div className={`absolute top-0 right-0 w-64 h-64 ${isCompleted ? "bg-emerald-500/10" : "bg-pink-500/10"} rounded-full blur-[100px] -mr-32 -mt-32`} />
@@ -42,7 +42,7 @@ export default function TaskViewModal({ task, onClose }) {
               </motion.button>
             </div>
 
-            <h2 className="text-4xl sm:text-5xl font-black text-white italic tracking-tighter mb-6 leading-none pr-6">
+            <h2 className="text-2xl sm:text-5xl font-black text-white italic tracking-tighter mb-6 leading-tight pr-6">
               {task.title}
             </h2>
 
@@ -60,7 +60,7 @@ export default function TaskViewModal({ task, onClose }) {
 
             <div className="space-y-6">
               <span className={`text-[10px] font-black tracking-widest ${isCompleted ? "text-emerald-500" : "text-pink-500"}`}>Supplemental Metadata</span>
-              <p className="text-lg text-slate-400 leading-relaxed font-light italic bg-white/[0.02] p-8 rounded-3xl border border-white/5">
+              <p className="text-base sm:text-lg text-slate-400 leading-relaxed font-light italic bg-white/[0.02] p-5 sm:p-8 rounded-3xl border border-white/5">
                 {task.description || "No further data records have been archived for this neural node."}
               </p>
             </div>

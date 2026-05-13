@@ -165,7 +165,7 @@ export default function TaskList({
       <div className="absolute -top-20 -left-20 w-96 h-96 bg-pink-500/10 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-4 sm:p-12 lg:p-16 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[950px] overflow-hidden group">
+      <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-4 sm:p-12 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[82vh] sm:h-[950px] overflow-hidden group">
         
         {/* Subtle Inner Border Glow */}
         <div className="absolute inset-0 rounded-[3rem] sm:rounded-[5rem] border border-white/5 pointer-events-none" />
@@ -182,13 +182,13 @@ export default function TaskList({
               placeholder="Search neural registry sequences..."
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-3xl pl-16 pr-8 py-5 text-white placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-base shadow-inner"
+              className="w-full bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 rounded-3xl pl-12 sm:pl-16 pr-8 py-4 sm:py-5 text-white placeholder:text-slate-500 focus:outline-none focus:ring-4 focus:ring-pink-500/10 focus:border-pink-500/40 transition-all font-bold italic text-sm sm:text-base shadow-inner"
             />
           </div>
           <button
             onClick={onRefresh}
             disabled={isRefreshing}
-            className={`px-8 rounded-3xl bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 flex items-center justify-center ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
+            className={`px-4 sm:px-8 rounded-3xl bg-white/[0.04] backdrop-blur-[10px] border-2 border-white/10 transition-all shadow-lg active:scale-95 flex items-center justify-center ${isRefreshing ? "text-pink-500 border-pink-500/30 bg-pink-500/10" : "text-slate-400 hover:text-white hover:border-white/20 hover:bg-white/[0.06]"}`}
             title="Refresh Sequence"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={isRefreshing ? "animate-spin" : "transition-transform hover:rotate-180"}><path d="M21.5 2v6h-6M2.5 22v-6h6M2 12c0-4.4 3.6-8 8-8 3.3 0 6.2 2 7.4 4.9M22 12c0 4.4-3.6 8-8 8-3.3 0-6.2-2-7.4-4.9"></path></svg>
@@ -253,44 +253,51 @@ export default function TaskList({
                         key={task.id} 
                         className="relative group/task overflow-visible w-full max-w-5xl mx-auto"
                       >
-                        <div className="relative bg-[#0d0d21]/60 backdrop-blur-3xl border-2 border-white/10 p-5 sm:p-9 rounded-[3rem] transition-all">
+                        <div className="relative bg-[#0d0d21]/60 backdrop-blur-3xl border-2 border-white/10 p-4 sm:p-9 rounded-[2.5rem] sm:rounded-[3rem] transition-all">
                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
                             <div className="flex-1 min-w-0">
                               {/* Selection Box - Absolutely positioned to top right */}
                               <button
                                 onClick={() => onToggleSelect(task.id)}
-                                className={`absolute top-5 right-5 sm:top-9 sm:right-9 h-8 w-8 rounded-lg border-2 flex items-center justify-center transition-all active:scale-95 z-20 ${isSelected ? "bg-pink-500 border-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.3)]" : "border-white/10 bg-white/5 hover:border-pink-500/40 text-transparent hover:text-pink-500"}`}
+                               className={`lg:hidden absolute top-5 right-5 sm:top-9 sm:right-9 h-8 w-8 rounded-lg border-2 flex items-center justify-center transition-all active:scale-95 z-20 ${isSelected ? "bg-pink-500 border-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.3)]" : "border-white/10 bg-white/5 hover:border-pink-500/40 text-transparent hover:text-pink-500"}`}
                               >
                                 <CheckIcon />
                               </button>
 
                               <div className="flex flex-col gap-4">
-                                <div className="flex items-center">
+                                <div className="flex items-center gap-3">
+                                  {/* Desktop Select Box */}
+                                  <button 
+                                    onClick={() => onToggleSelect(task.id)}
+                                    className={`hidden lg:flex h-6 w-6 rounded-lg border-2 items-center justify-center transition-all active:scale-95 ${isSelected ? "bg-pink-500 border-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.3)]" : "border-white/10 bg-white/5 hover:border-pink-500/40 text-transparent hover:text-pink-500"}`}
+                                  >
+                                    <div className="scale-75"><CheckIcon /></div>
+                                  </button>
                                   <span className={`px-4 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border ${task.status === "Completed" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" : "bg-pink-500/10 text-pink-500 border-pink-500/20"}`}>
                                       {task.status === "Completed" ? "Completed" : "Pending"}
                                   </span>
                                 </div>
-                                <h3 className={`text-2xl sm:text-4xl font-black italic tracking-tighter leading-tight transition-all duration-500 capitalize ${task.status === "Completed" ? "text-slate-500/60" : "text-white"}`}>
+                                <h3 className={`text-xl sm:text-4xl font-black italic tracking-tighter leading-tight transition-all duration-500 capitalize ${task.status === "Completed" ? "text-slate-500/60" : "text-white"}`}>
                                     {(task.title || '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()}
                                 </h3>
-                                <p className={`text-[14px] sm:text-base font-medium italic leading-relaxed line-clamp-2 max-w-3xl border-l-[3px] border-white/5 pl-6 transition-colors ${task.status === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
+                                <p className={`text-[14px] sm:text-base font-medium italic leading-relaxed truncate max-w-3xl border-l-[3px] border-white/5 pl-6 transition-colors ${task.status === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
                                   {task.description || "No neural data logged."}
                                 </p>
                               </div>
                             </div>
 
-                            <div className="flex flex-row items-center justify-center lg:justify-end gap-3 sm:gap-5 pt-6 lg:pt-0 border-t lg:border-t-0 border-white/5 shrink-0 relative z-10">
+                            <div className="flex flex-row items-center justify-center lg:justify-end gap-1.5 sm:gap-5 pt-6 lg:pt-0 border-t lg:border-t-0 border-white/5 shrink-0 relative z-10">
                               <button 
                                   onClick={() => handleToggle(task.id)} 
                                   disabled={loadingIds.has(task.id)}
                                   title={task.status === 'Completed' ? 'Reset to Pending' : 'Mark as Completed'}
-                                  className={`h-12 w-12 sm:h-14 sm:w-14 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${task.status === 'Completed' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'}`}
+                                  className={`h-10 w-10 sm:h-14 sm:w-14 rounded-2xl border-2 flex items-center justify-center transition-all active:scale-90 ${task.status === 'Completed' ? 'bg-amber-500/10 border-amber-500/20 text-amber-500 hover:bg-amber-500/20' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20'}`}
                               >
                                   {task.status === 'Completed' ? <svg width="22" height="22" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg> : <CheckIcon />}
                               </button>
-                              <button onClick={() => onViewTask(task)} title="View Node" className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-sky-500/10 border-2 border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 hover:border-sky-500/40 text-sky-400 transition-all active:scale-90"><ViewIcon /></button>
-                              <button onClick={() => onEditTask(task)} title="Edit Node" className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/20 flex items-center justify-center hover:bg-indigo-500/20 hover:border-indigo-500/40 text-indigo-400 transition-all active:scale-90"><EditIcon /></button>
-                              <button onClick={() => handleDelete(task.id)} title="Purge Node" className="h-12 w-12 sm:h-14 sm:w-14 rounded-2xl bg-rose-500/10 border-2 border-rose-500/20 flex items-center justify-center hover:bg-rose-600 hover:text-white text-rose-400 transition-all active:scale-90"><TrashIcon /></button>
+                              <button onClick={() => onViewTask(task)} title="View Node" className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-sky-500/10 border-2 border-sky-500/20 flex items-center justify-center hover:bg-sky-500/20 hover:border-sky-500/40 text-sky-400 transition-all active:scale-90"><ViewIcon /></button>
+                              <button onClick={() => onEditTask(task)} title="Edit Node" className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-indigo-500/10 border-2 border-indigo-500/20 flex items-center justify-center hover:bg-indigo-500/20 hover:border-indigo-500/40 text-indigo-400 transition-all active:scale-90"><EditIcon /></button>
+                              <button onClick={() => handleDelete(task.id)} title="Purge Node" className="h-10 w-10 sm:h-14 sm:w-14 rounded-2xl bg-rose-500/10 border-2 border-rose-500/20 flex items-center justify-center hover:bg-rose-600 hover:text-white text-rose-400 transition-all active:scale-90"><TrashIcon /></button>
                             </div>
                           </div>
                         </div>

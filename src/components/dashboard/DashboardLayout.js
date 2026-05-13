@@ -12,7 +12,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
       {/* Optimized Clean Background */}
 
       {/* Header */}
-      <header className="w-full max-w-7xl pt-12 px-6 flex justify-between items-center relative z-20 mx-auto">
+      <header className="w-full max-w-7xl pt-6 sm:pt-12 px-4 sm:px-6 flex justify-between items-center relative z-20 mx-auto">
         <Link href="/" className="group hover:scale-[1.02] transition-all duration-500 flex items-center gap-4">
           <div className="relative h-12 w-12 flex-shrink-0 group-hover:rotate-[360deg] transition-all duration-1000 ease-in-out">
             <img
@@ -21,7 +21,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
               className="w-full h-full object-contain drop-shadow-[0_0_15px_rgba(255,45,149,0.3)] group-hover:drop-shadow-[0_0_25px_rgba(255,45,149,0.5)] transition-all duration-500"
             />
           </div>
-          <h1 className="inline-block text-4xl font-black italic tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d95] via-[#d946ef] to-[#6366f1] drop-shadow-[0_10px_20px_rgba(255,45,149,0.2)] pr-[0.3em] -mr-[0.3em] whitespace-nowrap overflow-visible">
+          <h1 className="inline-block text-2xl sm:text-4xl font-black italic tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d95] via-[#d946ef] to-[#6366f1] drop-shadow-[0_10px_20px_rgba(255,45,149,0.2)] pr-[0.3em] -mr-[0.3em] whitespace-nowrap overflow-visible">
             TaskZen
           </h1>
         </Link>
@@ -46,7 +46,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
       </header>
 
       {/* Navigation Tabs */}
-      <nav className="w-full max-w-4xl px-6 mt-12 mb-10 relative z-20">
+      <nav className="w-full max-w-4xl px-4 sm:px-6 mt-6 sm:mt-12 mb-8 sm:mb-10 relative z-20">
         <div className="flex items-center gap-1 bg-white/[0.05] backdrop-blur-2xl border-2 border-white/15 p-1.5 rounded-[2rem] shadow-[0_20px_50px_rgba(0,0,0,0.5),0_0_20px_rgba(255,255,255,0.02)] relative transition-all hover:border-white/20">
           <div
             className="absolute h-[calc(100%-12px)] top-[6px] transition-all duration-500 ease-out bg-gradient-to-r from-pink-500 to-fuchsia-600 rounded-[1.6rem] shadow-[0_0_20px_rgba(255,45,149,0.3)]"
@@ -59,7 +59,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`flex-1 py-4 text-[13px] font-black tracking-[0.2em] relative z-10 transition-colors duration-500 ${activeTab === tab ? "text-white" : "text-slate-400 hover:text-slate-200"}`}
+              className={`flex-1 py-3 sm:py-4 text-[10px] sm:text-[13px] font-black tracking-widest sm:tracking-[0.2em] relative z-10 transition-colors duration-500 uppercase ${activeTab === tab ? "text-white" : "text-slate-400 hover:text-slate-200"}`}
             >
               {tab === "overview" ? "Overview" : tab === "add" ? "Allocate Node" : "Registry"}
             </button>
@@ -68,7 +68,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
       </nav>
 
       {/* Content Area */}
-      <div className="w-full max-w-7xl px-6 pb-24 relative z-20 flex-1 flex flex-col items-center mx-auto">
+      <div className="w-full max-w-7xl px-4 sm:px-6 pb-24 relative z-20 flex-1 flex flex-col items-center mx-auto">
         {children}
       </div>
 

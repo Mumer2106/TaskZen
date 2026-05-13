@@ -287,10 +287,10 @@ function ResonanceChart({ tasks }) {
                 </svg>
 
                 {/* Mobile View: Stats arranged horizontally (Left - Center - Right) */}
-                <div className="lg:hidden absolute inset-x-0 bottom-4 flex items-end justify-between px-4 pointer-events-none">
+                <div className="lg:hidden absolute inset-x-0 bottom-8 flex items-end justify-center gap-2 px-2 pointer-events-none">
                     
                     {/* Mobile: Inbound (Left) */}
-                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-3 rounded-[1.5rem] shadow-xl space-y-1">
+                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-2 sm:p-3 rounded-[1rem] sm:rounded-[1.5rem] shadow-xl space-y-1">
                         <div className="text-[7px] font-black text-indigo-400 tracking-widest italic uppercase">Inbound</div>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-black text-white italic tracking-tighter">{data[data.length - 1].created}</span>
@@ -311,7 +311,7 @@ function ResonanceChart({ tasks }) {
                     </div>
 
                     {/* Mobile: Outbound (Right) */}
-                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-3 rounded-[1.5rem] shadow-xl space-y-1 text-right">
+                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-2 sm:p-3 rounded-[1rem] sm:rounded-[1.5rem] shadow-xl space-y-1 text-right">
                         <div className="text-[7px] font-black text-pink-400 tracking-widest italic uppercase">Outbound</div>
                         <div className="flex items-baseline justify-end gap-1">
                             <span className="text-xl font-black text-white italic tracking-tighter">{data[data.length - 1].completed}</span>
@@ -738,7 +738,7 @@ export default function AdminPortal() {
             };
         });
 
-        setActionLoading(id);
+        setActionLoading({ id, type: 'status' });
         try {
             // ↳ dedicated task endpoint
             const res = await fetch(`/api/admin/tasks?secret=${encodeURIComponent(secret)}&id=${id}`, {
@@ -796,7 +796,7 @@ export default function AdminPortal() {
         if (!pendingDelete) return;
         const { id, type } = pendingDelete;
 
-        setActionLoading(id);
+        setActionLoading({ id, type: 'delete' });
         setPendingDelete(null);
         try {
             // Route to the correct dedicated endpoint per resource type
@@ -1063,7 +1063,7 @@ export default function AdminPortal() {
                         <motion.div key="users" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="flex flex-col gap-8 h-full w-full max-w-6xl mx-auto">
                             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                                 {/* User Registry List - Full Width */}
-                                <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-8 sm:p-12 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[950px] overflow-hidden lg:col-span-12">
+                                <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-5 sm:p-12 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[85vh] sm:h-[950px] overflow-hidden lg:col-span-12">
                                     <div className="absolute top-0 right-0 w-96 h-96 bg-pink-500/10 blur-[130px] -mr-48 -mt-48 rounded-full pointer-events-none" />
                                     <div className="absolute inset-0 rounded-[3rem] sm:rounded-[5rem] border border-white/5 pointer-events-none" />
 
@@ -1084,13 +1084,13 @@ export default function AdminPortal() {
                                                 onClick={() => handleSelectUser(user.id)}
                                                 className={`group/item flex items-center justify-between p-5 rounded-[2rem] border-2 transition-all cursor-pointer gap-4 ${selectedUserId === user.id ? 'bg-pink-600/10 border-pink-500/40 shadow-[0_0_30px_rgba(255,45,149,0.15)]' : 'bg-white/[0.02] border-white/5 hover:bg-white/5 hover:border-white/20'}`}
                                             >
-                                                <div className="flex items-center gap-4 text-left w-auto">
+                                                <div className="flex items-center gap-4 text-left flex-1 min-w-0">
                                                     <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center font-black text-sm sm:text-base text-white shadow-xl transition-transform group-hover/item:scale-110 shrink-0 ${selectedUserId === user.id ? 'bg-gradient-to-br from-pink-500 to-fuchsia-600 shadow-[0_0_20px_rgba(255,45,149,0.3)]' : 'bg-slate-800'}`}>
                                                         {user.firstName?.[0]}{user.lastName?.[0]}
                                                     </div>
-                                                    <div className="min-w-0">
-                                                        <h3 className={`font-black text-sm sm:text-lg italic tracking-tight mb-0.5 ${selectedUserId === user.id ? 'text-pink-400' : 'text-white'}`}>{user.firstName} {user.lastName}</h3>
-                                                        <p className="text-[8px] sm:text-[9px] font-black text-slate-500 tracking-wider italic uppercase opacity-60">{user.username}</p>
+                                                    <div className="flex-1 min-w-0">
+                                                        <h3 className={`font-black text-sm sm:text-lg italic tracking-tight mb-0.5 truncate ${selectedUserId === user.id ? 'text-pink-400' : 'text-white'}`}>{user.firstName} {user.lastName}</h3>
+                                                        <p className="text-[9px] sm:text-[10px] font-black text-slate-500 tracking-wider italic uppercase opacity-60 truncate">{user.username}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3 w-auto shrink-0">
@@ -1188,7 +1188,7 @@ export default function AdminPortal() {
 
                     {activeTab === "tasks" && (
                         <motion.div key="tasks" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="w-full max-w-7xl mx-auto flex flex-col h-full">
-                            <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-8 sm:p-12 lg:p-16 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[950px] overflow-hidden">
+                            <div className="bg-[#0b0b1a]/80 backdrop-blur-[40px] border-2 border-white/[0.12] rounded-[3rem] sm:rounded-[5rem] p-5 sm:p-12 lg:p-16 shadow-[0_0_120px_rgba(255,45,149,0.1)] relative flex flex-col h-[85vh] sm:h-[950px] overflow-hidden">
                                 <div className="absolute top-0 right-0 w-96 h-96 bg-pink-500/10 blur-[130px] -mr-48 -mt-48 rounded-full pointer-events-none" />
                                 <div className="absolute inset-0 rounded-[3rem] sm:rounded-[5rem] border border-white/5 pointer-events-none" />
                                 <div className="flex items-center justify-between mb-10 relative z-10 px-4">
@@ -1212,39 +1212,55 @@ export default function AdminPortal() {
                                             </div>
                                             <div className="grid gap-8">
                                                 {dateTasks.map(task => (
-                                                    <div key={task.id} className="group/task relative bg-white/5 backdrop-blur-3xl border-2 border-white/10 p-6 sm:p-10 rounded-[2rem] sm:rounded-[3.5rem] hover:bg-white/[0.08] hover:border-indigo-500/40 transition-all shadow-2xl overflow-hidden">
+                                                    <div key={task.id} className="group/task relative bg-white/5 backdrop-blur-3xl border-2 border-white/10 p-5 sm:p-10 rounded-[2rem] sm:rounded-[3.5rem] hover:bg-white/[0.08] hover:border-indigo-500/40 transition-all shadow-2xl overflow-hidden">
                                                         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[40px] -mr-16 -mt-16 rounded-full group-hover/task:bg-indigo-500/10 transition-all" />
+                                                        
+                                                        {/* Mobile Selection Box */}
+                                                        <div 
+                                                            onClick={(e) => { e.stopPropagation(); toggleSelectId(task.id); }}
+                                                            className={`lg:hidden absolute top-8 right-8 h-8 w-8 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-center z-[20] ${selectedIds.includes(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
+                                                        >
+                                                            {selectedIds.includes(task.id) && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                                        </div>
                                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-                                                            <div className="space-y-4 lg:flex-1 text-left">
+                                                            <div className="space-y-4 flex-1 min-w-0 text-left">
                                                                 <div className="flex flex-col gap-3">
-                                                                    <div className="flex items-center">
+                                                                    <div className="flex items-center gap-3">
+                                                                        {/* Desktop Select Box */}
+                                                                        <div 
+                                                                            onClick={(e) => { e.stopPropagation(); toggleSelectId(task.id); }}
+                                                                            className={`hidden lg:flex h-6 w-6 rounded-lg border-2 cursor-pointer transition-all items-center justify-center ${selectedIds.includes(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
+                                                                        >
+                                                                            {selectedIds.includes(task.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                                                        </div>
                                                                         <span className={`px-4 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
                                                                             {task.status === 'Completed' ? 'Completed' : 'Pending'}
                                                                         </span>
                                                                     </div>
-                                                                    <h3 className="text-3xl font-black text-white italic tracking-tighter capitalize break-words">
+                                                                    <h3 className="text-lg sm:text-3xl font-black text-white italic tracking-tighter capitalize break-words">
                                                                         {(task.title || '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()}
                                                                     </h3>
                                                                 </div>
-                                                                <p className="text-base text-slate-400 font-medium italic leading-relaxed line-clamp-2 max-w-3xl border-l-2 border-white/5 pl-6">{task.description}</p>
+                                                                <p className="text-base text-slate-400 font-medium italic leading-relaxed truncate max-w-3xl border-l-2 border-white/5 pl-6">{task.description}</p>
                                                             </div>
 
-                                                            <div className="flex flex-row items-center justify-center lg:justify-end gap-8 pt-6 lg:pt-0 border-t lg:border-t-0 border-white/5 shrink-0">
+                                                            <div className="flex flex-row items-center justify-center lg:justify-end gap-4 sm:gap-8 pt-6 lg:pt-0 border-t lg:border-t-0 border-white/5 shrink-0">
                                                                 {/* Status Toggle */}
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); toggleTaskStatus(task.id, task.status); }}
-                                                                    disabled={actionLoading === task.id}
+                                                                    disabled={actionLoading?.id === task.id}
                                                                     className={`h-12 w-12 sm:h-16 sm:w-16 rounded-[1.5rem] border-2 flex items-center justify-center transition-all shadow-lg active:scale-95 ${task.status === 'Completed' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}`}
                                                                 >
-                                                                    {actionLoading === task.id ? <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : (task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />)}
+                                                                    {actionLoading?.id === task.id && actionLoading?.type === 'status' ? <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : (task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />)}
                                                                 </button>
 
                                                                 {/* Purge Button */}
                                                                 <button
                                                                     onClick={(e) => { e.stopPropagation(); setPendingDelete({ id: task.id, type: 'task', label: task.title }); }}
-                                                                    className="h-12 w-12 sm:h-16 sm:w-16 bg-rose-500/10 border-2 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 rounded-[1.5rem] transition-all shadow-lg flex items-center justify-center whitespace-nowrap"
+                                                                    disabled={actionLoading?.id === task.id}
+                                                                    className="h-12 w-12 sm:h-16 sm:w-16 bg-rose-500/10 border-2 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 rounded-[1.5rem] transition-all shadow-lg flex items-center justify-center whitespace-nowrap disabled:opacity-50"
                                                                 >
-                                                                    <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></svg>
+                                                                    {actionLoading?.id === task.id && actionLoading?.type === 'delete' ? <div className="h-4 w-4 border-2 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" /> : <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></svg>}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -1301,7 +1317,7 @@ export default function AdminPortal() {
                 <AnimatePresence>
                     {pendingDelete && (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[200] flex items-center justify-center p-4 sm:p-6 backdrop-blur-[50px] bg-black/80">
-                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#050510] border-2 border-rose-500/30 p-8 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] max-w-xl w-full text-center shadow-[0_30px_100px_rgba(225,29,72,0.2)]">
+                            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-[#050510] border-2 border-rose-500/30 p-6 sm:p-12 rounded-[2.5rem] sm:rounded-[4rem] max-w-xl w-full text-center shadow-[0_30px_100px_rgba(225,29,72,0.2)]">
                                 <div className="w-16 h-16 sm:w-24 sm:h-24 bg-rose-500/10 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 sm:mb-8 border-2 border-rose-500/20">
                                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="text-rose-500 animate-pulse"><path d="M12 9v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z" /></svg>
                                 </div>
@@ -1476,19 +1492,19 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-black/60"
             onClick={onClose}
         >
-            <motion.div
+                <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
-                className="bg-[#0b0b1a] border-2 border-white/[0.12] rounded-[3.5rem] max-w-4xl w-full h-[90vh] shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative flex flex-col overflow-hidden"
+                className="bg-[#0b0b1a] border-2 border-white/[0.12] rounded-[3.5rem] max-w-4xl w-full h-[85vh] sm:h-[90vh] shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative flex flex-col overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Visual Flair */}
                 <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-[120px] -mr-48 -mt-48 rounded-full pointer-events-none" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.03),transparent_70%)] pointer-events-none" />
 
-                <div className="p-8 sm:p-12 border-b border-white/5 relative z-20 bg-[#0b0b1a]/50 backdrop-blur-md">
+                <div className="p-5 sm:p-12 border-b border-white/5 relative z-20 bg-[#0b0b1a]/50 backdrop-blur-md">
                     <div className="max-w-[calc(100%-3.5rem)] sm:max-w-[calc(100%-10rem)]">
-                        <h3 className="text-3xl sm:text-4xl font-black text-white italic tracking-tighter break-words capitalize">Operational Stream</h3>
+                        <h3 className="text-2xl sm:text-4xl font-black text-white italic tracking-tighter break-words capitalize">Operational Stream</h3>
                         <p className="text-[10px] sm:text-[11px] font-black text-pink-500 tracking-[0.2em] uppercase italic mt-1 opacity-90 break-all">Tracing activity for {user?.username}</p>
                     </div>
 
@@ -1508,7 +1524,7 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
                     </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto px-8 sm:px-12 pb-12 custom-scrollbar-purple relative z-10">
+                <div className="flex-1 overflow-y-auto px-5 sm:px-12 pb-12 custom-scrollbar-purple relative z-10">
                     {tasks && tasks.length > 0 ? (
                         Object.entries(tasks.reduce((groups, task) => {
                             const date = task.taskDate || task.taskdate || "Unscheduled";
@@ -1528,36 +1544,37 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
                                         <div key={task.id} className="group/task relative bg-[#131325]/40 backdrop-blur-3xl border border-white/[0.08] p-8 sm:p-10 rounded-[2.5rem] hover:bg-[#1a1a35]/60 hover:border-indigo-500/30 transition-all shadow-2xl overflow-hidden w-full max-w-3xl">
                                             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[50px] -mr-16 -mt-16 rounded-full group-hover/task:bg-indigo-500/10 transition-all" />
                                             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
-                                                <div className="space-y-4 lg:flex-1">
+                                                <div className="space-y-4 flex-1 min-w-0">
                                                     <div className="flex flex-col gap-3">
                                                         <div className="flex items-center">
                                                             <span className={`px-4 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-pink-500/10 text-pink-500 border-pink-500/20'}`}>
                                                                 {task.status === 'Completed' ? 'Completed' : 'Pending'}
                                                             </span>
                                                         </div>
-                                                        <h4 className="text-2xl sm:text-3xl font-black text-white italic tracking-tighter leading-tight capitalize break-words">
+                                                        <h4 className="text-lg sm:text-3xl font-black text-white italic tracking-tighter leading-tight capitalize break-words">
                                                             {(task.title || '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()}
                                                         </h4>
                                                     </div>
-                                                    <p className="text-[14px] sm:text-base font-medium text-slate-400 leading-relaxed italic opacity-80 border-l-2 border-indigo-500/40 pl-6">&quot;{task.description}&quot;</p>
+                                                    <p className="text-[14px] sm:text-base font-medium text-slate-400 leading-relaxed italic opacity-80 border-l-2 border-indigo-500/40 pl-6 truncate">&quot;{task.description}&quot;</p>
                                                 </div>
 
                                                 <div className="flex flex-row items-center justify-center lg:justify-end gap-8 pt-6 lg:pt-0 border-t lg:border-t-0 border-white/5 shrink-0">
                                                     {/* Status Toggle */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); onToggleStatus(task.id, task.status); }}
-                                                        disabled={actionLoading === task.id}
+                                                        disabled={actionLoading?.id === task.id}
                                                         className={`h-12 w-12 sm:h-16 sm:w-16 rounded-[1.5rem] border-2 flex items-center justify-center transition-all shadow-lg active:scale-95 ${task.status === 'Completed' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20 hover:bg-amber-500/20' : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'}`}
                                                     >
-                                                        {actionLoading === task.id ? <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : (task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />)}
+                                                        {actionLoading?.id === task.id && actionLoading?.type === 'status' ? <div className="h-4 w-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> : (task.status === 'Completed' ? <UndoIcon /> : <CheckIcon />)}
                                                     </button>
 
                                                     {/* Purge Button */}
                                                     <button
                                                         onClick={(e) => { e.stopPropagation(); onDeleteTask(task.id); }}
-                                                        className="h-12 w-12 sm:h-16 sm:w-16 bg-rose-500/10 border-2 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 rounded-[1.5rem] transition-all shadow-lg flex items-center justify-center whitespace-nowrap"
+                                                        disabled={actionLoading?.id === task.id}
+                                                        className="h-12 w-12 sm:h-16 sm:w-16 bg-rose-500/10 border-2 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 hover:border-rose-500/40 rounded-[1.5rem] transition-all shadow-lg flex items-center justify-center whitespace-nowrap disabled:opacity-50"
                                                     >
-                                                        <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></svg>
+                                                        {actionLoading?.id === task.id && actionLoading?.type === 'delete' ? <div className="h-4 w-4 border-2 border-rose-500/20 border-t-rose-500 rounded-full animate-spin" /> : <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M3 6h18m-2 0v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /></svg>}
                                                     </button>
                                                 </div>
                                             </div>

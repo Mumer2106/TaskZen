@@ -55,12 +55,12 @@ export default function Overview({ tasks, stats, activities = [] }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
-      className="grid grid-cols-1 lg:grid-cols-12 gap-10 w-full"
+      className="grid grid-cols-1 lg:grid-cols-12 gap-6 sm:gap-10 w-full"
     >
       {/* Left Main Matrix */}
       <div className="lg:col-span-8 flex flex-col gap-10">
         {/* Tier 1: Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
           {[
             { label: "Neural Registry", value: total, color: "from-blue-600/20", textColor: "text-blue-400", tag: "Total Tasks", icon: <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg> },
             { label: "Stable States", value: completed, color: "from-emerald-600/20", textColor: "text-emerald-400", tag: "Completed Tasks", icon: <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg> },
@@ -69,7 +69,7 @@ export default function Overview({ tasks, stats, activities = [] }) {
             <motion.div
               key={i}
               whileHover={{ y: -5, scale: 1.02 }}
-              className="group bg-[#050510]/60 backdrop-blur-2xl border-2 border-white/[0.12] p-10 rounded-[3rem] relative overflow-hidden transition-all duration-700 hover:border-pink-500/40 hover:shadow-[0_0_30px_rgba(255,45,149,0.1)]"
+              className="group bg-[#050510]/60 backdrop-blur-2xl border-2 border-white/[0.12] p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] relative overflow-hidden transition-all duration-700 hover:border-pink-500/40 hover:shadow-[0_0_30px_rgba(255,45,149,0.1)]"
             >
               <div className={`absolute -inset-1 bg-gradient-to-br ${stat.color} to-transparent opacity-0 group-hover:opacity-100 blur-2xl transition-opacity duration-1000`} />
 
@@ -78,7 +78,7 @@ export default function Overview({ tasks, stats, activities = [] }) {
                   <div className="text-[12px] font-black tracking-[0.3em] text-slate-300 drop-shadow-sm">{stat.tag}</div>
                   <div className={`${stat.textColor} opacity-60 group-hover:opacity-100 transition-opacity`}>{stat.icon}</div>
                 </div>
-                <div className={`text-5xl font-black ${stat.textColor} italic tracking-tight pr-2 mb-4 drop-shadow-[0_10_20px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-105 duration-500`}>{stat.value}</div>
+                <div className={`text-3xl sm:text-5xl font-black ${stat.textColor} italic tracking-tight pr-2 mb-4 drop-shadow-[0_10_20px_rgba(0,0,0,0.5)] transition-transform group-hover:scale-105 duration-500`}>{stat.value}</div>
                 <div className="text-[13px] font-bold text-slate-400 tracking-widest">{stat.label}</div>
               </div>
             </motion.div>
@@ -86,10 +86,10 @@ export default function Overview({ tasks, stats, activities = [] }) {
         </div>
 
         {/* Tier 2: Harmony Plot */}
-        <div className="bg-gradient-to-r from-[#050510]/90 via-[#08081a]/60 to-[#050510]/90 backdrop-blur-2xl border-2 border-white/[0.12] p-12 rounded-[4rem] flex flex-col md:flex-row items-center justify-between gap-12 relative overflow-hidden group hover:border-indigo-500/30 transition-colors duration-700">
+        <div className="bg-gradient-to-r from-[#050510]/90 via-[#08081a]/60 to-[#050510]/90 backdrop-blur-2xl border-2 border-white/[0.12] p-6 sm:p-12 rounded-[3.5rem] sm:rounded-[4rem] flex flex-col md:flex-row items-center justify-between gap-8 sm:gap-12 relative overflow-hidden group hover:border-indigo-500/30 transition-colors duration-700">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(255,45,149,0.05),transparent)] pointer-events-none" />
           <div className="max-w-md relative z-10 font-bold">
-            <h3 className="text-4xl font-black text-white italic tracking-tight mb-6 leading-tight overflow-visible pb-2">
+            <h3 className="text-2xl sm:text-4xl font-black text-white italic tracking-tight mb-4 sm:mb-6 leading-tight overflow-visible pb-2">
               System <span className="inline-block text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-fuchsia-400 to-indigo-400 drop-shadow-[0_0_15px_rgba(255,45,149,0.3)] pr-[0.3em] -mr-[0.3em] whitespace-nowrap">Integrity</span>
             </h3>
             <p className="text-slate-400 text-lg leading-relaxed font-light italic mb-8">
@@ -107,7 +107,7 @@ export default function Overview({ tasks, stats, activities = [] }) {
 
       {/* Right Sidebar Activity */}
       <div className="lg:col-span-4 flex flex-col gap-10">
-        <div className="bg-[#050510]/60 backdrop-blur-2xl border-2 border-white/[0.12] p-12 rounded-[4rem] flex-1 flex flex-col relative overflow-hidden group hover:border-pink-500/20 transition-colors duration-700">
+        <div className="bg-[#050510]/60 backdrop-blur-2xl border-2 border-white/[0.12] p-6 sm:p-12 rounded-[3.5rem] sm:rounded-[4rem] flex-1 flex flex-col relative overflow-hidden group hover:border-pink-500/20 transition-colors duration-700">
           <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-pink-500/30 to-transparent" />
           <h4 className="text-[13px] font-black tracking-[0.3em] text-pink-500 mb-6 flex items-center gap-3">
             <div className="h-2 w-2 rounded-full bg-pink-500 shadow-[0_0_15px_rgba(255,45,149,0.8)] animate-pulse" />
