@@ -47,6 +47,8 @@ export async function GET(request) {
         const [allUsers, allTasks] = await Promise.all([getAllUsers(), getAllTasks()]);
 
         // Extract users for the dashboard (prioritize those with activity)
+        const now = Date.now();
+        const THRESHOLD = 10 * 1000; // 10s for 3s heartbeat
         const recentActiveUsers = [...allUsers]
             .sort((a, b) => {
                 const dateA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
@@ -54,13 +56,17 @@ export async function GET(request) {
                 return dateB - dateA;
             })
             .slice(0, 20)
-            .map(u => ({
-                id: u.id,
-                username: u.username,
-                firstName: u.firstName || u.firstname || u.displayName || u.username.split('@')[0],
-                lastName: u.lastName || u.lastname || '',
-                lastActive: u.lastActive,
-            }));
+            .map(u => {
+                const lastActiveTime = u.lastActive ? new Date(u.lastActive).getTime() : 0;
+                return {
+                    id: u.id,
+                    username: u.username,
+                    firstName: u.firstName || u.firstname || u.displayName || u.username.split('@')[0],
+                    lastName: u.lastName || u.lastname || '',
+                    lastActive: u.lastActive,
+                    isOnline: lastActiveTime > 0 && (now - lastActiveTime) < THRESHOLD
+                };
+            });
 
         return NextResponse.json({
             stats: {

@@ -448,12 +448,10 @@ export default function AdminPortal() {
     const tasksListRef = useRef(null);
 
     const onlineUsers = useMemo(() => {
-        const threshold = 45 * 1000; // 45s window for 15s heartbeat
-        const now = Date.now();
         const sourceData = stats?.recentActiveUsers || [];
         return sourceData.map(u => ({
             ...u,
-            isOnline: u.lastActive ? (now - new Date(u.lastActive).getTime()) < threshold : false
+            isOnline: !!u.isOnline // Use server-calculated status
         }));
     }, [stats]);
 
@@ -698,28 +696,26 @@ export default function AdminPortal() {
     // Cross-tab sync removed — data is fetched on-demand only.
 
 
-    // ── Online Status Polling (targeted, lightweight — 30s interval) ──────────
-    // This ONLY polls the /api/admin/online endpoint — NOT the full stats/tasks APIs.
-    // It updates only the recentActiveUsers slice for the Active System Users widget.
+    // ── Online Status Check (Stable 30s Polling) ─────────────────────────────
+    // Balanced setting: updates automatically every 30s for a "live" feel
+    // without the network noise of high-frequency polling.
     useEffect(() => {
         if (!isAuthenticated || !secret) return;
 
-        const pollOnlineStatus = async () => {
+        const checkOnlineStatus = async () => {
             try {
                 const res = await fetch(`/api/admin/online?secret=${encodeURIComponent(secret)}`);
                 if (res.ok) {
                     const data = await res.json();
                     setStats(prev => prev ? { ...prev, recentActiveUsers: data.users } : prev);
                 }
-            } catch (err) {
-                // Silent fail — don't disrupt UI
-            }
+            } catch (err) { }
         };
 
-        pollOnlineStatus(); // fire immediately when authenticated
-        const interval = setInterval(pollOnlineStatus, 5000); // then every 5s
+        checkOnlineStatus();
+        const interval = setInterval(checkOnlineStatus, 3000); // Ultra-fast 3s for immediate updates
         return () => clearInterval(interval);
-    }, [isAuthenticated, secret]);
+    }, [isAuthenticated, secret, activeTab]);
 
     // ── Task status toggle ────────────────────────────────────────────────────
     const toggleTaskStatus = async (id, currentStatus) => {

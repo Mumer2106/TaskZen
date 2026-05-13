@@ -367,12 +367,12 @@ export async function getAllUsers() {
 }
 
 export async function touchUserActivity(userId) {
-    const now = new Date().toISOString();
     if (isPostgresConfigured) {
         try {
-            await sql`UPDATE users SET lastactive = ${now} WHERE id = ${userId}`;
+            await sql`UPDATE users SET lastactive = NOW() WHERE id = ${userId}`;
         } catch (e) { /* ignore table not setup yet */ }
     } else {
+        const now = new Date().toISOString();
         const db = await readJsonDb();
         if (db.users[userId]) {
             db.users[userId].lastActive = now;
@@ -421,6 +421,8 @@ export async function getAllTasks() {
     } else {
         const db = await readJsonDb();
         const allTasks = [];
+        const now = Date.now();
+        const THRESHOLD = 10 * 1000; // 10s threshold for 3s high-speed heartbeat
         for (const [userId, userTasks] of Object.entries(db.tasks)) {
             const username = db.users[userId]?.username || 'Unknown';
             allTasks.push(...userTasks.map(t => ({ ...t, owner: username, userId })));
