@@ -83,6 +83,16 @@ export default function Dashboard() {
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []); // Only run once on mount
 
+  // ── Heartbeat: keep user marked as "online" in the system ──────────────────
+  useEffect(() => {
+    const sendHeartbeat = () => {
+      fetch('/api/user/heartbeat', { method: 'POST' }).catch(() => {});
+    };
+    sendHeartbeat(); // fire immediately on mount
+    const interval = setInterval(sendHeartbeat, 60000); // then every 60s
+    return () => clearInterval(interval);
+  }, []);
+
   // Debouncing Search Effect
   useEffect(() => {
     const handler = setTimeout(() => {

@@ -448,11 +448,11 @@ export default function AdminPortal() {
     const tasksListRef = useRef(null);
 
     const onlineUsers = useMemo(() => {
-        const fiveMinsAgo = Date.now() - (5 * 60 * 1000);
+        const twoMinsAgo = Date.now() - (2 * 60 * 1000); // 2 min window matches 60s heartbeat
         const sourceData = stats?.recentActiveUsers || [];
         return sourceData.map(u => ({
             ...u,
-            isOnline: u.lastActive ? new Date(u.lastActive).getTime() > fiveMinsAgo : false
+            isOnline: u.lastActive ? new Date(u.lastActive).getTime() > twoMinsAgo : false
         }));
     }, [stats]);
 
@@ -697,7 +697,28 @@ export default function AdminPortal() {
     // Cross-tab sync removed — data is fetched on-demand only.
 
 
-    // Auto-polling removed — data is only fetched on login or explicit user action.
+    // ── Online Status Polling (targeted, lightweight — 30s interval) ──────────
+    // This ONLY polls the /api/admin/online endpoint — NOT the full stats/tasks APIs.
+    // It updates only the recentActiveUsers slice for the Active System Users widget.
+    useEffect(() => {
+        if (!isAuthenticated || !secret) return;
+
+        const pollOnlineStatus = async () => {
+            try {
+                const res = await fetch(`/api/admin/online?secret=${encodeURIComponent(secret)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    setStats(prev => prev ? { ...prev, recentActiveUsers: data.users } : prev);
+                }
+            } catch (err) {
+                // Silent fail — don't disrupt UI
+            }
+        };
+
+        pollOnlineStatus(); // fire immediately when authenticated
+        const interval = setInterval(pollOnlineStatus, 30000); // then every 30s
+        return () => clearInterval(interval);
+    }, [isAuthenticated, secret]);
 
     // ── Task status toggle ────────────────────────────────────────────────────
     const toggleTaskStatus = async (id, currentStatus) => {
