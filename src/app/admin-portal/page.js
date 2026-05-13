@@ -286,35 +286,35 @@ function ResonanceChart({ tasks }) {
                     ))}
                 </svg>
 
-                {/* Mobile View: Stats at top & bottom */}
-                <div className="lg:hidden absolute inset-0 flex flex-col justify-between items-center pt-2 pb-6 px-6 pointer-events-none">
-                    {/* Mobile: Inbound/Outbound Pill at Top */}
-                    <div className="flex items-center gap-2 bg-white/5 backdrop-blur-2xl border border-white/10 p-2 sm:p-3 rounded-[2rem] shadow-xl">
-                        <div className="bg-white/5 p-3 sm:p-5 rounded-[1.5rem] flex flex-col items-center">
-                            <div className="text-[8px] sm:text-[9px] font-black text-indigo-400 tracking-widest italic mb-0.5 uppercase opacity-80">Inbound</div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl sm:text-5xl font-black text-white italic tracking-tighter">{data[data.length - 1].created}</span>
-                            </div>
-                        </div>
-                        <div className="w-px h-8 bg-white/10 mx-1" />
-                        <div className="bg-white/5 p-3 sm:p-5 rounded-[1.5rem] flex flex-col items-center">
-                            <div className="text-[8px] sm:text-[9px] font-black text-pink-400 tracking-widest italic mb-0.5 uppercase opacity-80">Outbound</div>
-                            <div className="flex items-baseline gap-2">
-                                <span className="text-2xl sm:text-5xl font-black text-white italic tracking-tighter">{data[data.length - 1].completed}</span>
-                            </div>
+                {/* Mobile View: Stats arranged horizontally (Left - Center - Right) */}
+                <div className="lg:hidden absolute inset-x-0 bottom-4 flex items-end justify-between px-4 pointer-events-none">
+                    
+                    {/* Mobile: Inbound (Left) */}
+                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-3 rounded-[1.5rem] shadow-xl space-y-1">
+                        <div className="text-[7px] font-black text-indigo-400 tracking-widest italic uppercase">Inbound</div>
+                        <div className="flex items-baseline gap-1">
+                            <span className="text-xl font-black text-white italic tracking-tighter">{data[data.length - 1].created}</span>
                         </div>
                     </div>
 
-                    {/* Mobile: Focal Point (Sync Index) at Bottom */}
-                    <div className="relative group">
-                        <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-full blur-3xl opacity-20 animate-pulse" />
-                        <div className="relative bg-[#08081a]/80 backdrop-blur-3xl border-2 border-white/10 w-28 h-28 sm:w-44 sm:h-44 rounded-full flex flex-col items-center justify-center shadow-[0_0_50px_rgba(255,45,149,0.15)] gap-0.5 sm:gap-1">
-                            <div className="text-[8px] sm:text-[10px] font-black text-slate-500 tracking-widest mb-1 sm:mb-2 text-center px-2 uppercase">Sync Index</div>
-                            <div className="text-2xl sm:text-4xl font-black text-white italic tracking-tighter flex items-center gap-1">
+                    {/* Mobile: Focal Point (Sync Index - Center) */}
+                    <div className="relative group mx-2">
+                        <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-full blur-2xl opacity-20 animate-pulse" />
+                        <div className="relative bg-[#08081a]/80 backdrop-blur-3xl border-2 border-white/10 w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,45,149,0.15)] gap-0.5">
+                            <div className="text-[7px] font-black text-slate-500 tracking-widest mb-1 text-center px-1 uppercase">Sync</div>
+                            <div className="text-xl font-black text-white italic tracking-tighter flex items-center gap-0.5">
                                 {Math.round((data[data.length - 1].completed / data[data.length - 1].created) * 100 || 0)}
-                                <span className="text-xs sm:text-xl opacity-40 ml-0.5 sm:1 font-bold">%</span>
+                                <span className="text-[10px] opacity-40 ml-0.5 font-bold">%</span>
                             </div>
-                            <div className="h-1 sm:h-1.5 w-10 sm:w-14 bg-gradient-to-r from-indigo-500 via-pink-500 to-indigo-500 rounded-full shadow-[0_0_15px_#ec4899] mt-2 sm:mt-3" />
+                            <div className="h-1 w-8 bg-gradient-to-r from-indigo-500 via-pink-500 to-indigo-500 rounded-full shadow-[0_0_10px_#ec4899] mt-1.5" />
+                        </div>
+                    </div>
+
+                    {/* Mobile: Outbound (Right) */}
+                    <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-3 rounded-[1.5rem] shadow-xl space-y-1 text-right">
+                        <div className="text-[7px] font-black text-pink-400 tracking-widest italic uppercase">Outbound</div>
+                        <div className="flex items-baseline justify-end gap-1">
+                            <span className="text-xl font-black text-white italic tracking-tighter">{data[data.length - 1].completed}</span>
                         </div>
                     </div>
                 </div>
