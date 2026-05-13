@@ -72,7 +72,7 @@ function EditTaskModalInner({ task, onClose, onTaskUpdated, actionLoading, error
 
             {/* Header */}
             <div className="px-8 pt-10 pb-6 border-b border-white/5 bg-white/[0.02]">
-              <h2 className="text-3xl font-black text-white tracking-[0.05em]">Modify Protocol</h2>
+              <h2 className="text-xl sm:text-3xl font-black text-white tracking-[0.05em]">Modify Protocol</h2>
               <p className="text-indigo-400/80 text-[11px] font-black tracking-[0.4em] mt-2">Update Neural Node Parameters</p>
             </div>
 

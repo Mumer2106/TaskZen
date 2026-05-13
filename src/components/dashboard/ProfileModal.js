@@ -123,15 +123,17 @@ export default function ProfileModal({ isOpen, onClose, userInfo, onUpdate }) {
             {/* Header */}
             <div className="px-8 py-10 border-b border-white/5 relative bg-white/[0.02] rounded-t-[2.5rem] overflow-visible">
               <div className="absolute top-0 left-12 w-32 h-1.5 bg-gradient-to-r from-pink-500 to-fuchsia-600 rounded-full shadow-[0_0_15px_rgba(255,45,149,0.5)]" />
-              <h2 className="text-3xl font-black text-white tracking-[0.1em] leading-normal pr-[0.3em] -mr-[0.3em] overflow-visible">Identity Configuration</h2>
-              <p className="text-pink-500/80 text-[11px] font-black tracking-[0.4em] mt-3 drop-shadow-[0_0_8px_rgba(255,45,149,0.3)]">Modify Neural Operator Parameters</p>
+              <div className="relative pr-16 mb-4">
+                <h2 className="text-xl sm:text-3xl font-black text-white tracking-[0.1em] leading-tight italic break-words">Identity Configuration</h2>
+                <p className="text-pink-500/80 text-[10px] sm:text-[11px] font-black tracking-[0.4em] mt-2 drop-shadow-[0_0_8px_rgba(255,45,149,0.3)] uppercase italic">Modify Neural Operator Parameters</p>
+              </div>
               <motion.button
                 whileHover={{ rotate: 90, scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
                 onClick={onClose}
-                className="absolute top-10 right-8 h-12 w-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-slate-500 transition-colors shadow-lg"
+                className="absolute top-8 right-8 h-10 w-10 sm:h-12 sm:w-12 flex items-center justify-center rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-slate-500 transition-colors shadow-lg z-20"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
               </motion.button>
             </div>
 

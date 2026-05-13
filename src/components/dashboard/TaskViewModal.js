@@ -28,19 +28,19 @@ export default function TaskViewModal({ task, onClose }) {
           <div className={`absolute top-0 right-0 w-64 h-64 ${isCompleted ? "bg-emerald-500/10" : "bg-pink-500/10"} rounded-full blur-[100px] -mr-32 -mt-32`} />
 
           <div className="relative z-10">
-            <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center mb-8">
               <div className={`px-4 py-1.5 rounded-full text-[10px] font-black tracking-widest border ${isCompleted ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" : "bg-pink-500/10 text-pink-500 border-pink-500/30"}`}>
                 {isCompleted ? "Status Completed" : "Status Pending"}
               </div>
-              <motion.button
-                whileHover={{ rotate: 90, scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={onClose}
-                className="h-12 w-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-slate-500 transition-colors shadow-lg"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              </motion.button>
             </div>
+            <motion.button
+              whileHover={{ rotate: 90, scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onClose}
+              className="absolute top-8 right-8 h-12 w-12 flex items-center justify-center rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-rose-500/10 hover:border-rose-500/30 hover:text-rose-500 text-slate-500 transition-colors shadow-lg z-20"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </motion.button>
 
             <h2 className="text-2xl sm:text-5xl font-black text-white italic tracking-tighter mb-6 leading-tight pr-6">
               {task.title}

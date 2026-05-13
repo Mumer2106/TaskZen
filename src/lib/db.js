@@ -47,6 +47,7 @@ function normalizeUser(user) {
         role: user.role || 'user',
         isBanned: !!user.isbanned || !!user.isBanned || !!user.banned,
         lastActive: user.lastActive || user.lastactive || null,
+        displayName: (user.firstName || user.firstname || user.username || '').split('@')[0],
     };
 }
 
@@ -477,6 +478,8 @@ export async function updateUser(userId, updates) {
             const { rows } = await sql`SELECT * FROM users WHERE id = ${userId}`;
             const updated = rows[0];
 
+            await touchUserActivity(userId);
+
             return updated ? normalizeUser({
                 ...updated,
                 userId: updated.id,
@@ -510,6 +513,7 @@ export async function updateUser(userId, updates) {
 
         db.users[userId] = { ...db.users[userId], ...filteredUpdates };
         await writeJsonDb(db);
+        await touchUserActivity(userId);
         return normalizeUser(db.users[userId]);
     }
 }

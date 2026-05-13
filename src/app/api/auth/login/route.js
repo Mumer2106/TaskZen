@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { findUser, createUser, generateId } from '@/lib/db';
+import { findUser, createUser, generateId, touchUserActivity } from '@/lib/db';
 import { cookies } from 'next/headers';
 
 import nodemailer from 'nodemailer';
@@ -96,6 +96,10 @@ export async function POST(request) {
                 console.error("Find user critical error:", error);
                 throw error;
             }
+        }
+
+        if (user && user.id) {
+            await touchUserActivity(user.id);
         }
 
         const response = NextResponse.json({

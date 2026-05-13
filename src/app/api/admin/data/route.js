@@ -46,15 +46,18 @@ export async function GET(request) {
     try {
         const [allUsers, allTasks] = await Promise.all([getAllUsers(), getAllTasks()]);
 
-        // Extract top active users for the dashboard (regardless of pagination)
+        // Extract users for the dashboard (prioritize those with activity)
         const recentActiveUsers = [...allUsers]
-            .filter(u => u.lastActive)
-            .sort((a, b) => new Date(b.lastActive) - new Date(a.lastActive))
+            .sort((a, b) => {
+                const dateA = a.lastActive ? new Date(a.lastActive).getTime() : 0;
+                const dateB = b.lastActive ? new Date(b.lastActive).getTime() : 0;
+                return dateB - dateA;
+            })
             .slice(0, 5)
             .map(u => ({
                 id: u.id,
                 username: u.username,
-                firstName: u.firstName || u.firstname || '',
+                firstName: u.firstName || u.firstname || u.displayName || u.username.split('@')[0],
                 lastName: u.lastName || u.lastname || '',
                 lastActive: u.lastActive,
             }));

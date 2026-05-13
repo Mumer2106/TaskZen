@@ -442,6 +442,7 @@ export default function AdminPortal() {
     const [showActivityModal, setShowActivityModal] = useState(false);
     const [openDropdown, setOpenDropdown] = useState(null);
     const [taskDropdown, setTaskDropdown] = useState(null);
+    const [selectedIds, setSelectedIds] = useState(new Set());
 
     const usersListRef = useRef(null);
     const tasksListRef = useRef(null);
@@ -541,35 +542,40 @@ export default function AdminPortal() {
             if (!statsOk && !silent) { setError("Access Denied"); return; }
             setIsAuthenticated(true);
 
-            // Fetch only what's needed for the current view
-            if (activeTab === 'overview' || !silent) {
-                const promises = [
-                    fetchUsers(adminSecret, 0, false),
-                    fetchTasks(adminSecret, 0, null, false), // Always global
-                    fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&limit=1000`)
-                ];
+            // Surgical Data Retrieval Strategy
+            const promises = [];
 
-                // Refresh modal tasks too if it's open
-                if (selectedUserId) {
+            if (activeTab === 'overview') {
+                // Dashboard needs bulk tasks for charts only on initial load or manual refresh
+                if (!silent) {
                     promises.push(
-                        fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&userId=${selectedUserId}&limit=1000`)
+                        fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&limit=1000`)
                             .then(res => res.json())
-                            .then(data => setModalTasks(data.tasks || []))
+                            .then(data => setChartTasks(data.tasks || []))
                             .catch(e => console.error(e))
                     );
-                }
-
-                const [uRes, tRes, cRes] = await Promise.all(promises);
-
-                if (cRes && cRes.ok) {
-                    const chartDataResult = await cRes.json();
-                    setChartTasks(chartDataResult.tasks || []);
+                    
+                    // Pre-fetch registry data on initial load
+                    promises.push(fetchUsers(adminSecret, 0, false));
+                    promises.push(fetchTasks(adminSecret, 0, null, false));
                 }
             } else if (activeTab === 'users') {
-                await fetchUsers(adminSecret, usersOffsetRef.current, false);
+                promises.push(fetchUsers(adminSecret, usersOffsetRef.current, false));
             } else if (activeTab === 'tasks') {
-                await fetchTasks(adminSecret, tasksOffsetRef.current, null, false);
+                promises.push(fetchTasks(adminSecret, tasksOffsetRef.current, null, false));
             }
+
+            // Refresh modal tasks if viewing a specific user's activity
+            if (showActivityModal && selectedUserId) {
+                promises.push(
+                    fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&userId=${selectedUserId}&limit=1000`)
+                        .then(res => res.json())
+                        .then(data => setModalTasks(data.tasks || []))
+                        .catch(e => console.error(e))
+                );
+            }
+
+            if (promises.length > 0) await Promise.all(promises);
         } catch (err) {
             if (!silent) setError("Connection failed");
         } finally {
@@ -688,38 +694,10 @@ export default function AdminPortal() {
     };
 
 
-    // ── Cross-tab & focus sync ────────────────────────────────────────────────
-    useEffect(() => {
-        if (!isAuthenticated || !secret) return;
-
-        const handleStorageChange = (e) => {
-            if (e.key === 'taskzen_registry_sync') fetchData(secret, true);
-        };
-        const handleFocus = () => {
-            // Only refresh if on Dashboard or if we explicitly want to keep lists in sync without resetting scroll
-            if (activeTab === 'overview' && !actionLoading && !pendingDelete) {
-                fetchData(secret, true);
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
-        window.addEventListener('focus', handleFocus);
-
-        return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            window.removeEventListener('focus', handleFocus);
-        };
-    }, [isAuthenticated, secret, actionLoading, pendingDelete, fetchData, activeTab]);
+    // Cross-tab sync removed — data is fetched on-demand only.
 
 
-    // ── Real-time Polling (every 5 seconds) ───────────────────────────────────
-    useEffect(() => {
-        if (!isAuthenticated || !secret || activeTab !== 'overview') return;
-        const interval = setInterval(() => {
-            fetchData(secret, true);
-        }, 5000);
-        return () => clearInterval(interval);
-    }, [isAuthenticated, secret, activeTab, fetchData]);
+    // Auto-polling removed — data is only fetched on login or explicit user action.
 
     // ── Task status toggle ────────────────────────────────────────────────────
     const toggleTaskStatus = async (id, currentStatus) => {
@@ -846,6 +824,14 @@ export default function AdminPortal() {
         } finally {
             setActionLoading(null);
         }
+    };
+
+    const toggleSelectId = (id) => {
+        setSelectedIds(prev => {
+            const next = new Set(prev);
+            next.has(id) ? next.delete(id) : next.add(id);
+            return next;
+        });
     };
 
     // ── Login Screen ──────────────────────────────────────────────────────────
@@ -1218,9 +1204,9 @@ export default function AdminPortal() {
                                                         {/* Mobile Selection Box */}
                                                         <div 
                                                             onClick={(e) => { e.stopPropagation(); toggleSelectId(task.id); }}
-                                                            className={`lg:hidden absolute top-8 right-8 h-8 w-8 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-center z-[20] ${selectedIds.includes(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
+                                                            className={`lg:hidden absolute top-8 right-8 h-8 w-8 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-center z-[20] ${selectedIds.has(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
                                                         >
-                                                            {selectedIds.includes(task.id) && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                                            {selectedIds.has(task.id) && <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
                                                         </div>
                                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8 relative z-10">
                                                             <div className="space-y-4 flex-1 min-w-0 text-left">
@@ -1229,9 +1215,9 @@ export default function AdminPortal() {
                                                                         {/* Desktop Select Box */}
                                                                         <div 
                                                                             onClick={(e) => { e.stopPropagation(); toggleSelectId(task.id); }}
-                                                                            className={`hidden lg:flex h-6 w-6 rounded-lg border-2 cursor-pointer transition-all items-center justify-center ${selectedIds.includes(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
+                                                                            className={`hidden lg:flex h-6 w-6 rounded-lg border-2 cursor-pointer transition-all items-center justify-center ${selectedIds.has(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
                                                                         >
-                                                                            {selectedIds.includes(task.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                                                            {selectedIds.has(task.id) && <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
                                                                         </div>
                                                                         <span className={`px-4 py-1 rounded-full text-[8px] font-black tracking-widest uppercase border ${task.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-amber-500/10 text-amber-500 border-amber-500/20'}`}>
                                                                             {task.status === 'Completed' ? 'Completed' : 'Pending'}
@@ -1321,7 +1307,7 @@ export default function AdminPortal() {
                                 <div className="w-16 h-16 sm:w-24 sm:h-24 bg-rose-500/10 rounded-[1.5rem] sm:rounded-[2.5rem] flex items-center justify-center mx-auto mb-6 sm:mb-8 border-2 border-rose-500/20">
                                     <svg width="32" height="32" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" className="text-rose-500 animate-pulse"><path d="M12 9v4m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 17c-.77 1.333.192 3 1.732 3z" /></svg>
                                 </div>
-                                <h3 className="text-2xl sm:text-4xl font-black text-white italic tracking-tighter mb-4 uppercase">Confirm Purge</h3>
+                                <h3 className="text-xl sm:text-4xl font-black text-white italic tracking-tighter mb-4 uppercase">Confirm Purge</h3>
                                 <p className="text-slate-400 text-sm sm:text-lg font-medium italic mb-8 sm:mb-10 leading-relaxed px-2 sm:px-4">
                                     Are you certain you wish to permanently erase <span className="text-rose-500 font-black">&quot;{pendingDelete.label}&quot;</span> from the secure ledger?
                                 </p>
@@ -1384,18 +1370,21 @@ function UserDetailsModal({ user, onClose, onSave, loading }) {
                 {/* Horizontal Pink Accent Tag */}
                 <div className="absolute top-0 left-12 w-32 h-2 bg-gradient-to-r from-pink-500 to-fuchsia-500 rounded-b-full shadow-[0_0_15px_rgba(236,72,153,0.4)]" />
 
-                <div className="flex items-center justify-between mb-2 relative z-10">
-                    <h3 className="text-4xl font-black text-white tracking-tighter">Identity Configuration</h3>
-                    <motion.button
-                        whileHover={{ scale: 1.05, backgroundColor: 'rgba(244, 63, 94, 0.1)', borderColor: 'rgba(244, 63, 94, 0.3)', color: 'rgba(244, 63, 94, 1)' }}
-                        whileTap={{ scale: 0.95 }}
-                        onClick={onClose}
-                        className="w-11 h-11 flex items-center justify-center bg-[#1a1921]/80 backdrop-blur-xl rounded-[1.1rem] border border-white/[0.05] text-slate-300 transition-all cursor-pointer shadow-2xl group"
-                    >
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5" className="group-hover:rotate-90 transition-transform duration-300"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                    </motion.button>
+                <div className="relative z-10 mb-10">
+                    <div className="pr-16">
+                        <h3 className="text-xl sm:text-4xl font-black text-white tracking-tighter leading-tight italic break-words">Identity Configuration</h3>
+                        <p className="text-[10px] sm:text-[11px] font-black text-pink-500 tracking-[0.2em] uppercase italic mt-1 opacity-90 break-all">Modify Neural Operator Parameters</p>
+                    </div>
                 </div>
-                <p className="text-[11px] font-black text-pink-500 tracking-[0.2em] uppercase italic mb-10 opacity-90">Modify Neural Operator Parameters</p>
+
+                <motion.button
+                    whileHover={{ scale: 1.05, backgroundColor: 'rgba(244, 63, 94, 0.1)', borderColor: 'rgba(244, 63, 94, 0.3)', color: 'rgba(244, 63, 94, 1)' }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={onClose}
+                    className="absolute top-8 right-8 w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-[#1a1921]/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/[0.05] text-slate-300 transition-all cursor-pointer shadow-2xl group z-20"
+                >
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5" className="group-hover:rotate-90 transition-transform duration-300"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                </motion.button>
 
                 <div className="space-y-8 mb-12">
                     <div className="grid grid-cols-2 gap-6">
@@ -1502,13 +1491,13 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
                 <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500/10 blur-[120px] -mr-48 -mt-48 rounded-full pointer-events-none" />
                 <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.03),transparent_70%)] pointer-events-none" />
 
-                <div className="p-5 sm:p-12 border-b border-white/5 relative z-20 bg-[#0b0b1a]/50 backdrop-blur-md">
-                    <div className="max-w-[calc(100%-3.5rem)] sm:max-w-[calc(100%-10rem)]">
-                        <h3 className="text-2xl sm:text-4xl font-black text-white italic tracking-tighter break-words capitalize">Operational Stream</h3>
+                <div className="p-6 sm:p-12 border-b border-white/5 relative z-20 bg-[#0b0b1a]/50 backdrop-blur-md">
+                    <div className="pr-14 sm:pr-40">
+                        <h3 className="text-xl sm:text-4xl font-black text-white italic tracking-tighter break-words capitalize leading-tight">Operational Stream</h3>
                         <p className="text-[10px] sm:text-[11px] font-black text-pink-500 tracking-[0.2em] uppercase italic mt-1 opacity-90 break-all">Tracing activity for {user?.username}</p>
                     </div>
 
-                    <div className="absolute top-8 right-8 sm:top-12 sm:right-12 flex items-center gap-6">
+                    <div className="absolute top-6 right-6 sm:top-12 sm:right-12 flex items-center gap-4 sm:gap-6">
                         <div className="hidden lg:flex px-5 py-2 bg-white/[0.03] border border-white/10 rounded-xl items-center gap-3 shadow-inner">
                             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
                             <span className="text-[10px] font-black text-white tracking-widest italic uppercase">{tasks.length} Operations</span>
@@ -1517,9 +1506,9 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
                             whileHover={{ scale: 1.1, backgroundColor: 'rgba(244, 63, 94, 0.1)', borderColor: 'rgba(244, 63, 94, 0.3)', color: 'rgba(244, 63, 94, 1)' }}
                             whileTap={{ scale: 0.95 }}
                             onClick={onClose}
-                            className="w-12 h-12 flex items-center justify-center bg-[#1a1921]/80 backdrop-blur-xl rounded-2xl border border-white/[0.05] text-slate-300 transition-all cursor-pointer shadow-2xl group"
+                            className="w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center bg-[#1a1921]/80 backdrop-blur-xl rounded-xl sm:rounded-2xl border border-white/[0.05] text-slate-300 transition-all cursor-pointer shadow-2xl group"
                         >
-                            <svg width="24" height="24" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5" className="group-hover:rotate-90 transition-transform duration-300"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3.5" className="sm:w-6 sm:h-6 group-hover:rotate-90 transition-transform duration-300"><path d="M18 6L6 18M6 6l12 12" /></svg>
                         </motion.button>
                     </div>
                 </div>
