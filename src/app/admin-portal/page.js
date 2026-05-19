@@ -17,6 +17,10 @@ const UndoIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /><path d="M3 3v5h5" /></svg>
 );
 
+const RefreshIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M23 4v6h-6" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+);
+
 // ─── UI Components (High Fidelity) ───────────────────────────────────────────
 
 function StatCard({ label, value, icon, colorClass, glowClass }) {
@@ -288,7 +292,7 @@ function ResonanceChart({ tasks }) {
 
                 {/* Mobile View: Stats arranged horizontally (Left - Center - Right) */}
                 <div className="lg:hidden absolute inset-x-0 bottom-8 flex items-end justify-center gap-2 px-2 pointer-events-none">
-                    
+
                     {/* Mobile: Inbound (Left) */}
                     <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-2 sm:p-3 rounded-[1rem] sm:rounded-[1.5rem] shadow-xl space-y-1">
                         <div className="text-[7px] font-black text-indigo-400 tracking-widest italic uppercase">Inbound</div>
@@ -427,6 +431,7 @@ export default function AdminPortal() {
     const [showMoreUsersLoading, setShowMoreUsersLoading] = useState(false);
     const [showMoreTasksLoading, setShowMoreTasksLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
     // Refs for stable retrieval in callbacks without re-triggering them
     const usersOffsetRef = useRef(0);
@@ -458,6 +463,14 @@ export default function AdminPortal() {
     // ── Auth helpers ─────────────────────────────────────────────────────────
     const handleLogin = async (e) => { e.preventDefault(); fetchData(secret); };
     const handleLock = () => { setIsAuthenticated(false); setSecret(""); resetState(); };
+
+    const handleRefresh = async () => {
+        if (refreshing) return;
+        setRefreshing(true);
+        await fetchData(secret, true, true); // silent refresh, force all
+        // Artificial delay for better UX feel
+        setTimeout(() => setRefreshing(false), 800);
+    };
 
     const resetState = () => {
         setStats(null);
@@ -526,7 +539,7 @@ export default function AdminPortal() {
     }, []);
 
     // ── Initial data fetch — fires all APIs ──────────────────────────────────
-    const fetchData = useCallback(async (adminSecret, silent = false) => {
+    const fetchData = useCallback(async (adminSecret, silent = false, forceAll = false) => {
         if (!silent) {
             setLoading(true);
             setUsersOffset(0);
@@ -544,23 +557,27 @@ export default function AdminPortal() {
             // Surgical Data Retrieval Strategy
             const promises = [];
 
-            if (activeTab === 'overview') {
+            if (activeTab === 'overview' || forceAll) {
                 // Dashboard needs bulk tasks for charts only on initial load or manual refresh
-                if (!silent) {
+                if (!silent || forceAll) {
                     promises.push(
                         fetch(`/api/admin/tasks?secret=${encodeURIComponent(adminSecret)}&limit=1000`)
                             .then(res => res.json())
                             .then(data => setChartTasks(data.tasks || []))
                             .catch(e => console.error(e))
                     );
-                    
-                    // Pre-fetch registry data on initial load
+
+                    // Pre-fetch registry data
                     promises.push(fetchUsers(adminSecret, 0, false));
                     promises.push(fetchTasks(adminSecret, 0, null, false));
                 }
-            } else if (activeTab === 'users') {
+            }
+
+            if (activeTab === 'users' || (forceAll && activeTab !== 'overview')) {
                 promises.push(fetchUsers(adminSecret, usersOffsetRef.current, false));
-            } else if (activeTab === 'tasks') {
+            }
+
+            if (activeTab === 'tasks' || (forceAll && activeTab !== 'overview')) {
                 promises.push(fetchTasks(adminSecret, tasksOffsetRef.current, null, false));
             }
 
@@ -933,6 +950,30 @@ export default function AdminPortal() {
                     </div>
                 </div>
                 <div className="flex items-center gap-3">
+                    <motion.button
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        onClick={handleRefresh}
+                        disabled={refreshing}
+                        className="relative h-12 w-12 flex items-center justify-center rounded-2xl border-2 border-indigo-500/20 bg-indigo-500/5 hover:border-indigo-500/60 hover:bg-indigo-500/10 shadow-[0_0_15px_rgba(99,102,241,0.1)] transition-all duration-500 group overflow-hidden backdrop-blur-xl"
+                        title="Refresh All Data"
+                    >
+                        <motion.div
+                            whileHover={{ rotate: 360 }}
+                            transition={{ duration: 0.8, ease: "easeInOut" }}
+                            className="relative z-10 text-indigo-400 group-hover:text-indigo-300"
+                        >
+                            {refreshing ? (
+                                <div className="h-5 w-5 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+                            ) : (
+                                <RefreshIcon />
+                            )}
+                        </motion.div>
+
+                        {/* Status Pulse Dot */}
+                        <div className="absolute bottom-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500/40 opacity-0 group-hover:opacity-100 shadow-[0_0_8px_#10b981] transition-all duration-500" />
+                    </motion.button>
+
                     <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={handleLock} className="h-12 w-12 flex items-center justify-center rounded-2xl bg-rose-600/10 border border-rose-500/20 hover:bg-rose-600/20 hover:border-rose-500/40 hover:shadow-[0_0_20px_rgba(225,29,72,0.2)] text-rose-500 transition-all group" title="Lock Console">
                         <svg className="w-5 h-5 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
                     </motion.button>
@@ -1218,9 +1259,9 @@ export default function AdminPortal() {
                                                 {dateTasks.map(task => (
                                                     <div key={task.id} className="group/task relative bg-white/5 backdrop-blur-3xl border-2 border-white/10 p-5 sm:p-10 rounded-[2rem] sm:rounded-[3.5rem] hover:bg-white/[0.08] hover:border-indigo-500/40 transition-all shadow-2xl overflow-hidden">
                                                         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-[40px] -mr-16 -mt-16 rounded-full group-hover/task:bg-indigo-500/10 transition-all" />
-                                                        
+
                                                         {/* Mobile Selection Box */}
-                                                        <div 
+                                                        <div
                                                             onClick={(e) => { e.stopPropagation(); toggleSelectId(task.id); }}
                                                             className={`lg:hidden absolute top-8 right-8 h-8 w-8 rounded-xl border-2 cursor-pointer transition-all flex items-center justify-center z-[20] ${selectedIds.has(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
                                                         >
@@ -1231,7 +1272,7 @@ export default function AdminPortal() {
                                                                 <div className="flex flex-col gap-3">
                                                                     <div className="flex items-center gap-3">
                                                                         {/* Desktop Select Box */}
-                                                                        <div 
+                                                                        <div
                                                                             onClick={(e) => { e.stopPropagation(); toggleSelectId(task.id); }}
                                                                             className={`hidden lg:flex h-6 w-6 rounded-lg border-2 cursor-pointer transition-all items-center justify-center ${selectedIds.has(task.id) ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(99,102,241,0.4)]' : 'border-white/20 bg-white/5 hover:border-indigo-500/50'}`}
                                                                         >
@@ -1499,7 +1540,7 @@ function UserActivityModal({ user, tasks, hasMore, canHide, onShowMore, onHide, 
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 backdrop-blur-xl bg-black/60"
             onClick={onClose}
         >
-                <motion.div
+            <motion.div
                 initial={{ scale: 0.9, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 className="bg-[#0b0b1a] border-2 border-white/[0.12] rounded-[3.5rem] max-w-4xl w-full h-[85vh] sm:h-[90vh] shadow-[0_40px_100px_rgba(0,0,0,0.8)] relative flex flex-col overflow-hidden"

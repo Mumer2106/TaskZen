@@ -217,13 +217,13 @@ export async function getTasksForUser(userId, search = '') {
                     SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
                     FROM tasks 
                     WHERE userid = ${userId} AND (LOWER(title) LIKE ${searchTerm} OR LOWER(description) LIKE ${searchTerm})
-                    ORDER BY id DESC
+                    ORDER BY createdat DESC, id DESC
                 `;
                 rows = result.rows;
             } else {
                 const result = await sql`
                     SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
-                    FROM tasks WHERE userid = ${userId} ORDER BY id DESC
+                    FROM tasks WHERE userid = ${userId} ORDER BY createdat DESC, id DESC
                 `;
                 rows = result.rows;
             }
@@ -247,7 +247,11 @@ export async function getTasksForUser(userId, search = '') {
                 (t.description && t.description.toLowerCase().includes(query))
             );
         }
-        return tasks;
+        return tasks.sort((a, b) => {
+            const dateA = a.createdAt || a.createdat || '';
+            const dateB = b.createdAt || b.createdat || '';
+            return dateB.localeCompare(dateA) || b.id.localeCompare(a.id);
+        });
     }
 }
 
@@ -406,7 +410,7 @@ export async function getAllTasks() {
                        users.username as owner 
                 FROM tasks 
                 JOIN users ON tasks.userid = users.id 
-                ORDER BY tasks.id DESC
+                ORDER BY tasks.createdat DESC, tasks.id DESC
             `;
             return rows.map(r => ({
                 ...r,
@@ -427,7 +431,11 @@ export async function getAllTasks() {
             const username = db.users[userId]?.username || 'Unknown';
             allTasks.push(...userTasks.map(t => ({ ...t, owner: username, userId })));
         }
-        return allTasks.sort((a, b) => b.id.localeCompare(a.id));
+        return allTasks.sort((a, b) => {
+            const dateA = a.createdAt || a.createdat || '';
+            const dateB = b.createdAt || b.createdat || '';
+            return dateB.localeCompare(dateA) || (b.id || '').localeCompare(a.id || '');
+        });
     }
 }
 
