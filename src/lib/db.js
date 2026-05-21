@@ -36,17 +36,23 @@ async function writeJsonDb(data) {
 function normalizeUser(user) {
     if (!user) return null;
     const { password, ...safe } = user;
+    
+    // Postgres often returns lowercase column names, while JSON/Local uses camelCase.
+    // We map both to a consistent standard.
+    const id = user.id || user.userid || user.userId || '';
+    const lastActive = user.lastactive || user.lastActive || null;
+    
     return {
         ...safe,
-        id: user.id || user.userId || '',
-        userId: user.id || user.userId || '',
+        id: id,
+        userId: id,
         username: user.username || '',
         firstName: user.firstName || user.firstname || '',
         lastName: user.lastName || user.lastname || '',
         profilePic: user.profilePic || user.profilepic || null,
         role: user.role || 'user',
         isBanned: !!user.isbanned || !!user.isBanned || !!user.banned,
-        lastActive: user.lastActive || user.lastactive || null,
+        lastActive: lastActive,
         displayName: (user.firstName || user.firstname || user.username || '').split('@')[0],
     };
 }
@@ -341,7 +347,12 @@ export async function deleteTasks(userId, taskIds) {
 export async function getAllUsers() {
     if (isPostgresConfigured) {
         try {
-            const { rows } = await sql`SELECT * FROM users ORDER BY id DESC`;
+            // Explicitly select columns to ensure mapping is correct
+            const { rows } = await sql`
+                SELECT id, username, firstname, lastname, profilepic, role, lastactive, isbanned as "isBanned"
+                FROM users 
+                ORDER BY id DESC
+            `;
             // Use centralized normalization to ensure all fields like lastActive 
             // are mapped correctly regardless of their case in the DB.
             return rows.map(r => normalizeUser({
@@ -359,14 +370,19 @@ export async function getAllUsers() {
 }
 
 export async function touchUserActivity(userId) {
+    if (!userId) return;
     const now = new Date().toISOString();
+    
     if (isPostgresConfigured) {
         try {
-            // Using ISO string instead of NOW() for consistency with JSON DB 
-            // and because 'lastactive' column is TEXT.
-            await sql`UPDATE users SET lastactive = ${now} WHERE id = ${userId}`;
+            // Use TRIM and LOWER to ensure a match regardless of subtle DB formatting differences
+            await sql`
+                UPDATE users 
+                SET lastactive = ${now} 
+                WHERE TRIM(LOWER(id)) = TRIM(LOWER(${userId}::text))
+            `;
         } catch (e) { 
-            console.error("[Database] Failed to touch user activity:", e.message);
+            console.error(`[Database] touchUserActivity failed for ${userId}:`, e.message);
         }
     } else {
         const db = await readJsonDb();
