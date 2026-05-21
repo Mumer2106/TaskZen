@@ -220,7 +220,7 @@ export async function getTasksForUser(userId, search = '') {
             if (search) {
                 const searchTerm = `%${search.toLowerCase()}%`;
                 const result = await sql`
-                    SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
+                    SELECT id, userid, title, description, status, createdat, taskdate 
                     FROM tasks 
                     WHERE userid = ${userId} AND (LOWER(title) LIKE ${searchTerm} OR LOWER(description) LIKE ${searchTerm})
                     ORDER BY createdat DESC, id DESC
@@ -228,16 +228,17 @@ export async function getTasksForUser(userId, search = '') {
                 rows = result.rows;
             } else {
                 const result = await sql`
-                    SELECT id, userid as "userId", title, description, status, createdat as "createdAt", taskdate as "taskDate" 
+                    SELECT id, userid, title, description, status, createdat, taskdate 
                     FROM tasks WHERE userid = ${userId} ORDER BY createdat DESC, id DESC
                 `;
                 rows = result.rows;
             }
             return rows.map(r => ({
                 ...r,
-                taskDate: r.taskDate || r.taskdate || 'Unscheduled',
-                createdAt: r.createdAt || r.createdat,
-                userId: r.userId || r.userid,
+                id: r.id || '',
+                taskDate: r.taskdate || r.taskDate || 'Unscheduled',
+                createdAt: r.createdat || r.createdAt,
+                userId: r.userid || r.userId,
             }));
         } catch (error) {
             console.error("Postgres getTasksForUser error:", error.message);
@@ -347,12 +348,7 @@ export async function deleteTasks(userId, taskIds) {
 export async function getAllUsers() {
     if (isPostgresConfigured) {
         try {
-            // Explicitly select columns to ensure mapping is correct
-            const { rows } = await sql`
-                SELECT id, username, firstname, lastname, profilepic, role, lastactive, isbanned as "isBanned"
-                FROM users 
-                ORDER BY id DESC
-            `;
+            const { rows } = await sql`SELECT * FROM users ORDER BY id DESC`;
             // Use centralized normalization to ensure all fields like lastActive 
             // are mapped correctly regardless of their case in the DB.
             return rows.map(r => normalizeUser({
@@ -413,8 +409,8 @@ export async function getAllTasks() {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`
-                SELECT tasks.id, tasks.userid as "userId", tasks.title, tasks.description,
-                       tasks.status, tasks.createdat as "createdAt", tasks.taskdate as "taskDate",
+                SELECT tasks.id, tasks.userid, tasks.title, tasks.description,
+                       tasks.status, tasks.createdat, tasks.taskdate,
                        users.username as owner 
                 FROM tasks 
                 JOIN users ON tasks.userid = users.id 
@@ -422,9 +418,11 @@ export async function getAllTasks() {
             `;
             return rows.map(r => ({
                 ...r,
-                taskDate: r.taskDate || r.taskdate || 'Unscheduled',
-                createdAt: r.createdAt || r.createdat,
-                userId: r.userId || r.userid,
+                id: r.id || '',
+                taskDate: r.taskdate || r.taskDate || 'Unscheduled',
+                createdAt: r.createdat || r.createdAt,
+                userId: r.userid || r.userId,
+                owner: r.owner || 'Unknown'
             }));
         } catch (error) {
             console.error("Postgres getAllTasks error:", error.message);
