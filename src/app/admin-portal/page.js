@@ -713,13 +713,16 @@ export default function AdminPortal() {
     // Cross-tab sync removed — data is fetched on-demand only.
 
 
-    // ── Online Status Check (Stable 30s Polling) ─────────────────────────────
+    // ── Online Status Check (Optimized Polling) ─────────────────────────────
     // Balanced setting: updates automatically every 30s for a "live" feel
     // without the network noise of high-frequency polling.
     useEffect(() => {
-        if (!isAuthenticated || !secret) return;
+        if (!isAuthenticated || !secret || activeTab !== 'overview') return;
 
         const checkOnlineStatus = async () => {
+            // Only poll if tab is active and visible
+            if (document.visibilityState !== 'visible') return;
+            
             try {
                 const res = await fetch(`/api/admin/online?secret=${encodeURIComponent(secret)}`);
                 if (res.ok) {
@@ -730,7 +733,7 @@ export default function AdminPortal() {
         };
 
         checkOnlineStatus();
-        const interval = setInterval(checkOnlineStatus, 3000); // Ultra-fast 3s for immediate updates
+        const interval = setInterval(checkOnlineStatus, 30000); // 30s for optimal load balance
         return () => clearInterval(interval);
     }, [isAuthenticated, secret, activeTab]);
 
@@ -968,6 +971,7 @@ export default function AdminPortal() {
                             ) : (
                                 <RefreshIcon />
                             )}
+                            
                         </motion.div>
 
                         {/* Status Pulse Dot */}

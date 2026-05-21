@@ -48,7 +48,7 @@ export async function GET(request) {
 
         // Extract users for the dashboard (prioritize those with activity)
         const now = Date.now();
-        const THRESHOLD = 10 * 1000; // 10s for 3s heartbeat
+        const THRESHOLD = 120 * 1000; // 2 min threshold for 30s heartbeat (avoids flickering)
         const recentActiveUsers = [...allUsers]
             .sort((a, b) => {
                 const dateA = a.lastActive ? new Date(a.lastActive).getTime() : 0;

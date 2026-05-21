@@ -84,13 +84,14 @@ export default function Dashboard() {
   }, []); // Only run once on mount
 
   // ── Heartbeat: keep user marked as "online" in the system ──────────────────
-  // Ultra-fast 3s heartbeat for "immediate" sync with admin portal.
+  // Balanced 30s heartbeat. Removed visibility check to ensure user remains 
+  // marked as "active" even if tab is in background.
   useEffect(() => {
     const sendHeartbeat = () => {
       fetch('/api/user/heartbeat', { method: 'POST' }).catch(() => {});
     };
     sendHeartbeat(); // fire immediately on mount
-    const interval = setInterval(sendHeartbeat, 3000); 
+    const interval = setInterval(sendHeartbeat, 30000); 
     return () => clearInterval(interval);
   }, []);
 

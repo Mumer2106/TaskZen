@@ -342,14 +342,11 @@ export async function getAllUsers() {
     if (isPostgresConfigured) {
         try {
             const { rows } = await sql`SELECT * FROM users ORDER BY id DESC`;
-            return rows.map(r => ({
+            // Use centralized normalization to ensure all fields like lastActive 
+            // are mapped correctly regardless of their case in the DB.
+            return rows.map(r => normalizeUser({
                 ...r,
-                firstName: r.firstName || r.firstname || '',
-                lastName: r.lastName || r.lastname || '',
-                profilePic: r.profilePic || r.profilepic || null,
-                role: r.role || 'user',
-                isBanned: !!r.isbanned || !!r.banned,
-                lastActive: r.lastActive || r.lastactive || null,
+                userId: r.id
             }));
         } catch (error) {
             console.error("Postgres getAllUsers error:", error.message);
@@ -357,26 +354,21 @@ export async function getAllUsers() {
         }
     } else {
         const db = await readJsonDb();
-        return Object.values(db.users).map(u => ({
-            id: u.id,
-            username: u.username,
-            firstName: u.firstName,
-            lastName: u.lastName,
-            profilePic: u.profilePic,
-            role: u.role || 'user',
-            isBanned: !!u.banned,
-            lastActive: u.lastActive || null,
-        }));
+        return Object.values(db.users).map(u => normalizeUser(u));
     }
 }
 
 export async function touchUserActivity(userId) {
+    const now = new Date().toISOString();
     if (isPostgresConfigured) {
         try {
-            await sql`UPDATE users SET lastactive = NOW() WHERE id = ${userId}`;
-        } catch (e) { /* ignore table not setup yet */ }
+            // Using ISO string instead of NOW() for consistency with JSON DB 
+            // and because 'lastactive' column is TEXT.
+            await sql`UPDATE users SET lastactive = ${now} WHERE id = ${userId}`;
+        } catch (e) { 
+            console.error("[Database] Failed to touch user activity:", e.message);
+        }
     } else {
-        const now = new Date().toISOString();
         const db = await readJsonDb();
         if (db.users[userId]) {
             db.users[userId].lastActive = now;

@@ -24,7 +24,7 @@ export async function GET(request) {
     try {
         const allUsers = await getAllUsers();
         const now = Date.now();
-        const THRESHOLD = 10 * 1000; // 10s for 3s heartbeat
+        const THRESHOLD = 120 * 1000; // 2 min threshold for 30s heartbeat (avoids flickering)
 
         const users = [...allUsers]
             .sort((a, b) => {
