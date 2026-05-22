@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server';
 import { getAllUsers } from '@/lib/db';
 
+export const dynamic = 'force-dynamic';
 const ADMIN_SECRET = 'KC@210639';
 
 export async function GET(request) {
@@ -24,7 +25,7 @@ export async function GET(request) {
     try {
         const allUsers = await getAllUsers();
         const now = Date.now();
-        const THRESHOLD = 120 * 1000; // 2 min threshold for 30s heartbeat (avoids flickering)
+        const THRESHOLD = 180 * 1000; // 3 min threshold for 30s heartbeat (avoids flickering)
 
         const users = [...allUsers]
             .sort((a, b) => {

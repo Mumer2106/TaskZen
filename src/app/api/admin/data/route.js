@@ -16,6 +16,8 @@ import { NextResponse } from 'next/server';
 import { getAllUsers, getAllTasks, deleteUser, deleteTaskAdmin, updateTaskAdmin, findUserById } from '@/lib/db';
 import { cookies } from 'next/headers';
 
+export const dynamic = 'force-dynamic';
+
 // ── Admin auth guard ──────────────────────────────────────────────────────────
 async function requireAdmin(request) {
     const { searchParams } = new URL(request.url);
@@ -48,7 +50,7 @@ export async function GET(request) {
 
         // Extract users for the dashboard (prioritize those with activity)
         const now = Date.now();
-        const THRESHOLD = 120 * 1000; // 2 min threshold for 30s heartbeat (avoids flickering)
+        const THRESHOLD = 180 * 1000; // 3 min threshold for 30s heartbeat (avoids flickering)
         const recentActiveUsers = [...allUsers]
             .sort((a, b) => {
                 const dateA = a.lastActive ? new Date(a.lastActive).getTime() : 0;

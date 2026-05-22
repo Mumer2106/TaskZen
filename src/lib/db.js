@@ -40,7 +40,9 @@ function normalizeUser(user) {
     // Postgres often returns lowercase column names, while JSON/Local uses camelCase.
     // We map both to a consistent standard.
     const id = user.id || user.userid || user.userId || '';
-    const lastActive = user.lastactive || user.lastActive || null;
+    
+    // Ensure lastActive is extracted reliably regardless of source casing
+    const lastActiveValue = user.lastactive || user.lastActive || user.last_active || user.LastActive || null;
     
     return {
         ...safe,
@@ -52,7 +54,8 @@ function normalizeUser(user) {
         profilePic: user.profilePic || user.profilepic || null,
         role: user.role || 'user',
         isBanned: !!user.isbanned || !!user.isBanned || !!user.banned,
-        lastActive: lastActive,
+        lastActive: lastActiveValue,
+        lastactive: lastActiveValue, // Consistency
         displayName: (user.firstName || user.firstname || user.username || '').split('@')[0],
     };
 }
@@ -371,11 +374,12 @@ export async function touchUserActivity(userId) {
     
     if (isPostgresConfigured) {
         try {
-            // Use TRIM and LOWER to ensure a match regardless of subtle DB formatting differences
+            // Precise update using standard id match
+            // We also cast to TEXT to avoid any type mismatch on Vercel Postgres
             await sql`
                 UPDATE users 
                 SET lastactive = ${now} 
-                WHERE TRIM(LOWER(id)) = TRIM(LOWER(${userId}::text))
+                WHERE id = ${userId} OR TRIM(LOWER(id)) = TRIM(LOWER(${userId}::text))
             `;
         } catch (e) { 
             console.error(`[Database] touchUserActivity failed for ${userId}:`, e.message);
