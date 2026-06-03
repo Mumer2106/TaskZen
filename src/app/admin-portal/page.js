@@ -89,14 +89,32 @@ function DonutChart({ pending, completed }) {
 
 function BarChart({ tasks }) {
     const data = useMemo(() => {
+        // Build a map of date -> count from tasks
         const groups = tasks.reduce((acc, task) => {
-            const date = task.taskDate || task.taskdate || "Unknown";
+            const raw = task.taskDate || task.taskdate;
+            if (!raw || raw === "Unknown") return acc;
+            const date = raw.split('T')[0]; // Normalize to YYYY-MM-DD
             acc[date] = (acc[date] || 0) + 1;
             return acc;
         }, {});
-        return Object.entries(groups)
-            .sort(([a], [b]) => new Date(a) - new Date(b))
-            .slice(-5);
+
+        // Determine date range: from earliest task date to today
+        const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
+        const allDates = Object.keys(groups).sort();
+        const startDate = allDates.length > 0 ? allDates[0] : today;
+
+        // Generate every day from startDate to today
+        const fullRange = [];
+        const cursor = new Date(startDate);
+        const end = new Date(today);
+        while (cursor <= end) {
+            const dateStr = cursor.toLocaleDateString('en-CA');
+            fullRange.push([dateStr, groups[dateStr] || 0]);
+            cursor.setDate(cursor.getDate() + 1);
+        }
+
+        // Show last 7 days (1 week) so the chart stays clean
+        return fullRange.slice(-7);
     }, [tasks]);
 
     const max = Math.max(...data.map(([, v]) => v), 1);
@@ -115,28 +133,42 @@ function BarChart({ tasks }) {
                     </div>
 
                     {/* Bars + Labels Pair */}
-                    {data.map(([date, value], i) => (
-                        <div key={date} className="flex-1 flex flex-col items-center justify-end h-full relative z-10 group/bar px-1 sm:px-2">
-                            <div className="relative w-full flex-1 flex items-end justify-center mb-6">
-                                <motion.div
-                                    initial={{ height: 0 }}
-                                    animate={{ height: `${(value / max) * 100}%` }}
-                                    transition={{ duration: 1, delay: i * 0.1, ease: "circOut" }}
-                                    className="w-full max-w-[32px] sm:max-w-[42px] bg-gradient-to-t from-indigo-600 via-purple-500 to-pink-500 rounded-t-2xl relative group-hover/bar:brightness-125 transition-all shadow-[0_0_30px_rgba(255,45,149,0.2)]"
-                                >
-                                    <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-[10px] sm:text-[11px] font-black text-white bg-pink-600 px-2 py-1.5 sm:px-3 rounded-xl shadow-[0_10px_25px_rgba(255,45,149,0.5)] opacity-100 group-hover/bar:scale-110 transition-all whitespace-nowrap border border-white/20 z-20">
-                                        <span className="opacity-60 mr-1 text-[8px] sm:text-[9px]">T:</span>{value}
+                    {data.map(([date, value], i) => {
+                        const isEmpty = value === 0;
+                        return (
+                            <div key={date} className="flex-1 flex flex-col items-center justify-end h-full relative z-10 group/bar px-0.5 sm:px-1">
+                                <div className="relative w-full flex-1 flex items-end justify-center mb-6">
+                                    {isEmpty ? (
+                                        /* Empty day — faded dim bar with 0 label */
+                                        <div className="w-full flex items-end justify-center h-full">
+                                            <div className="w-full max-w-[24px] sm:max-w-[36px] h-[18%] bg-gradient-to-t from-white/[0.06] to-white/[0.12] rounded-t-xl border border-white/[0.08] backdrop-blur-sm relative">
+                                                <div className="absolute -top-9 left-1/2 -translate-x-1/2 text-[9px] sm:text-[10px] font-black text-slate-500 bg-white/[0.05] px-1.5 py-1 sm:px-2 rounded-lg border border-white/[0.07] whitespace-nowrap">
+                                                    <span className="opacity-60 mr-0.5 text-[7px] sm:text-[8px]">T:</span>0
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <motion.div
+                                            initial={{ height: 0 }}
+                                            animate={{ height: `${(value / max) * 100}%` }}
+                                            transition={{ duration: 1, delay: i * 0.07, ease: "circOut" }}
+                                            className="w-full max-w-[24px] sm:max-w-[36px] bg-gradient-to-t from-indigo-600 via-purple-500 to-pink-500 rounded-t-2xl relative group-hover/bar:brightness-125 transition-all shadow-[0_0_30px_rgba(255,45,149,0.2)]"
+                                        >
+                                            <div className="absolute -top-12 left-1/2 -translate-x-1/2 text-[9px] sm:text-[11px] font-black text-white bg-pink-600 px-1.5 py-1 sm:px-3 sm:py-1.5 rounded-xl shadow-[0_10px_25px_rgba(255,45,149,0.5)] opacity-100 group-hover/bar:scale-110 transition-all whitespace-nowrap border border-white/20 z-20">
+                                                <span className="opacity-60 mr-0.5 text-[7px] sm:text-[9px]">T:</span>{value}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
+                                {/* Date label */}
+                                <div className="h-10 flex items-center justify-center">
+                                    <div className={`inline-block text-[7px] sm:text-[9px] font-black tracking-widest px-1 py-1 sm:px-2 rounded-lg border shadow-inner ${isEmpty ? 'text-slate-600 bg-white/[0.02] border-white/[0.03]' : 'text-slate-400 bg-white/5 border-white/5'}`}>
+                                        {date.split('-').slice(1).join('/')}
                                     </div>
-                                </motion.div>
-                            </div>
-                            {/* Perfect Alignment for Date */}
-                            <div className="h-10 flex items-center justify-center">
-                                <div className="inline-block text-[9px] sm:text-[11px] font-black text-slate-400 tracking-widest bg-white/5 px-2 py-1.5 sm:px-3 rounded-xl border border-white/5 shadow-inner">
-                                    {date.split('-').slice(1).join('/')}
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             </div>
         </div>
@@ -149,7 +181,7 @@ function ResonanceChart({ tasks }) {
         const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD
         const dayCounts = tasks.reduce((acc, task) => {
             const date = task.taskDate || task.taskdate;
-            if (!date) return acc;
+            if (!date || date === "Unknown") return acc;
             const dateStr = date.split('T')[0]; // Ensure only YYYY-MM-DD
             if (!acc[dateStr]) acc[dateStr] = { created: 0, completed: 0 };
             acc[dateStr].created++;
@@ -157,15 +189,21 @@ function ResonanceChart({ tasks }) {
             return acc;
         }, {});
 
-        // Ensure today is in the counts
-        if (!dayCounts[today]) {
-            dayCounts[today] = { created: 0, completed: 0 };
+        // Generate exactly the last 7 days including today
+        const fullRange = [];
+        const cursor = new Date();
+        cursor.setDate(cursor.getDate() - 6); // Start from 6 days ago
+
+        for (let i = 0; i < 7; i++) {
+            const dateStr = cursor.toLocaleDateString('en-CA');
+            fullRange.push({
+                date: dateStr,
+                ...(dayCounts[dateStr] || { created: 0, completed: 0 })
+            });
+            cursor.setDate(cursor.getDate() + 1);
         }
 
-        return Object.entries(dayCounts)
-            .sort(([a], [b]) => new Date(a) - new Date(b))
-            .slice(-10)
-            .map(([date, counts]) => ({ date, ...counts }));
+        return fullRange;
     }, [tasks]);
 
     const isTodayEmpty = useMemo(() => {
@@ -257,33 +295,32 @@ function ResonanceChart({ tasks }) {
                     </defs>
 
                     {/* Background Filled Areas with horizontal oscillation */}
-                    {!isTodayEmpty && (
-                        <motion.g animate={{ x: [-1, 1, -1] }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}>
-                            <motion.path d={getPath('created', -5, true)} fill="url(#area-grad-1)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }} />
-                            <motion.path d={getPath('completed', 15, true)} fill="url(#area-grad-2)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2, delay: 0.5 }} />
+                    <motion.g animate={{ x: [-1, 1, -1] }} transition={{ duration: 10, repeat: Infinity, ease: "linear" }}>
+                        <motion.path d={getPath('created', -5, true)} fill="url(#area-grad-1)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2 }} />
+                        <motion.path d={getPath('completed', 15, true)} fill="url(#area-grad-2)" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 2, delay: 0.5 }} />
 
-                            {/* The Main Waves with continuous movement */}
-                            <motion.path
-                                d={getPath('created', -5)}
-                                fill="none" stroke="#6366f1" strokeWidth="1.5" filter="url(#glow)"
-                                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                                transition={{ duration: 3, ease: "easeInOut" }}
-                            />
-                            <motion.path
-                                d={getPath('completed', 15)}
-                                fill="none" stroke="#ec4899" strokeWidth="1.5" filter="url(#glow)"
-                                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                                transition={{ duration: 3, delay: 0.5, ease: "easeInOut" }}
-                            />
+                        {/* The Main Waves with continuous movement */}
+                        <motion.path
+                            d={getPath('created', -5)}
+                            fill="none" stroke="#6366f1" strokeWidth="1.5" filter="url(#glow)"
+                            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                            transition={{ duration: 3, ease: "easeInOut" }}
+                        />
+                        <motion.path
+                            d={getPath('completed', 15)}
+                            fill="none" stroke="#ec4899" strokeWidth="1.5" filter="url(#glow)"
+                            initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                            transition={{ duration: 3, delay: 0.5, ease: "easeInOut" }}
+                        />
 
-                            {/* Shimmer Overlays */}
-                            <path d={getPath('created', -5)} fill="none" stroke="url(#flow-shimmer)" strokeWidth="2" />
-                            <path d={getPath('completed', 15)} fill="none" stroke="url(#flow-shimmer)" strokeWidth="2" />
-                        </motion.g>
-                    )}
+                        {/* Shimmer Overlays */}
+                        <path d={getPath('created', -5)} fill="none" stroke="url(#flow-shimmer)" strokeWidth="2" />
+                        <path d={getPath('completed', 15)} fill="none" stroke="url(#flow-shimmer)" strokeWidth="2" />
+                    </motion.g>
+
 
                     {/* Animated Particles along paths */}
-                    {!isTodayEmpty && [0, 25, 50, 75].map(offset => (
+                    {[0, 25, 50, 75].map(offset => (
                         <motion.circle key={offset} r="0.6" fill="#fff" className="shadow-[0_0_8px_white]">
                             <animateMotion dur="5s" repeatCount="indefinite" path={getPath('created', -5)} keyPoints={`${offset / 100};${(offset / 100 + 1) % 1}`} keyTimes="0;1" />
                         </motion.circle>
@@ -295,7 +332,7 @@ function ResonanceChart({ tasks }) {
 
                     {/* Mobile: Inbound (Left) */}
                     <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-2 sm:p-3 rounded-[1rem] sm:rounded-[1.5rem] shadow-xl space-y-1">
-                        <div className="text-[7px] font-black text-indigo-400 tracking-widest italic uppercase">Inbound</div>
+                        <div className="text-[7px] font-black text-indigo-400 tracking-widest italic text-center">Inbound</div>
                         <div className="flex items-baseline gap-1">
                             <span className="text-xl font-black text-white italic tracking-tighter">{data[data.length - 1].created}</span>
                         </div>
@@ -305,7 +342,7 @@ function ResonanceChart({ tasks }) {
                     <div className="relative group mx-2">
                         <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-full blur-2xl opacity-20 animate-pulse" />
                         <div className="relative bg-[#08081a]/80 backdrop-blur-3xl border-2 border-white/10 w-24 h-24 rounded-full flex flex-col items-center justify-center shadow-[0_0_30px_rgba(255,45,149,0.15)] gap-0.5">
-                            <div className="text-[7px] font-black text-slate-500 tracking-widest mb-1 text-center px-1 uppercase">Sync</div>
+                            <div className="text-[7px] font-black text-slate-500 tracking-widest mb-1 text-center px-1">Sync Index</div>
                             <div className="text-xl font-black text-white italic tracking-tighter flex items-center gap-0.5">
                                 {Math.round((data[data.length - 1].completed / data[data.length - 1].created) * 100 || 0)}
                                 <span className="text-[10px] opacity-40 ml-0.5 font-bold">%</span>
@@ -316,7 +353,7 @@ function ResonanceChart({ tasks }) {
 
                     {/* Mobile: Outbound (Right) */}
                     <div className="bg-white/5 backdrop-blur-2xl border border-white/10 p-2 sm:p-3 rounded-[1rem] sm:rounded-[1.5rem] shadow-xl space-y-1 text-right">
-                        <div className="text-[7px] font-black text-pink-400 tracking-widest italic uppercase">Outbound</div>
+                        <div className="text-[7px] font-black text-pink-400 tracking-widest italic text-center">Outbound</div>
                         <div className="flex items-baseline justify-end gap-1">
                             <span className="text-xl font-black text-white italic tracking-tighter">{data[data.length - 1].completed}</span>
                         </div>
@@ -326,17 +363,17 @@ function ResonanceChart({ tasks }) {
                 {/* Desktop View: Restore Original Bottom Layout */}
                 <div className="hidden lg:flex absolute inset-x-0 bottom-0 justify-between items-end pb-12 px-12 pointer-events-none">
                     <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-6 rounded-[2.5rem] shadow-2xl space-y-3">
-                        <div className="text-[10px] font-black text-indigo-400 tracking-widest italic mb-1">Inbound Stream</div>
+                        <div className="text-[10px] font-black text-indigo-400 tracking-widest italic mb-1 text-center">Total Tasks</div>
                         <div className="flex items-baseline gap-3">
                             <span className="text-5xl font-black text-white italic tracking-tighter drop-shadow-2xl">{data[data.length - 1].created}</span>
-                            <span className="text-[10px] font-bold text-slate-500 tracking-widest">Units</span>
+                            <span className="text-[10px] font-bold text-slate-500 tracking-widest">Tasks</span>
                         </div>
                     </div>
 
                     <div className="relative group -mb-4">
                         <div className="absolute -inset-4 bg-gradient-to-br from-indigo-500 to-pink-500 rounded-full blur-3xl opacity-20 animate-pulse" />
                         <div className="relative bg-[#08081a]/80 backdrop-blur-3xl border-2 border-white/10 w-44 h-44 rounded-full flex flex-col items-center justify-center shadow-[0_0_50px_rgba(255,45,149,0.1)] gap-1">
-                            <div className="text-[10px] font-black text-slate-500 tracking-widest mb-2 uppercase">Sync Index</div>
+                            <div className="text-[10px] font-black text-slate-500 tracking-widest mb-2 text-center">Sync Index</div>
                             <div className="text-4xl font-black text-white italic tracking-tighter flex items-center gap-1">
                                 {Math.round((data[data.length - 1].completed / data[data.length - 1].created) * 100 || 0)}
                                 <span className="text-xl opacity-40 ml-1">%</span>
@@ -346,7 +383,7 @@ function ResonanceChart({ tasks }) {
                     </div>
 
                     <div className="bg-white/5 backdrop-blur-3xl border border-white/10 p-6 rounded-[2.5rem] shadow-2xl space-y-3 text-right">
-                        <div className="text-[10px] font-black text-pink-400 tracking-widest italic mb-1 uppercase">Outbound Flow</div>
+                        <div className="text-[10px] font-black text-pink-400 tracking-widest italic mb-1 text-center">Completed Tasks</div>
                         <div className="flex items-baseline justify-end gap-3">
                             <span className="text-5xl font-black text-white italic tracking-tighter drop-shadow-2xl">{data[data.length - 1].completed}</span>
                             <span className="text-[10px] font-bold text-slate-500 tracking-widest">Done</span>
@@ -722,7 +759,7 @@ export default function AdminPortal() {
         const checkOnlineStatus = async () => {
             // Only poll if tab is active and visible
             if (document.visibilityState !== 'visible') return;
-            
+
             try {
                 const res = await fetch(`/api/admin/online?secret=${encodeURIComponent(secret)}`);
                 if (res.ok) {
@@ -971,7 +1008,7 @@ export default function AdminPortal() {
                             ) : (
                                 <RefreshIcon />
                             )}
-                            
+
                         </motion.div>
 
                         {/* Status Pulse Dot */}
@@ -998,7 +1035,7 @@ export default function AdminPortal() {
                         <button
                             key={tab}
                             onClick={() => setActiveTab(tab)}
-                            className={`flex-1 py-3 sm:py-4 text-[10px] sm:text-[13px] font-black tracking-widest relative z-10 transition-colors duration-500 ${activeTab === tab ? "text-white" : "text-slate-500 hover:text-slate-300"}`}
+                            className={`flex-1 py-3 sm:py-4 text-[10px] sm:text-[13px] font-black tracking-widest relative z-10 transition-colors duration-500 ${activeTab === tab ? "text-white" : "text-slate-400 hover:text-slate-200"}`}
                         >
                             {tab === "overview" ? "Dashboard" : tab === "users" ? "Users" : "Tasks"}
                         </button>
@@ -1038,7 +1075,7 @@ export default function AdminPortal() {
                                 </div>
                                 <div className="lg:col-span-4 bg-[#050510]/85 backdrop-blur-3xl border-2 border-white/[0.18] p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] flex flex-col items-center justify-center h-auto lg:h-[600px] shadow-[0_0_80px_rgba(16,185,129,0.12)] relative overflow-hidden min-h-[500px]">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/15 blur-[60px] -mr-16 -mt-16 rounded-full" />
-                                    <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-lime-400 via-emerald-500 to-teal-500 italic tracking-tight mb-8 text-center w-full border-b border-white/5 pb-4 uppercase text-xs">System Efficiency</h3>
+                                    <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-lime-400 via-emerald-500 to-teal-500 italic tracking-tight w-full border-b border-white/5 pb-4 mb-8">System Efficiency</h3>
                                     <DonutChart pending={stats?.pendingTasks || 0} completed={stats?.completedTasks || 0} />
                                     <div className="mt-8 sm:mt-10 grid grid-cols-2 gap-3 sm:gap-4 w-full">
                                         <div className="text-center p-4 sm:p-5 bg-white/5 backdrop-blur-xl rounded-[1.5rem] sm:rounded-3xl border border-white/10 shadow-inner group/stat hover:border-indigo-500/30 transition-all">
@@ -1057,10 +1094,7 @@ export default function AdminPortal() {
                                 <div className="bg-[#050510]/85 backdrop-blur-3xl border-2 border-white/[0.18] p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] group h-auto lg:h-[600px] flex flex-col shadow-[0_0_80px_rgba(59,130,246,0.12)] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/15 blur-[60px] -mr-16 -mt-16 rounded-full" />
                                     <div className="flex items-center justify-between mb-10 border-b border-white/5 pb-6 gap-6 overflow-hidden">
-                                        <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 italic tracking-tight flex items-center gap-3 shrink-0">
-                                            <div className="h-2.5 w-2.5 rounded-full bg-blue-500 shadow-[0_0_15px_rgba(59,130,246,0.5)] animate-pulse" />
-                                            Operational Resonance
-                                        </h3>
+                                        <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 italic tracking-tight shrink-0">Operational Resonance</h3>
                                         <div className="flex items-center gap-3 opacity-90 shrink-0">
                                             <div className="hidden sm:block text-[9px] font-black text-slate-500 tracking-widest italic">System Epoch</div>
                                             <div className="text-[11px] font-black text-white italic tracking-tighter border-b border-pink-500/30 pb-0.5">{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
@@ -1072,7 +1106,7 @@ export default function AdminPortal() {
                                 </div>
                                 <div className="bg-[#050510]/85 backdrop-blur-3xl border-2 border-white/[0.18] p-6 sm:p-10 rounded-[2.5rem] sm:rounded-[4rem] group flex flex-col h-auto lg:h-[600px] shadow-[0_0_80px_rgba(251,191,36,0.12)] relative overflow-hidden min-h-[500px]">
                                     <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/15 blur-[60px] -mr-16 -mt-16 rounded-full" />
-                                    <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 italic tracking-tight mb-8 border-b border-white/5 pb-4">Active System Users</h3>
+                                    <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-500 to-rose-500 italic tracking-tight mb-8 border-b border-white/5 pb-4">Active System Users</h3>
                                     <div className="flex-1 overflow-y-auto pr-4 space-y-4 custom-scrollbar-blue -mr-4">
                                         {onlineUsers.length > 0 ? onlineUsers.map((u, i) => (
                                             <div key={u.id} className="flex items-center justify-between p-4 sm:p-6 bg-white/5 backdrop-blur-md border border-white/10 rounded-[1.5rem] sm:rounded-3xl group hover:border-blue-500/30 transition-all hover:bg-white/[0.08] shadow-xl">

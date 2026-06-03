@@ -70,7 +70,7 @@ export default function Dashboard() {
     // Initial fetch handled by debouncedSearch effect or manually here if needed
     // But since debouncedSearch starts empty, we can just call it once.
     if (debouncedSearch === "") {
-        fetchTasks("", 0, false);
+      fetchTasks("", 0, false);
     }
 
     const handleStorageChange = (e) => {
@@ -88,10 +88,10 @@ export default function Dashboard() {
   // marked as "active" even if tab is in background.
   useEffect(() => {
     const sendHeartbeat = () => {
-      fetch('/api/user/heartbeat', { method: 'POST' }).catch(() => {});
+      fetch('/api/user/heartbeat', { method: 'POST' }).catch(() => { });
     };
     sendHeartbeat(); // fire immediately on mount
-    const interval = setInterval(sendHeartbeat, 30000); 
+    const interval = setInterval(sendHeartbeat, 30000);
     return () => clearInterval(interval);
   }, []);
 

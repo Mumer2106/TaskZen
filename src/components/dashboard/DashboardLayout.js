@@ -83,7 +83,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
               onClick={() => setShowLogoutConfirm(false)}
               className="absolute inset-0 bg-[#02000d]/80 backdrop-blur-xl"
             />
-            
+
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -91,7 +91,7 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, use
               className="relative w-full max-w-sm bg-gradient-to-b from-[#050510]/95 to-black/95 border border-rose-500/20 rounded-[2.5rem] shadow-[0_30px_100px_rgba(244,63,94,0.15)] overflow-hidden p-8 text-center"
             >
               <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-rose-500 to-transparent" />
-              
+
               <div className="mx-auto h-16 w-16 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center mb-6 shadow-[0_0_20px_rgba(244,63,94,0.2)] text-rose-500">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
               </div>

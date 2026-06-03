@@ -45,7 +45,7 @@ export default function LandingPage() {
 
       {/* Background Layer */}
       <NexusBackground />
-      
+
       {/* Grid overlay for depth */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none z-20">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff02_1px,transparent_1px),linear-gradient(to_bottom,#ffffff02_1px,transparent_1px)] bg-[size:60px_60px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_90%)] opacity-30"></div>

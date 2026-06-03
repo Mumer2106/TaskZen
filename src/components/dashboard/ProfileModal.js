@@ -43,7 +43,7 @@ export default function ProfileModal({ isOpen, onClose, userInfo, onUpdate }) {
     setError("");
   };
 
-  const isModified = 
+  const isModified =
     formData.firstName !== (userInfo?.firstName || "") ||
     formData.lastName !== (userInfo?.lastName || "") ||
     formData.email !== (userInfo?.email || "") ||
