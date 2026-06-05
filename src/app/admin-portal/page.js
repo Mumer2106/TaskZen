@@ -250,25 +250,30 @@ function ResonanceChart({ tasks }) {
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#050510] to-[#050510]" />
             </div>
 
-            {/* No Tasks Today Message */}
+            {/* No Tasks Today Message - Moved to top-left as a status indicator to avoid overlap */}
             <AnimatePresence>
                 {isTodayEmpty && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.9 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9 }}
-                        className="absolute inset-x-0 top-1/4 z-50 flex justify-center pointer-events-none"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        className="absolute left-6 top-0 z-50 pointer-events-none"
                     >
-                        <div className="bg-[#08081a]/40 backdrop-blur-3xl border-2 border-white/10 px-8 py-5 rounded-[2rem] shadow-2xl flex items-center gap-4">
-                            <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse shadow-[0_0_10px_rgba(236,72,153,0.5)]" />
-                            <span className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-300 italic">No Operational Tasks Encountered Today</span>
+                        <div className="flex items-center gap-3 bg-[#0a0a20]/60 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-xl shadow-xl">
+                            <div className="relative">
+                                <div className="h-2 w-2 rounded-full bg-pink-500 animate-pulse" />
+                                <div className="absolute inset-0 h-2 w-2 rounded-full bg-pink-500 blur-[4px] animate-pulse" />
+                            </div>
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 italic">
+                                No tasks added today.
+                            </span>
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            <div className="h-full w-full relative overflow-hidden">
-                <svg viewBox="0 0 100 100" className="w-[120%] h-[60%] overflow-visible -ml-[10%]" preserveAspectRatio="none">
+            <div className="h-full w-full relative overflow-hidden pt-12">
+                <svg viewBox="0 0 100 100" className="w-[120%] h-[55%] overflow-visible -ml-[10%]" preserveAspectRatio="none">
                     <defs>
                         <linearGradient id="area-grad-1" x1="0%" y1="0%" x2="0%" y2="100%">
                             <stop offset="0%" stopColor="rgba(79, 70, 229, 0.4)" />
@@ -986,7 +991,6 @@ export default function AdminPortal() {
                         <h1 className="text-2xl sm:text-4xl font-black italic tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#ff2d95] via-[#d946ef] to-[#6366f1] pr-[0.3em] -mr-[0.3em]">
                             Admin Portal
                         </h1>
-                        <p className="text-[8px] sm:text-[10px] font-black tracking-[0.4em] text-slate-500 uppercase mt-0.5 ml-1">Management Portal v5.0</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-3">

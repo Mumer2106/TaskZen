@@ -255,7 +255,7 @@ export default function TaskList({
                       >
                         <div className="relative bg-[#0d0d21]/60 backdrop-blur-3xl border-2 border-white/10 p-4 sm:p-9 rounded-[2.5rem] sm:rounded-[3rem] transition-all">
                           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-8">
-                            <div className="flex-1 min-w-0">
+                            <div className="flex-1 min-w-0 overflow-hidden">
                               {/* Selection Box - Absolutely positioned to top right */}
                               <button
                                 onClick={() => onToggleSelect(task.id)}
@@ -264,7 +264,7 @@ export default function TaskList({
                                 <CheckIcon />
                               </button>
 
-                              <div className="flex flex-col gap-4">
+                              <div className="flex flex-col gap-4 w-full overflow-hidden">
                                 <div className="flex items-center gap-3">
                                   {/* Desktop Select Box */}
                                   <button
@@ -277,10 +277,10 @@ export default function TaskList({
                                     {task.status === "Completed" ? "Completed" : "Pending"}
                                   </span>
                                 </div>
-                                <h3 className={`text-xl sm:text-4xl font-black italic tracking-tighter leading-tight transition-all duration-500 capitalize ${task.status === "Completed" ? "text-slate-500/60" : "text-white"}`}>
+                                <h3 className={`text-xl sm:text-4xl font-black italic tracking-tighter leading-tight transition-all duration-500 capitalize truncate sm:whitespace-normal ${task.status === "Completed" ? "text-slate-500/60" : "text-white"}`}>
                                   {(task.title || '').replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim()}
                                 </h3>
-                                <p className={`text-[14px] sm:text-base font-medium italic leading-relaxed truncate max-w-3xl border-l-[3px] border-white/5 pl-6 transition-colors ${task.status === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
+                                <p className={`text-[14px] sm:text-base font-medium italic leading-relaxed truncate max-w-[180px] sm:max-w-3xl border-l-[3px] border-white/5 pl-6 transition-colors ${task.status === "Completed" ? "text-slate-700" : "text-slate-400"}`}>
                                   {task.description || "No neural data logged."}
                                 </p>
                               </div>
